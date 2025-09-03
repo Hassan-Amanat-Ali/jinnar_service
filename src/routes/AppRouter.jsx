@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout.jsx';
+import LandingLayout from '../layouts/LandingLayout.jsx';
 import Landing from '../pages/common/Landing.jsx';
 import RoleSelection from '../pages/common/RoleSelection.jsx';
 import Login from '../pages/common/Login.jsx';
@@ -34,9 +35,12 @@ import { ROLES } from '../constants/roles.js';
 
 const router = createBrowserRouter([
   {
+    element: <LandingLayout />,
+    children: [{ index: true, element: <Landing /> }],
+  },
+  {
     element: <MainLayout />,
     children: [
-      { index: true, element: <Landing /> },
       { path: 'role', element: <RoleSelection /> },
       { path: 'login', element: <Login /> },
       { path: 'signup', element: <Signup /> },
