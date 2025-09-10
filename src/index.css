@@ -1,5 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
-@import 'tailwindcss';
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap");
+@import "tailwindcss";
 
 @theme {
   /* Colors */
@@ -23,9 +23,9 @@
   ); /* CTA alternative */
 
   /* Fonts */
-  --font-base: 'Inter', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --font-heading: 'Inter', sans-serif;
+  --font-base: "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-heading: "Inter", sans-serif;
 }
 
 @layer base {
@@ -71,6 +71,13 @@
   }
 
   /* ==== Utilities ==== */
+  .line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
