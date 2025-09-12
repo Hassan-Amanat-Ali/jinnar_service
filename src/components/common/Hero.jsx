@@ -14,7 +14,8 @@ const Hero = ({
 }) => {
   const [price, setPrice] = React.useState(50);
   const [openDropdown, setOpenDropdown] = React.useState(null);
-
+  const services = ["All", "Active", "Completed", "Cancelled"];
+  const [selectedService, setSelectedService] = React.useState("All");
   const handleDropdownToggle = (dropdownId) => {
     setOpenDropdown(openDropdown === dropdownId ? null : dropdownId);
   };
@@ -33,7 +34,7 @@ const Hero = ({
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
                 {title}
               </h1>
-              <h4 className="text-xs sm:text-sm md:text-base text-gray-400 font-light mt-0.5 max-w-2xl mx-auto">
+              <h4 className="text-xs sm:text-sm md:text-base text-gray-600 font-base mt-0.5 max-w-2xl mx-auto">
                 {subtitle}
               </h4>
             </div>
@@ -48,7 +49,7 @@ const Hero = ({
                         className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10 h-3 w-3"
                       />
                       <input
-                        className="bg-white/20 backdrop-blur-2xl w-full h-8 sm:h-9 rounded-xl text-xs sm:text-sm px-3 pl-9 focus:outline-none border-1 border-gray-200"
+                        className="bg-white/70 backdrop-blur-2xl w-full h-9 sm:h-11 rounded-xl text-xs sm:text-sm px-3 pl-9 focus:outline-none border-2 border-white"
                         placeholder="Search for services..."
                         type="text"
                       />
@@ -181,6 +182,41 @@ const Hero = ({
                     </div>
                   </div>
                 </>
+              )}
+            </div>
+            <div>
+              {place === "My Bookings" && (
+                <div>
+                  <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 ">
+                    <div className="flex items-center justify-start sm:justify-center gap-2 sm:gap-3 md:gap-4 overflow-x-auto scrollbar-hide py-3">
+                      {services.map((service, index) => (
+                        <button
+                          key={index}
+                          className={`cursor-pointer flex-shrink-0 text-xs px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-2xl sm:rounded-2xl whitespace-nowrap transition-all duration-200 shadow-sm ${
+                            selectedService === service
+                              ? "bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium"
+                              : "bg-white text-gray-500 hover:bg-neutral-200 border-1 border-neutral-300"
+                          }`}
+                          onClick={() => setSelectedService(service)}
+                        >
+                          {service}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="relative w-full max-w-sm sm:max-w-md md:max-w-lg mt-5 mx-auto">
+                      <img
+                        src={search}
+                        alt=""
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 z-10 h-3 w-3"
+                      />
+                      <input
+                        className="bg-white/70 backdrop-blur-2xl w-full h-9 sm:h-11 rounded-xl text-xs sm:text-sm px-3 pl-9 focus:outline-none border-2 border-white"
+                        placeholder="Search for bookings..."
+                        type="text"
+                      />
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>
