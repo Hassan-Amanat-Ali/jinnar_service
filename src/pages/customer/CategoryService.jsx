@@ -105,7 +105,7 @@ const CategoryService = () => {
         title="Plumbing Services"
         subtitle="Choose from trusted workers near you"
       />
-      <div className="max-w-6xl mx-auto mt-6 sm:mt-8 md:mt-10 mb-4 sm:mb-6 px-4 sm:px-6 lg:px-8 text-neutral-500 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+      <div className="max-w-6xl mx-auto mb-2 px-4 sm:px-6 lg:px-8 text-neutral-500 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
         <h2 className="order-2 sm:order-1">
           Found {dummyWorkers.length} workers for plumbing services
         </h2>
@@ -124,7 +124,7 @@ const CategoryService = () => {
         </div>
       </div>
 
-      <div className="mx-4 sm:mx-6 lg:mx-8">
+      <div className="mx-4 lg:mx-0">
         <hr className="border-[1px] border-t border-gray-200" />
       </div>
 

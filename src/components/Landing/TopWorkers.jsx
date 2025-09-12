@@ -42,7 +42,7 @@ const TopWorkers = () => {
   ];
 
   return (
-    <section className="py-8 md:py-12 lg:py-16">
+    <section className="py-8 md:py-10 lg:py-12 ">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-center mb-2">
           Meet Our Top Rated Workers
@@ -50,11 +50,11 @@ const TopWorkers = () => {
         <p className="text-center mb-6 md:mb-8 text-sm sm:text-base text-gray-600">
           Verified professionals with proven skills and excellent ratings.
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 ">
           {workers.map((worker) => (
             <div
               key={worker.id}
-              className="bg-white rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-4 sm:p-6"
+              className="bg-white rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-4 sm:p-6 border border-neutral-200"
             >
               {/* Worker Image */}
               <div className="w-full flex justify-center mb-4">

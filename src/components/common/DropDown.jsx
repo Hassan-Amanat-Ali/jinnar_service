@@ -54,29 +54,31 @@ function Dropdown({
 
       {/* Options */}
       {isOpen && (
-        <div className="absolute mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-          {options.map((opt, i) => (
-            <div
-              key={i}
-              onClick={() => {
-                setSelected(opt);
-                onSelect && onSelect(opt);
-                onToggle(); // Close after selection
-              }}
-              className="px-3 py-2 text-sm text-gray-700 hover:bg-sky-50 hover:text-sky-600 cursor-pointer transition first:rounded-t-lg last:rounded-b-lg"
-            >
-              {showStars && opt.includes("Star") ? (
-                <div className="flex items-center justify-between">
-                  <span>{opt}</span>
-                  <div className="flex items-center space-x-0.5 ml-2">
-                    {renderStars(opt)}
+        <div className="absolute mt-1 w-full bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-48 overflow-hidden">
+          <div className="max-h-48 overflow-y-auto overflow-x-hidden w-fit text-start  scrollbar-thin">
+            {options.map((opt, i) => (
+              <div
+                key={i}
+                onClick={() => {
+                  setSelected(opt);
+                  onSelect && onSelect(opt);
+                  onToggle(); // Close after selection
+                }}
+                className="px-2 flex-wrap text-wrap py-2.5 w-fit text-gray-700 hover:bg-gradient-to-r hover:from-sky-50 hover:to-blue-50 hover:text-sky-700 cursor-pointer transition-all duration-150 first:rounded-t-lg last:rounded-b-lg border-b border-gray-50 last:border-b-0 text-xs"
+              >
+                {showStars && opt.includes("Star") ? (
+                  <div className="flex items-center justify-between">
+                    <span>{opt}</span>
+                    <div className="flex items-center space-x-0.5 ml-2">
+                      {renderStars(opt)}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                opt
-              )}
-            </div>
-          ))}
+                ) : (
+                  opt
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

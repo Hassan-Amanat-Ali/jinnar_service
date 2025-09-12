@@ -5,7 +5,6 @@ import service1 from "../../assets/images/All-services-1.jpg";
 import service2 from "../../assets/images/all-services-2.jpg";
 import service3 from "../../assets/images/all-services-3.jpg";
 import service4 from "../../assets/images/all-services-4.jpg";
-import service5 from "../../assets/images/all-services-5.jpg";
 
 const AllServices = () => {
   const servicesData = [
@@ -165,6 +164,7 @@ const AllServices = () => {
               img={service.img}
               rating={service.rating}
               description={service.description}
+              staritems={true}
             />
           ))}
         </div>

@@ -10,7 +10,7 @@ const Footer = () => {
         <img
           src={growing}
           alt=""
-          className="w-full h-full absolute top-0 left-0 object-cover "
+          className="w-full h-full absolute top-0 left-0 object-cover rounded-2xl"
         />
         <div className="z-100 relative ">
           <h1 className="overflow-hidden text-sm w-60 sm:w-full sm:text-4xl sm:font-bold sm:mt-10 text-center mx-auto z-30 text-white">
