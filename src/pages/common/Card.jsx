@@ -67,7 +67,7 @@ const Card = ({
             <Button
               title="View Details"
               className={
-                "text-white text-nowrap font-semibold sm:text-sm h-9 sm:px-20 "
+                "text-white text-nowrap font-semibold sm:text-sm h-9 sm:px-18 rounded-xl hover:bg-white hover:text-[#74C7F2] border border-[#74C7F2] bg-[#74C7F2] transition-all duration-300"
               }
             />
           </div>

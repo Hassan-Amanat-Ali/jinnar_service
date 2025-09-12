@@ -14,6 +14,7 @@ import service3 from "../../assets/images/all-services-3.jpg";
 import service4 from "../../assets/images/all-services-4.jpg";
 import TopWorkers from "../../components/Landing/TopWorkers";
 import Testimonials from "../../components/Landing/Testimonials";
+import BookingCard from "../../components/customer/BookinCard";
 
 const CustomerHome = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -435,9 +436,16 @@ const CustomerHome = () => {
       </div>
 
       <div className="max-w-7xl w-[90%] mx-auto my-20">
-        <div className="flex items-center justify-between ">
-          <h1 className="text-3xl font-semibold">Popular Services</h1>
-          <button className="border-2 text-[#74C7F2] border-[#74C7F2] rounded-md py-1.5 px-3 text-sm cursor-pointer hover:bg-[#74C7F2] hover:text-white transition-all duration-300">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-semibold">
+              Popular Services
+            </h1>
+            <p className="text-sm sm:text-base">
+              Trending services in your area
+            </p>
+          </div>
+          <button className="border-2 text-[#74C7F2] border-[#74C7F2] rounded-md py-1.5 px-3 text-sm cursor-pointer hover:bg-[#74C7F2] hover:text-white transition-all duration-300 w-fit">
             View All Services
           </button>
         </div>
@@ -464,6 +472,52 @@ const CustomerHome = () => {
       </div>
 
       <TopWorkers />
+
+      <div className="max-w-7xl mx-auto my-20 px-4 lg:px-12">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-semibold">
+              Your Bookings
+            </h1>
+            <p className="text-sm sm:text-base">
+              Track your ongoing and upcoming services
+            </p>
+          </div>
+          <button className="border-2 text-[#74C7F2] border-[#74C7F2] rounded-md py-1.5 px-3 text-sm cursor-pointer hover:bg-[#74C7F2] hover:text-white transition-all duration-300 w-fit">
+            View All Bookings
+          </button>
+        </div>
+        <div className="flex flex-col gap-6 mt-6">
+          <BookingCard
+            image={service1}
+            title="Web Design"
+            workerName="John Doe"
+            time="2 hours ago"
+            category="Design"
+            status="Confirmed"
+            price="50"
+          />
+          <BookingCard
+            image={service1}
+            title="Web Design"
+            workerName="John Doe"
+            time="2 hours ago"
+            category="Design"
+            status="Confirmed"
+            price="50"
+          />
+          <BookingCard
+            image={service1}
+            title="Web Design"
+            workerName="John Doe"
+            time="2 hours ago"
+            category="Design"
+            status="Confirmed"
+            price="50"
+          />
+        </div>
+      </div>
+
       <Testimonials />
     </>
   );
