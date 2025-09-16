@@ -411,7 +411,7 @@ const CustomerHome = () => {
         <p className="text-center text-sm sm:text-base">
           Get your task done in 4 simple steps
         </p>
-        <div className="max-w-7xl bg-[#E4F6FF] min-h-[20rem] w-[95%] sm:w-[90%] mx-auto mt-6 sm:mt-10 rounded-2xl flex flex-col md:flex-row justify-center items-center gap-6 sm:gap-8 md:gap-10 p-6 sm:p-8 md:p-10">
+        <div className="max-w-7xl bg-[#E4F6FF] min-h-[20rem]   mx-auto mt-6 sm:mt-10 rounded-2xl flex flex-col md:flex-row justify-center items-center gap-6 sm:gap-8 md:gap-10 p-6 sm:p-8 md:p-10">
           {[
             {
               id: 1,
@@ -470,11 +470,11 @@ const CustomerHome = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl w-full px-4 sm:px-6 lg:px-8 mx-auto my-16 sm:my-20 lg:my-24">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-8 sm:mb-10">
+      <div className="max-w-7xl w-full px-4   mx-auto my-16 sm:my-20 lg:my-24">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-8 sm:mb-10 sm:px-2">
           <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold mb-2 sm:mb-3 text-gray-900">
-              Popular Services
+            <h1 className="text-2xl sm:text-3xl lg:text-3xl font-semibold text-gray-900">
+              Popular Services Near You
             </h1>
             <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
               Trending services in your area
@@ -517,7 +517,7 @@ const CustomerHome = () => {
 
       <TopWorkers />
 
-      <div className="max-w-7xl mx-auto my-20 px-4 lg:px-12">
+      <div className="max-w-7xl mx-auto my-20 px-4 lg:px-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
           <div>
             <h1 className="text-2xl sm:text-3xl font-semibold">

@@ -7,8 +7,8 @@ const Footer = () => {
   return (
     <footer>
       {/* CTA Section */}
-      <div className="relative mx-auto mt-10 mb-12 sm:mb-16 px-4 sm:px-6">
-        <div className="relative w-full max-w-5xl mx-auto h-40 sm:h-48 md:h-56 lg:h-64 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl">
+      <div className="relative mx-auto mt-1 mb-12 sm:mb-16  sm:px-6">
+        <div className="relative  max-w-7xl mx-auto h-50 m:h-48 md:h-56 lg:h-84 rounded-xl sm:rounded-2xl overflow-hidden w-[90%] md:w-full  xl:w-[90%]">
           {/* Background Image */}
           <img
             src={growing}

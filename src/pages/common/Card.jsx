@@ -14,7 +14,7 @@ const Card = ({
   return (
     <>
       {place === "home" && (
-        <div className="h-82 w-65 md:w-80 lg:w-65 overflow-hidden shadow-sm rounded-2xl border-[#F2F2F2] border-1">
+        <div className="h-82 w-65 md:w-80 lg:w-70 overflow-hidden shadow-sm rounded-2xl border-[#F2F2F2] border-1">
           <div className="h-50 w-full">
             <img src={img} alt={place} className="w-full h-full object-cover" />
           </div>
@@ -37,7 +37,7 @@ const Card = ({
         </div>
       )}
       {place === "customer" && (
-        <div className="h-82 w-65 md:w-80 lg:w-65 overflow-hidden shadow-sm rounded-2xl border-[#F2F2F2] border-1">
+        <div className="h-82 w-65 md:w-80 lg:w-75 overflow-hidden shadow-sm rounded-2xl border-[#F2F2F2] border-1">
           <div className="relative">
             <div className="h-50 w-full">
               <img
