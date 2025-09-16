@@ -404,70 +404,114 @@ const CustomerHome = () => {
 
       <PopularServices />
 
-      <div className="my-8">
-        <h1 className="text-3xl font-semibold text-center ">How It Works</h1>
-        <p className="text-center">Get your task done in 4 simple steps</p>
-        <div className="max-w-7xl bg-[#E4F6FF] h-[20rem] w-[90%] mx-auto mt-10 rounded-2xl flex justify-center items-center gap-10">
-          <div className="flex  items-center gap-10">
-            <div className="bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] h-15 w-15 rounded-full flex items-center justify-center p-1 shadow-2xl">
-              <img src={search2} alt="" className="w-7 h-7 object-cover" />
+      <div className="my-8 px-4">
+        <h1 className="text-2xl sm:text-3xl font-semibold text-center">
+          How It Works
+        </h1>
+        <p className="text-center text-sm sm:text-base">
+          Get your task done in 4 simple steps
+        </p>
+        <div className="max-w-7xl bg-[#E4F6FF] min-h-[20rem] w-[95%] sm:w-[90%] mx-auto mt-6 sm:mt-10 rounded-2xl flex flex-col md:flex-row justify-center items-center gap-6 sm:gap-8 md:gap-10 p-6 sm:p-8 md:p-10">
+          {[
+            {
+              id: 1,
+              icon: search2,
+              title: "Search Service",
+              description: "Browse categories or search for what you need",
+            },
+            {
+              id: 2,
+              icon: people,
+              title: "Choose Worker",
+              description: "Select from verified professionals in your area",
+            },
+            {
+              id: 3,
+              icon: shield,
+              title: "Secure Booking",
+              description: "Safe payment and booking confirmation",
+            },
+            {
+              id: 4,
+              icon: correct,
+              title: "Get It Done",
+              description: "Enjoy quality service at your convenience",
+            },
+          ].map((step, index) => (
+            <div
+              key={step.id}
+              className="flex flex-col md:flex-row items-center gap-4 md:gap-6"
+            >
+              <div className="flex flex-col items-center relative">
+                <div className="bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full flex items-center justify-center p-1 shadow-2xl relative z-10">
+                  <img
+                    src={step.icon}
+                    alt=""
+                    className="w-6 h-6 sm:w-7 sm:h-7 object-cover"
+                  />
+                </div>
+                <div className="w-fit flex flex-col items-center mt-4">
+                  <div className="h-6 w-6 rounded-full bg-white text-[#74C7F2] font-bold text-sm flex items-center justify-center mb-2">
+                    {step.id}
+                  </div>
+                  <p className="text-center text-sm font-medium mb-2">
+                    {step.title}
+                  </p>
+                  <p className="text-center text-xs text-gray-600 max-w-[140px] leading-relaxed">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+              {index < 3 && (
+                <div className="hidden md:block bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] h-0.5 w-12 lg:w-16 rounded-lg -mt-20"></div>
+              )}
             </div>
-            <div className="bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] h-0.5 w-20 rounded-lg"></div>
-          </div>
-
-          <div className="flex  items-center gap-10">
-            <div className="bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] h-15 w-15 rounded-full flex items-center justify-center p-1 shadow-2xl">
-              <img src={people} alt="" className="w-7 h-7 object-cover" />
-            </div>
-            <div className="bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] h-0.5 w-20 rounded-lg"></div>
-          </div>
-          <div className="flex  items-center gap-10">
-            <div className="bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] h-15 w-15 rounded-full flex items-center justify-center p-1 shadow-2xl">
-              <img src={shield} alt="" className="w-7 h-7 object-cover" />
-            </div>
-            <div className="bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] h-0.5 w-20 rounded-lg"></div>
-          </div>
-          <div className="flex  items-center gap-10">
-            <div className="bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] h-15 w-15 rounded-full flex items-center justify-center p-1 shadow-2xl">
-              <img src={correct} alt="" className="w-7 h-7 object-cover" />
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
-      <div className="max-w-7xl w-[90%] mx-auto my-20">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-semibold">
+      <div className="max-w-7xl w-full px-4 sm:px-6 lg:px-8 mx-auto my-16 sm:my-20 lg:my-24">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 mb-8 sm:mb-10">
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold mb-2 sm:mb-3 text-gray-900">
               Popular Services
             </h1>
-            <p className="text-sm sm:text-base">
+            <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
               Trending services in your area
             </p>
           </div>
-          <button className="border-2 text-[#74C7F2] border-[#74C7F2] rounded-md py-1.5 px-3 text-sm cursor-pointer hover:bg-[#74C7F2] hover:text-white transition-all duration-300 w-fit">
+          <button className="border-2 text-[#74C7F2] border-[#74C7F2] rounded-lg py-2.5 px-6 text-sm font-medium cursor-pointer hover:bg-[#74C7F2] hover:text-white hover:shadow-lg transition-all duration-300 w-fit whitespace-nowrap">
             View All Services
           </button>
         </div>
         {servicesData.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5 md:gap-4 lg:gap-6 justify-items-center place-items-center">
             {servicesData.map((service) => (
-              <Card
-                place="customer"
+              <div
                 key={service.id}
-                title={service.title}
-                img={service.img}
-                rating={service.rating}
-                description={service.description}
-                starting={"$25"}
-                status={"Available"}
-              />
+                className="w-full max-w-[280px] flex justify-center"
+              >
+                <Card
+                  place="customer"
+                  title={service.title}
+                  img={service.img}
+                  rating={service.rating}
+                  description={service.description}
+                  starting={"$25"}
+                  status={"Available"}
+                />
+              </div>
             ))}
           </div>
         ) : (
-          <p className="text-center mt-4 text-gray-500">
-            No services available at the moment.
-          </p>
+          <div className="text-center mt-12 py-8">
+            <p className="text-lg text-gray-500 mb-2">
+              No services available at the moment.
+            </p>
+            <p className="text-sm text-gray-400">
+              Please check back later for new services.
+            </p>
+          </div>
         )}
       </div>
 
