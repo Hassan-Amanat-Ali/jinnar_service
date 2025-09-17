@@ -1,5 +1,6 @@
 import React from "react";
 import { Calendar, Clock, MapPin, DollarSign, Star } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const JobCard = ({
   serviceImage,
@@ -15,6 +16,7 @@ const JobCard = ({
   location,
   price,
 }) => {
+  const navigate = useNavigate();
   return (
     <div className="w-full max-w-md mx-auto bg-white rounded-2xl shadow-lg p-3 sm:p-4 md:p-5 border border-gray-100 sm:h-92">
       {/* Header */}
@@ -123,7 +125,7 @@ const JobCard = ({
 
       {/* Buttons */}
       <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mt-4 sm:mt-5">
-        <button className="flex-1 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium hover:opacity-80 transition whitespace-nowrap cursor-pointer text-xs sm:text-sm">
+        <button className="flex-1 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium hover:opacity-80 transition whitespace-nowrap cursor-pointer text-xs sm:text-sm" onClick={() => navigate('/customer-booking/:slug')}>
           View Detail
         </button>
         <button className="flex-1 px-3 sm:px-4 py-2 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-100 transition whitespace-nowrap text-xs sm:text-sm cursor-pointer">

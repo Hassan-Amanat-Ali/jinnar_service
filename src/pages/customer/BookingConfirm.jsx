@@ -1,4 +1,3 @@
-import ali from "../../assets/images/ali-hassan.jpg";
 import {
   Check,
   Star,
@@ -12,8 +11,11 @@ import {
   ArrowLeft,
   Info,
 } from "lucide-react";
+import ali from "../../assets/images/ali-hassan.jpg";
+import { useNavigate } from "react-router-dom";
 
 const BookingConfirm = () => {
+  const navigate = useNavigate();
   return (
     <div className="min-h-[70vh] bg-white">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
@@ -137,11 +139,14 @@ const BookingConfirm = () => {
 
           {/* CTA buttons */}
           <div className="mt-6 flex flex-col sm:flex-row gap-3">
-            <button className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#74C7F2] to-[#74C7F2] text-white py-3 rounded-xl font-medium hover:opacity-95 transition-all shadow">
+            <button className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#74C7F2] to-[#74C7F2] text-white py-3 rounded-xl font-medium hover:opacity-95 transition-all shadow" onClick={() => navigate("/customer-booking/BK-2045")}>
               Go to Booking Details
               <ArrowRight className="w-4 h-4" />
             </button>
-            <button className="flex-1 inline-flex items-center justify-center gap-2 border border-[#74C7F2] text-[#74C7F2] py-3 rounded-xl font-medium hover:bg-[#DBF0FF] transition-colors">
+            <button
+              className="flex-1 inline-flex items-center justify-center gap-2 border border-[#74C7F2] text-[#74C7F2] py-3 rounded-xl font-medium hover:bg-[#DBF0FF] transition-colors"
+              onClick={() => navigate("/customer-home")}
+            >
               <ArrowLeft className="w-4 h-4" />
               Back to Home
             </button>

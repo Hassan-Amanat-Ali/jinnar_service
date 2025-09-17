@@ -1,5 +1,6 @@
 import React from "react";
 import { Star, Clock, MapPin, Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const WorkerCard = ({
   name,
@@ -14,6 +15,7 @@ const WorkerCard = ({
   jobsCompleted,
   rate,
 }) => {
+  const navigate = useNavigate();
   return (
     <div className="w-full max-w-sm h-90 rounded-2xl shadow p-4 text-gray-800 text-sm bg-white border-1 border-gray-300">
       {/* Top Section */}
@@ -61,15 +63,20 @@ const WorkerCard = ({
       </p>
 
       {/* Skills */}
-      <div className="flex flex-wrap gap-2 mt-2.5">
-        {skills.map((skill, idx) => (
-          <span
-            key={idx}
-            className="px-2 py-0.5 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white text-xs rounded-lg font-"
-          >
-            {skill}
-          </span>
-        ))}
+      <div className="h-13">
+        <div
+          className="flex flex-wrap gap-2 mt-2.5 
+      "
+        >
+          {skills.slice(0, 4).map((skill, idx) => (
+            <span
+              key={idx}
+              className="px-2 py-1.5 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white text-xs rounded-lg font-"
+            >
+              {skill}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Stats */}
@@ -87,10 +94,20 @@ const WorkerCard = ({
 
       {/* Buttons */}
       <div className="flex gap-2 mt-3">
-        <button className="flex items-center justify-center gap-1 border rounded-lg w-1/2 py-2.5 text-xs font-medium text-gray-400 hover:text-gray-600 hover:border-gray-400 transition cursor-pointer">
+        <button
+          className="flex items-center justify-center gap-1 border rounded-lg w-1/2 py-2.5 text-xs font-medium text-gray-400 hover:text-gray-600 hover:border-gray-400 transition cursor-pointer"
+          onClick={() => {
+            navigate("/worker-profile/slug");
+          }}
+        >
           <Eye size={14} /> View
         </button>
-        <button className="w-1/2 py-2.5 rounded-lg bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white text-xs font-medium cursor-pointer">
+        <button
+          className="w-1/2 py-2.5 rounded-lg bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white text-xs font-medium cursor-pointer"
+          onClick={() => {
+            navigate("/book-worker/slug");
+          }}
+        >
           Book Now
         </button>
       </div>

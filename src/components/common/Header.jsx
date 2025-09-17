@@ -10,9 +10,11 @@ import {
 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -28,31 +30,39 @@ export default function Navbar() {
 
             {/* Nav Links - Desktop */}
             <div className="hidden md:flex space-x-3.5">
-              <NavItem icon={<Home size={14} />} label="Home" active={false} />
+              <NavItem
+                icon={<Home size={14} />}
+                label="Home"
+                to="/customer-home"
+              />
               <NavItem
                 icon={<Wrench size={14} />}
                 label="Services"
-                active={true}
+                to="/services"
               />
               <NavItem
                 icon={<Calendar size={14} />}
                 label="My Bookings"
-                active={false}
+                to="/customer-bookings"
               />
               <NavItem
                 icon={<User size={14} />}
                 label="Profile"
-                active={false}
+                to="/profile"
               />
             </div>
 
             {/* Right Icons - Desktop */}
             <div className="hidden md:flex items-center space-x-3">
-              <IconButton icon={<MessageSquare size={14} color="#74C7F2" />} />
+              <div onClick={() => navigate("/chat")}>
+                <IconButton
+                  icon={<MessageSquare size={14} color="#74C7F2" />}
+                />
+              </div>
               <IconButton
                 icon={<Bell size={14} color="white" />}
                 className={
-                  "bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] border-0"
+                  "bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] border-0"
                 }
               />
             </div>
@@ -63,7 +73,7 @@ export default function Navbar() {
               <IconButton
                 icon={<Bell size={14} color="white" />}
                 className={
-                  "bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] border-0"
+                  "bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] border-0"
                 }
               />
               <button
@@ -88,22 +98,26 @@ export default function Navbar() {
             <MobileNavItem
               icon={<Home size={14} />}
               label="Home"
-              active={false}
+              to="/customer-home"
+              onNavigate={() => setIsMobileMenuOpen(false)}
             />
             <MobileNavItem
               icon={<Wrench size={14} />}
               label="Services"
-              active={true}
+              to="/services"
+              onNavigate={() => setIsMobileMenuOpen(false)}
             />
             <MobileNavItem
               icon={<Calendar size={14} />}
               label="My Bookings"
-              active={false}
+              to="/customer-bookings"
+              onNavigate={() => setIsMobileMenuOpen(false)}
             />
             <MobileNavItem
               icon={<User size={14} />}
               label="Profile"
-              active={false}
+              to="/profile"
+              onNavigate={() => setIsMobileMenuOpen(false)}
             />
           </div>
         </div>
@@ -113,36 +127,45 @@ export default function Navbar() {
 }
 
 // Compact Nav Item Component
-function NavItem({ icon, label, active }) {
+function NavItem({ icon, label, to }) {
   return (
-    <div
-      className={`flex items-center space-x-1 text-xs px-2.5 py-1.5 rounded-md cursor-pointer transition
-        ${
-          active
-            ? "bg-sky-100 text-sky-600 font-medium"
-            : "text-gray-700 hover:text-sky-600"
-        }`}
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        twMerge(
+          "flex items-center space-x-1 text-xs px-2.5 py-1.5 rounded-md transition",
+          isActive
+            ? "bg-[#DBF0FF] text-[#74C7F2] font-medium"
+            : "text-gray-700 hover:text-[#74C7F2]"
+        )
+      }
+      end
     >
       {icon}
       <span>{label}</span>
-    </div>
+    </NavLink>
   );
 }
 
 // Mobile Nav Item Component
-function MobileNavItem({ icon, label, active }) {
+function MobileNavItem({ icon, label, to, onNavigate }) {
   return (
-    <div
-      className={`flex items-center space-x-3 text-sm px-3 py-2.5 rounded-md cursor-pointer transition
-        ${
-          active
-            ? "bg-sky-100 text-sky-600 font-medium"
-            : "text-gray-700 hover:text-sky-600"
-        }`}
+    <NavLink
+      to={to}
+      onClick={onNavigate}
+      className={({ isActive }) =>
+        twMerge(
+          "flex items-center space-x-3 text-sm px-3 py-2.5 rounded-md transition",
+          isActive
+            ? "bg-[#DBF0FF] text-[#74C7F2] font-medium"
+            : "text-gray-700 hover:text-[#74C7F2]"
+        )
+      }
+      end
     >
       {icon}
       <span>{label}</span>
-    </div>
+    </NavLink>
   );
 }
 

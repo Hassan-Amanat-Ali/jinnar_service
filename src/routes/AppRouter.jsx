@@ -57,10 +57,10 @@ const router = createBrowserRouter([
       { path: "services/:slug", element: <CategoryService /> },
 
       { path: "customer-bookings", element: <CustomerBookings /> },
-      { path: "book-worker/:id", element: <BookWorker /> },
+      { path: "book-worker/:slug", element: <BookWorker /> },
       { path: "booking-confirm", element: <BookingConfirm /> },
-      { path: "customer-booking/:id", element: <CustomerBookingDetail /> },
-      { path: "worker-profile/:id", element: <WorkerPublicProfile /> },
+      { path: "customer-booking/:slug", element: <CustomerBookingDetail /> },
+      { path: "worker-profile/:slug", element: <WorkerPublicProfile /> },
 
       // Worker pages - simple flat routing
       { path: "worker-home", element: <WorkerHome /> },

@@ -1,6 +1,7 @@
 import React from "react";
 import Button from "../../components/common/Button";
 import icon from "../../assets/icons/star.png";
+import { useNavigate } from "react-router-dom";
 
 const Card = ({
   place = "home",
@@ -11,6 +12,7 @@ const Card = ({
   starting,
   status,
 }) => {
+  const navigate = useNavigate();
   return (
     <>
       {place === "home" && (
@@ -28,9 +30,14 @@ const Card = ({
           <p className="px-3 h-10 mt-1.5 overflow-hidden text-xs font-light">
             {description.slice(0, 70)}...
           </p>
-          <div className="px-3 py-2 flex justify-center">
+          <div
+            className="px-3 py-2 flex justify-center"
+            onClick={() => {
+              navigate("/services/slug");
+            }}
+          >
             <Button
-              title="View All"
+              title="View Details"
               className={"text-white font-semibold sm:text-sm h-9 sm:px-20 "}
             />
           </div>
@@ -63,7 +70,12 @@ const Card = ({
           <h1 className="text-sm font-base px-3 text-[#74C7F2]">
             Starting from {starting}
           </h1>
-          <div className="px-3 py-2 flex justify-center">
+          <div
+            className="px-3 py-2 flex justify-center"
+            onClick={() => {
+              navigate("/services/slug");
+            }}
+          >
             <Button
               title="View Details"
               className={

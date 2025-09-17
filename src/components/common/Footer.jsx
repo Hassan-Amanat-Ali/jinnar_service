@@ -2,6 +2,7 @@ import growing from "../../assets/images/growing.jpg";
 import arrow from "../../assets/icons/arrow.png";
 import bubble1 from "../../assets/icons/bubble1.png";
 import followUs from "../../assets/icons/follow-us.png";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -52,8 +53,8 @@ const Footer = () => {
         </div>
       </div>
 
-      <div className="bg-[#0C0D1D] py-8 sm:py-10 text-white">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 px-6 sm:px-10 lg:px-16">
+      <div className="bg-[#0C0D1D] pt-8 sm:pt-10 text-white">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 px-8">
           {/* Brand Info */}
           <div className="flex flex-col">
             <h1 className="font-semibold text-base">Tanzania Marketplace</h1>
@@ -62,9 +63,15 @@ const Footer = () => {
               worldwide. Building trust, creating opportunities.
             </p>
             <div className="text-xs sm:text-sm mt-6 space-y-1 font-light text-gray-400">
-              <p>hello@workconnect.com</p>
-              <p>+1 (555) 123-4567</p>
-              <p>San Francisco, CA</p>
+              <p className="flex items-center gap-2">
+                <Mail size={16} /> hello@workconnect.com
+              </p>
+              <p className="flex items-center gap-2">
+                <Phone size={16} /> +1 (555) 123-4567
+              </p>
+              <p className="flex items-center gap-2">
+                <MapPin size={16} /> San Francisco, CA
+              </p>
             </div>
           </div>
 
@@ -120,6 +127,11 @@ const Footer = () => {
               Stay updated with our latest news and features.
             </p>
           </div>
+        </div>
+        <div className="mt-10 pb-2 text-gray-400">
+          <p className="text-xs text-center">
+            © 2024 TanzaniaMarketplace. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>

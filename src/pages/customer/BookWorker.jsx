@@ -1,5 +1,7 @@
 import Hero from "../../components/common/Hero";
 import ali from "../../assets/images/ali-hassan.jpg";
+import { useNavigate } from "react-router-dom";
+
 import {
   Star,
   MapPin,
@@ -13,6 +15,7 @@ import {
 } from "lucide-react";
 
 const BookWorker = () => {
+  const navigate = useNavigate();
   return (
     <div>
       <Hero
@@ -200,10 +203,18 @@ const BookWorker = () => {
             {/* Footer Actions */}
             <section className="bg-white rounded-2xl border border-neutral-200 p-3 sm:p-4 shadow-sm">
               <div className="flex flex-col sm:flex-row gap-3">
-                <button className="flex-1 border border-[#74C7F2] text-[#74C7F2] py-3 rounded-xl font-medium hover:bg-[#DBF0FF] transition-colors">
+                <button
+                  className="flex-1 border border-[#74C7F2] text-[#74C7F2] py-3 rounded-xl font-medium hover:bg-[#DBF0FF] transition-colors"
+                  onClick={() => {
+                    navigate(-1);
+                  }}
+                >
                   Cancel
                 </button>
-                <button className="flex-1 bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] text-white py-3 rounded-xl font-medium hover:from-[#DBF0FF]/90 hover:to-[#74C7F2]/90 transition-all shadow-md">
+                <button
+                  className="flex-1 bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] text-white py-3 rounded-xl font-medium hover:from-[#DBF0FF]/90 hover:to-[#74C7F2]/90 transition-all shadow-md"
+                  onClick={() => navigate("/booking-confirm")}
+                >
                   Confirm Booking
                 </button>
               </div>

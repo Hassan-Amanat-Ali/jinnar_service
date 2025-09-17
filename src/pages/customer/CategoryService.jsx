@@ -128,7 +128,7 @@ const CategoryService = () => {
         <hr className="border-[1px] border-t border-gray-200" />
       </div>
 
-      <div className="my-6 sm:my-8 md:my-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="my-6 sm:my-8 md:my-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6 place-items-center md:place-items-stretch">
           {dummyWorkers.map((worker) => (
             <WorkerCard

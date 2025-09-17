@@ -27,6 +27,8 @@ const Hero = ({
             ? "h-[33rem] md:h-[30rem] lg:h-[33rem]"
             : place === "Worker"
             ? "h-[15rem]"
+            : place === "chat"
+            ? "h-[12rem]"
             : "h-[28rem] md:h-[28rem] lg:h-[28rem]"
         } mb-10 w-full bg-gradient-to-b from-[#afe0f9] to-[#c4e6ff]`}
       >
