@@ -55,7 +55,7 @@ function Dropdown({
       {/* Options */}
       {isOpen && (
         <div className="absolute mt-1 w-full bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-48 overflow-hidden">
-          <div className="max-h-48 overflow-y-auto overflow-x-hidden w-fit text-start  scrollbar-thin">
+          <div className="max-h-48 overflow-y-auto overflow-x-hidden text-start  scrollbar-thin">
             {options.map((opt, i) => (
               <div
                 key={i}

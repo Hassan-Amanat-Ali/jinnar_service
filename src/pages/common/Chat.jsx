@@ -3,15 +3,10 @@ import {
   Search,
   Phone,
   Video,
-  Info,
-  MoreVertical,
   CheckCheck,
   Paperclip,
   Smile,
-  Image as ImageIcon,
-  Mic,
   Send,
-  ChevronLeft,
 } from "lucide-react";
 
 import meera from "../../assets/images/worker2.jpg";
@@ -32,7 +27,7 @@ const ContactItem = ({
 }) => (
   <button
     className={[
-      "w-full flex items-center gap-3 py-4 p-3 text-left transition-colors hover:cursor-pointer",
+      "w-full flex items-center gap-2 md:gap-3 py-3 md:py-4 p-2 md:p-3 text-left transition-colors hover:cursor-pointer",
       active
         ? "bg-[#EAF6FF]  border-l-4 border-l-[#74C7F2]"
         : "hover:bg-gray-50 ",
@@ -42,21 +37,30 @@ const ContactItem = ({
     <img
       src={avatar}
       alt={name}
-      className="h-10 w-10 rounded-full object-cover"
+      className="h-8 w-8 md:h-10 md:w-10 rounded-full object-cover flex-shrink-0"
     />
     <div className="min-w-0 flex-1">
       <div className="flex items-center justify-between">
-        <p className="truncate text-sm font-semibold text-gray-900">{name}</p>
-        <span className="shrink-0 text-xs text-gray-500">{time}</span>
+        <p className="truncate text-xs md:text-sm font-semibold text-gray-900">
+          {name}
+        </p>
+        <span className="shrink-0 text-[10px] md:text-xs text-gray-500">
+          {time}
+        </span>
       </div>
       <div className="mt-0.5 flex items-center gap-2">
-        <p className="line-clamp-1 text-xs text-gray-600">{preview}</p>
+        <p className="line-clamp-1 text-[10px] md:text-xs text-gray-600">
+          {preview}
+        </p>
         {unread > 0 ? (
-          <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-sky-500 px-1.5 text-[10px] font-semibold text-white">
+          <span className="ml-auto inline-flex h-4 min-w-4 md:h-5 md:min-w-5 items-center justify-center rounded-full bg-sky-500 px-1 md:px-1.5 text-[9px] md:text-[10px] font-semibold text-white">
             {unread}
           </span>
         ) : (
-          <CheckCheck size={14} className="ml-auto text-sky-500" />
+          <CheckCheck
+            size={12}
+            className="md:w-[14px] md:h-[14px] ml-auto text-sky-500"
+          />
         )}
       </div>
     </div>
@@ -67,7 +71,6 @@ const StatusPill = ({ color = "bg-orange-500", text = "In Progress" }) => (
   <span
     className={`inline-flex items-center gap-1 rounded-full ${color} px-2.5 py-1 text-[11px] font-semibold text-white`}
   >
-    <span className="h-1.5 w-1.5 rounded-full bg-white/90" />
     {text}
   </span>
 );
@@ -77,7 +80,7 @@ const ChatBubble = ({ side = "left", text, avatar }) => {
   return (
     <div
       className={[
-        "flex items-end gap-3",
+        "flex gap-2 md:gap-3",
         isLeft ? "justify-start" : "justify-end",
       ].join(" ")}
     >
@@ -85,22 +88,32 @@ const ChatBubble = ({ side = "left", text, avatar }) => {
         <img
           src={avatar}
           alt="avatar"
-          className="h-8 w-8 rounded-full object-cover"
+          className="h-6 w-6 md:h-8 md:w-8 rounded-full object-cover flex-shrink-0"
         />
       )}
       <div
         className={[
-          "max-w-[70%] rounded-2xl px-3.5 py-2.5 text-sm leading-5 shadow-sm",
-          isLeft ? "bg-white border border-gray-200" : "bg-sky-500 text-white",
+          "max-w-[85%] sm:max-w-[75%] md:max-w-[70%] rounded-lg px-3 md:px-3.5 py-2 text-xs md:text-sm leading-5 shadow-sm",
+          isLeft
+            ? "bg-[#EEEEEE] border border-gray-200"
+            : "bg-sky-500 text-white",
         ].join(" ")}
       >
-        <p>{text}</p>
+        <p className="break-words">{text}</p>
+        <div
+          className={`${
+            isLeft ? "text-left" : "text-right text-white"
+          } text-[10px] md:text-[11px] text-gray-500 mt-1 md:mt-2 `}
+        >
+          3:57 PM
+        </div>
       </div>
+
       {!isLeft && (
         <img
           src={avatar}
           alt="avatar"
-          className="h-8 w-8 rounded-full object-cover"
+          className="h-6 w-6 md:h-8 md:w-8 rounded-full object-cover flex-shrink-0"
         />
       )}
     </div>
@@ -116,8 +129,8 @@ const Chat = () => {
 
       {/* Global search */}
 
-      <div className="max-w-7xl px-2 lg:px-8 mx-auto mb-5">
-        <label className="relative mx-auto  block w-[1129px]">
+      <div className="max-w-7xl px-4 md:px-8 mx-auto mb-5">
+        <label className="relative mx-auto block w-full max-w-4xl">
           <Search
             size={18}
             className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
@@ -131,36 +144,48 @@ const Chat = () => {
       </div>
 
       <div
-        className="grid grid-cols-1 gap-4 lg:grid-cols-3 max-w-7xl px-4 md:px-8 mx-auto mb-5 min-h-[640px] lg:h-[calc(100vh-220px)]"
+        className="grid grid-cols-1 lg:grid-cols-3 max-w-7xl px-4 md:px-8 mx-auto mb-5 min-h-[640px] lg:h-[calc(100vh-220px)] gap-4 lg:gap-0"
         role="region"
         aria-label="Chat layout"
       >
+        {/* Mobile toggle button */}
+        <div className="lg:hidden mb-4">
+          <button
+            onClick={() => setShowSidebar(!showSidebar)}
+            className="flex items-center gap-2 px-4 py-2 bg-sky-500 text-white rounded-lg text-sm font-medium"
+          >
+            {showSidebar ? "Hide" : "Show"} Conversations
+          </button>
+        </div>
+
         {/* Sidebar */}
         <aside
           className={[
-            "rounded-2xl border border-gray-200 bg-white shadow-sm lg:block col-span-1 flex h-full flex-col",
-            showSidebar ? "block" : "hidden",
+            "border border-gray-200 bg-white shadow-sm lg:block col-span-1 flex h-full flex-col rounded-lg lg:rounded-r-none lg:border-r-0",
+            showSidebar ? "block" : "hidden lg:block",
           ].join(" ")}
           aria-label="Conversations list"
         >
-          <div className="flex items-center gap-3 border-b border-gray-100 p-4">
+          <div className="flex items-center gap-2 md:gap-3 border-b border-gray-100 p-3 md:p-4">
             <img
               src={ali}
               alt="Saleha Jamshed"
-              className="h-12 w-12 rounded-full object-cover"
+              className="h-10 w-10 md:h-12 md:w-12 rounded-full object-cover"
             />
             <div>
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-xs md:text-sm font-semibold text-gray-900">
                 Saleha Jamshed
               </p>
-              <p className="text-xs text-gray-500">@saleha_123</p>
+              <p className="text-[10px] md:text-xs text-gray-500">
+                @saleha_123
+              </p>
             </div>
           </div>
 
-          <h2 className="mt-4 mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-gray-500 pl-4">
+          <h2 className="mt-3 md:mt-4 mb-2 px-2 md:px-1 text-[10px] md:text-xs font-semibold uppercase tracking-wide text-gray-500 pl-3 md:pl-4">
             Messages
           </h2>
-          <nav className="space-y-1 flex-1 overflow-y-auto  scrollbar-thin">
+          <nav className="space-y-1 flex-1 overflow-y-auto scrollbar-thin">
             <ContactItem
               avatar={emily}
               name="Emily"
@@ -197,42 +222,64 @@ const Chat = () => {
         </aside>
 
         {/* Chat panel */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm col-span-2 flex h-full flex-col">
+        <section className="border border-gray-200 bg-white p-2 shadow-sm col-span-1 lg:col-span-2 flex h-full flex-col rounded-lg lg:rounded-l-none lg:border-l-0">
           {/* Header */}
           <header
-            className="rounded-xl p-4 text-white"
+            className="rounded-lg p-3 md:p-4 text-white"
             style={{
               background: "linear-gradient(180deg, #B6E0FE 0%, #74C7F2 100%)",
             }}
           >
             <div className="flex items-center justify-between">
-              <h1 className="text-base font-semibold text-white">Meera</h1>
-              <div className="flex items-center gap-3 text-white">
-                <Phone size={18} />
-                <Video size={18} />
-                <Info size={18} />
-                <MoreVertical size={18} />
+              <div className="flex items-center gap-2 md:gap-3">
+                <img
+                  src={meera}
+                  alt="Meera"
+                  className="h-10 w-10 md:h-12 md:w-12 rounded-full object-cover"
+                />
+                <h1 className="text-sm md:text-base font-semibold text-white">
+                  Meera
+                </h1>
               </div>
-            </div>
-
-            {/* Job pill */}
-            <div className="mt-3 flex items-center justify-between rounded-xl bg-[#FCE7D4] px-3 py-3 text-sm">
-              <div className="flex items-center gap-3">
-                <StatusPill />
-                <div className="text-gray-700">Kitchen Renovation</div>
-                <span className="text-gray-500">725 45600</span>
+              <div className="flex items-center gap-2 md:gap-3 text-white">
+                <Phone
+                  size={20}
+                  className="md:w-[22px] md:h-[22px]"
+                  color="white"
+                  fill="white"
+                />
+                <Video
+                  size={20}
+                  className="md:w-[22px] md:h-[22px]"
+                  color="white"
+                  fill="white"
+                />
               </div>
-              <button className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-sky-700 shadow-sm hover:bg-white">
-                View Job
-              </button>
             </div>
           </header>
 
+          {/* Job pill */}
+          <div className="mt-1 flex flex-col sm:flex-row sm:items-center justify-between rounded-lg bg-[#FCE7D4] px-3 py-3 text-sm gap-3 sm:gap-0">
+            <div className="flex flex-col gap-1">
+              <div className="text-[#9F2D00] font-bold text-sm md:text-base">
+                Kitchen Renovation
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <StatusPill />
+                <span className="text-gray-500 text-xs md:text-sm">
+                  725 45600
+                </span>
+              </div>
+            </div>
+            <button className="rounded-full bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] px-3 md:px-4 py-2 md:py-3 cursor-pointer text-xs font-semibold text-white self-start sm:self-auto">
+              View Job
+            </button>
+          </div>
+
           {/* Messages */}
-          <div className="space-y-4 p-4 flex-1 overflow-y-auto scrollbar-thin">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-sky-400" />
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-semibold text-gray-600">
+          <div className="space-y-3 md:space-y-4 p-3 md:p-4 flex-1 overflow-y-auto scrollbar-thin">
+            <div className="flex items-center justify-center gap-2">
+              <span className="rounded-md bg-gray-100 px-2 md:px-3 py-1 md:py-2 text-[10px] md:text-[11px] font-semibold text-gray-600">
                 TODAY
               </span>
             </div>
@@ -243,61 +290,43 @@ const Chat = () => {
               text="Hello! I'm Ali Khan, your plumber for tomorrow's appointment. I'll be there at 9 AM as scheduled."
             />
 
-            <div className="text-right text-[11px] text-gray-500 -mt-2 pr-14">
-              3:57 PM
-            </div>
-
             <ChatBubble
               side="right"
               avatar={meera}
               text="Perfect! Should I prepare anything before you arrive?"
             />
-            <div className="text-left text-[11px] text-gray-500 -mt-2 pl-14">
-              3:59 PM
-            </div>
           </div>
 
           {/* Composer */}
-          <footer className="border-t border-gray-100 p-3">
-            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-2 shadow-sm">
+          <footer className="border-t border-gray-100 p-2 md:p-3">
+            <div className="flex items-center gap-1 md:gap-2 rounded-full border border-gray-200 bg-white px-2 md:px-3 py-1.5 md:py-2 shadow-sm">
               <button
-                className="p-2 text-gray-500 hover:text-gray-700"
+                className="p-1.5 md:p-2 text-gray-500 hover:text-gray-700"
                 aria-label="Attach file"
               >
-                <Paperclip size={18} />
+                <Paperclip size={16} className="md:w-[18px] md:h-[18px]" />
               </button>
               <input
                 type="text"
                 placeholder="Type message.."
-                className="w-full bg-transparent text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
+                className="flex-1 bg-transparent text-xs md:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none min-w-0"
               />
               <button
-                className="p-2 text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700"
                 aria-label="Emoji"
               >
-                <Smile size={18} />
+                <Smile size={16} className="md:w-[18px] md:h-[18px]" />
               </button>
+
               <button
-                className="p-2 text-gray-500 hover:text-gray-700"
-                aria-label="Image"
-              >
-                <ImageIcon size={18} />
-              </button>
-              <button
-                className="p-2 text-gray-500 hover:text-gray-700"
-                aria-label="Voice"
-              >
-                <Mic size={18} />
-              </button>
-              <button
-                className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-white shadow"
+                className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full text-white shadow cursor-pointer"
                 style={{
                   background:
                     "linear-gradient(180deg, #B6E0FE 0%, #74C7F2 100%)",
                 }}
                 aria-label="Send"
               >
-                <Send size={18} />
+                <Send size={14} className="md:w-[18px] md:h-[18px]" />
               </button>
             </div>
           </footer>
