@@ -58,7 +58,7 @@ const BookingCard = ({
         />
 
         {/* Price */}
-        <p className="text-sm font-semibold text-blue-500">${price}</p>
+        <p className="text-sm font-semibold text-[#74C7F2]">${price}</p>
       </div>
     </div>
   );

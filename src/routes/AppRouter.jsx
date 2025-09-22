@@ -1,6 +1,8 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout.jsx";
 import LandingLayout from "../layouts/LandingLayout.jsx";
+import WorkerLayout from "../layouts/WorkerLayout.jsx";
+import SetupLayout from "../layouts/SetupLayout.jsx";
 import Landing from "../pages/common/Landing.jsx";
 import RoleSelection from "../pages/common/RoleSelection.jsx";
 import Login from "../pages/common/Login.jsx";
@@ -61,9 +63,12 @@ const router = createBrowserRouter([
       { path: "booking-confirm", element: <BookingConfirm /> },
       { path: "customer-booking/:slug", element: <CustomerBookingDetail /> },
       { path: "worker-profile/:slug", element: <WorkerPublicProfile /> },
-
-      // Worker pages - simple flat routing
-      { path: "worker-home", element: <WorkerHome /> },
+    ],
+  },
+  {
+    element: <SetupLayout />,
+    children: [
+      // Worker setup pages - without navbar/footer
       { path: "worker-setup-basic", element: <ProfileSetupBasic /> },
       { path: "worker-setup-services", element: <ProfileSetupServices /> },
       { path: "worker-setup-pricing", element: <ProfileSetupPricing /> },
@@ -71,6 +76,13 @@ const router = createBrowserRouter([
         path: "worker-setup-availability",
         element: <ProfileSetupAvailability />,
       },
+    ],
+  },
+  {
+    element: <WorkerLayout />,
+    children: [
+      // Worker pages - using dedicated WorkerLayout
+      { path: "worker-home", element: <WorkerHome /> },
       { path: "jobs", element: <Jobs /> },
       { path: "job/:id", element: <JobDetail /> },
       { path: "worker-bookings", element: <WorkerBookings /> },
