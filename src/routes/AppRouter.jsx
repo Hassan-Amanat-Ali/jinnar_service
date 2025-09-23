@@ -25,6 +25,7 @@ import ProfileSetupBasic from "../pages/worker/ProfileSetupBasic.jsx";
 import ProfileSetupServices from "../pages/worker/ProfileSetupServices.jsx";
 import ProfileSetupPricing from "../pages/worker/ProfileSetupPricing.jsx";
 import ProfileSetupAvailability from "../pages/worker/ProfileSetupAvailability.jsx";
+import ProfileSetupExperience from "../pages/worker/ProfileSetupExperience.jsx";
 import Jobs from "../pages/worker/Jobs.jsx";
 import JobDetail from "../pages/worker/JobDetail.jsx";
 import WorkerBookings from "../pages/worker/MyBookings.jsx";
@@ -72,6 +73,7 @@ const router = createBrowserRouter([
       // Worker setup pages - without navbar/footer
       { path: "worker-setup-basic", element: <ProfileSetupBasic /> },
       { path: "worker-setup-services", element: <ProfileSetupServices /> },
+      { path: "worker-setup-experience", element: <ProfileSetupExperience /> },
       { path: "worker-setup-pricing", element: <ProfileSetupPricing /> },
       {
         path: "worker-setup-availability",

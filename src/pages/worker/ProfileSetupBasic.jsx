@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import Step1Form from "../../components/worker/WorkerProfile/Step1Form";
+import SetupProgress from "../../components/worker/WorkerProfile/SetupProgress";
 
 const ProfileSetupBasic = () => {
   const navigate = useNavigate();
@@ -10,7 +11,7 @@ const ProfileSetupBasic = () => {
   };
 
   const handleBack = () => {
-    navigate(-1); // Go back to previous page
+    navigate(-1);
   };
 
   return (
@@ -35,65 +36,7 @@ const ProfileSetupBasic = () => {
       </div>
 
       {/* Progress Steps */}
-      <div className=" px-6 py-4">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 xl:px-5">
-          <div className="flex items-center justify-between">
-            {/* Step 1 - Active */}
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-[#74C7F2] rounded-full flex items-center justify-center text-white text-sm font-medium">
-                1
-              </div>
-              <span className="ml-3 text-sm font-medium text-gray-900">
-                Personal Info
-              </span>
-            </div>
-
-            <div className="flex-1 mx-4 h-px bg-gray-300"></div>
-
-            {/* Step 2 */}
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-sm font-medium">
-                2
-              </div>
-              <span className="ml-3 text-sm text-gray-500">
-                Skills & Services
-              </span>
-            </div>
-
-            <div className="flex-1 mx-4 h-px bg-gray-300"></div>
-
-            {/* Step 3 */}
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-sm font-medium">
-                3
-              </div>
-              <span className="ml-3 text-sm text-gray-500">
-                Work Experience
-              </span>
-            </div>
-
-            <div className="flex-1 mx-4 h-px bg-gray-300"></div>
-
-            {/* Step 4 */}
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-sm font-medium">
-                4
-              </div>
-              <span className="ml-3 text-sm text-gray-500">Pricing</span>
-            </div>
-
-            <div className="flex-1 mx-4 h-px bg-gray-300"></div>
-
-            {/* Step 5 */}
-            <div className="flex items-center">
-              <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-sm font-medium">
-                5
-              </div>
-              <span className="ml-3 text-sm text-gray-500">Availability</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <SetupProgress current={1} />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 xl:px-5 py-8">
@@ -113,13 +56,13 @@ const ProfileSetupBasic = () => {
           <div className="flex gap-4">
             <button
               onClick={handleBack}
-              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-xs"
             >
               Exit
             </button>
             <button
               onClick={handleNext}
-              className="px-8 py-3 bg-[#74C7F2] text-white rounded-lg font-medium hover:bg-[#5ba8e0] transition-colors"
+              className="px-8 py-2 bg-[#74C7F2] text-white rounded-lg font-medium hover:bg-[#5ba8e0] transition-colors text-xs"
             >
               Next: Skills & Services →
             </button>

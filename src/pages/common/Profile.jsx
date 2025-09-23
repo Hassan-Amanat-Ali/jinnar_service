@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import {
   User,
   AlertTriangle,
@@ -21,8 +22,39 @@ import PrivacyPolicy from "../../components/profile/PrivacyPolicy";
 import TermsAndConditions from "../../components/profile/TermsAndConditions";
 
 const Profile = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("profile");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const validTabs = useMemo(
+    () =>
+      new Set([
+        "profile",
+        "complaint",
+        "notifications",
+        "help",
+        "privacy",
+        "terms",
+      ]),
+    []
+  );
+
+  // Sync state from URL on mount and whenever ?tab changes
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab");
+    if (tabFromUrl && validTabs.has(tabFromUrl) && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams, activeTab, validTabs]);
+
+  // Helper to update both state and URL
+  const updateActiveTab = (tabId) => {
+    if (!validTabs.has(tabId)) return;
+    setActiveTab(tabId);
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", tabId);
+    setSearchParams(next, { replace: true });
+  };
 
   // Function to render the active component
   const renderActiveComponent = () => {
@@ -116,7 +148,7 @@ const Profile = () => {
                   return (
                     <button
                       key={item.id}
-                      onClick={() => setActiveTab(item.id)}
+                      onClick={() => updateActiveTab(item.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
                         isActive
                           ? "bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white border border-blue-200"
@@ -215,7 +247,7 @@ const Profile = () => {
                           <button
                             key={item.id}
                             onClick={() => {
-                              setActiveTab(item.id);
+                              updateActiveTab(item.id);
                               setIsSidebarOpen(false);
                             }}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${

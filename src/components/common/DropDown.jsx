@@ -64,7 +64,7 @@ function Dropdown({
                   onSelect && onSelect(opt);
                   onToggle(); // Close after selection
                 }}
-                className="px-2 flex-wrap text-wrap py-2.5 w-fit text-gray-700 hover:bg-gradient-to-r hover:from-sky-50 hover:to-blue-50 hover:text-sky-700 cursor-pointer transition-all duration-150 first:rounded-t-lg last:rounded-b-lg border-b border-gray-50 last:border-b-0 text-xs"
+                className="px-2 flex-wrap text-wrap py-2.5 w-full text-gray-700 hover:bg-gradient-to-r hover:from-sky-50 hover:to-blue-50 hover:text-sky-700 cursor-pointer transition-all duration-150 first:rounded-t-lg last:rounded-b-lg border-b border-gray-50 last:border-b-0 text-xs"
               >
                 {showStars && opt.includes("Star") ? (
                   <div className="flex items-center justify-between">

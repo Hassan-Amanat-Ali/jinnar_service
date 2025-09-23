@@ -9,8 +9,8 @@ const LandingHeader = () => {
     { to: "/", label: "Home" },
     { to: "/#how-it-works", label: "How it Works" },
     { to: "/customer-home", label: "Services" },
-    { to: "/#workers", label: "Workers" },
-    { to: "/#help", label: "Help" },
+    { to: "/services/slug", label: "Workers" },
+    { to: "/profile?tab=help", label: "Help" },
   ];
 
   const isNavActive = (to) => {
