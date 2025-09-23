@@ -6,7 +6,7 @@ const Step1Form = () => {
     fullName: "",
     phoneNumber: "",
     emailAddress: "",
-    languages: ["English"], // English is selected by default
+    languages: ["English"],
     yearsOfExperience: "",
     dateOfBirth: "",
   });

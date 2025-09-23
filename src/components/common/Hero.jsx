@@ -22,7 +22,7 @@ const Hero = ({
   return (
     <>
       <div
-        class={`relative ${
+        className={`relative ${
           place === "home"
             ? "h-[33rem] md:h-[30rem] lg:h-[33rem]"
             : place === "Worker"
@@ -32,7 +32,7 @@ const Hero = ({
             : "h-[28rem] md:h-[28rem] lg:h-[28rem]"
         } mb-10 w-full bg-gradient-to-b from-[#afe0f9] to-[#c4e6ff]`}
       >
-        <div class="absolute bottom-0 left-0 right-0 top-0 bg-[linear-gradient(to_right,#c4e9fb_1px,transparent_1px),linear-gradient(to_bottom,#c4e9fb_1px,transparent_1px)] bg-[size:84px_74px] ]">
+        <div className="absolute bottom-0 left-0 right-0 top-0 bg-[linear-gradient(to_right,#c4e9fb_1px,transparent_1px),linear-gradient(to_bottom,#c4e9fb_1px,transparent_1px)] bg-[size:84px_74px] ]">
           <div className=" top-0 h-auto">
             <div className="text-center mt-6 sm:mt-8 md:mt-20 px-4 z-100">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">

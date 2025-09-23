@@ -39,13 +39,14 @@ const router = createBrowserRouter([
     element: <LandingLayout />,
     children: [{ index: true, element: <Landing /> }],
   },
+  { path: "login", element: <Login /> },
+  { path: "signup", element: <Signup /> },
   {
     element: <MainLayout />,
     children: [
       // Common pages
       { path: "role", element: <RoleSelection /> },
-      { path: "login", element: <Login /> },
-      { path: "signup", element: <Signup /> },
+
       { path: "help", element: <Help /> },
       { path: "privacy", element: <PrivacyPolicy /> },
       { path: "notifications", element: <Notifications /> },

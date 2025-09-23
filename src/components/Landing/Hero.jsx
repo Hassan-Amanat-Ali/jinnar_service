@@ -57,7 +57,7 @@ const Hero = () => {
               <FiUsers className="text-black" />
               Find a Worker
             </button>
-            <button className="btn-outline">
+            <button className="btn-outline" onClick={() => navigate("/signup")}>
               <FiPlay className="text-white" />
               Join as a Worker
             </button>

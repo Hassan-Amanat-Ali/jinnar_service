@@ -4,8 +4,10 @@ import worker3 from "../../assets/images/worker3.jpg";
 import worker4 from "../../assets/images/worker4.jpg";
 import star from "../../assets/icons/star.png";
 import Button from "../common/Button";
+import { useNavigate } from "react-router-dom";
 
 const TopWorkers = () => {
+  const navigate = useNavigate();
   const workers = [
     {
       id: 1,
@@ -102,7 +104,12 @@ const TopWorkers = () => {
 
               {/* View Profile Button */}
               <div className="flex justify-center">
-                <button className="border-1 border-[#74C7F2] text-[#74C7F2] hover:bg-[#74C7F2] hover:text-black transition-colors duration-300 text-xs px-4 sm:px-6 lg:px-8 py-1 rounded-md font-medium w-full sm:w-auto cursor-pointer">
+                <button
+                  className="border-1 border-[#74C7F2] text-[#74C7F2] hover:bg-[#74C7F2] hover:text-black transition-colors duration-300 text-xs px-4 sm:px-6 lg:px-8 py-1 rounded-md font-medium w-full sm:w-auto cursor-pointer"
+                  onClick={() => {
+                    navigate("/worker-profile/slug");
+                  }}
+                >
                   View Profile
                 </button>
               </div>
@@ -111,7 +118,12 @@ const TopWorkers = () => {
         </div>
 
         {/* View All Workers Button */}
-        <div className="text-center mt-8">
+        <div
+          className="text-center mt-8"
+          onClick={() => {
+            navigate("/services/:slug");
+          }}
+        >
           <Button title="View All Workers" />
         </div>
       </div>

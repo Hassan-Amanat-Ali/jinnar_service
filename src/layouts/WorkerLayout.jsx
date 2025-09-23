@@ -12,6 +12,7 @@ import {
 } from "react-icons/fi";
 import { Wallet, BriefcaseBusiness } from "lucide-react";
 import { twMerge } from "tailwind-merge";
+import ScrollToTop from "../components/common/ScrollToTop.jsx";
 import Footer from "../components/common/Footer";
 
 const WorkerNavbar = () => {
@@ -27,10 +28,10 @@ const WorkerNavbar = () => {
     { to: "/profile", label: "Profile", icon: FiUser },
   ];
 
-  const handleLogout = () => {
-    // Add logout logic here
-    navigate("/");
-  };
+  // const handleLogout = () => {
+  //   // Add logout logic here
+  //   navigate("/");
+  // };
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -217,6 +218,7 @@ const WorkerFooter = () => {
 const WorkerLayout = () => {
   return (
     <div className="min-h-dvh flex flex-col bg-gray-50">
+      <ScrollToTop />
       <WorkerNavbar />
       <main className="flex-1">
         <Outlet />

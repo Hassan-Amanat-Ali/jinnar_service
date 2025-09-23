@@ -16,8 +16,10 @@ import petIcon from "../../assets/icons/pet.png";
 import car from "../../assets/icons/car.png";
 import carepentryIcon from "../../assets/icons/carpentry.png";
 import Button from "../common/Button";
+import { useNavigate } from "react-router-dom";
 
 const PopularServices = () => {
+  const navigate = useNavigate();
   const services = [
     { icon: cleaningIcon, image: cleaning, name: "House Cleaning", jobs: 1200 },
     { icon: carepentryIcon, image: carepentry, name: "Carpentry", jobs: 800 },
@@ -81,7 +83,12 @@ const PopularServices = () => {
             </div>
           ))}
         </div>
-        <div className="text-center mt-6 md:mt-8">
+        <div
+          className="text-center mt-6 md:mt-8"
+          onClick={() => {
+            navigate("/services");
+          }}
+        >
           <Button title="View All Services" />
         </div>
       </div>
