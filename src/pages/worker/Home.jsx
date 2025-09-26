@@ -4,7 +4,6 @@ import LatestJobs from "../../components/worker/Home/LatesJobs";
 import service1 from "../../assets/images/All-services-1.jpg";
 import service2 from "../../assets/images/all-services-2.jpg";
 import service3 from "../../assets/images/all-services-3.jpg";
-import service4 from "../../assets/images/all-services-4.jpg";
 import BookingCard from "../../components/customer/BookinCard";
 import Testimonials from "../../components/Landing/Testimonials";
 const Home = () => {

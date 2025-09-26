@@ -1,4 +1,4 @@
-import { Outlet, Link, NavLink, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
   FiMenu,
@@ -39,16 +39,16 @@ const WorkerNavbar = () => {
 
   return (
     <>
-      <nav className="w-full bg-white shadow-sm rounded-b-xl">
+      <nav className="w-full bg-white shadow-sm rounded-b-xl absolute md:static top-0 left-0 right-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             {/* Logo - Far Left */}
             <div className="font-bold text-lg tracking-wide">LOGO HERE</div>
 
             {/* Center Section - Nav Links and Search */}
-            <div className="hidden md:flex items-center space-x-8.5">
+            <div className="hidden md:flex items-center space-x-[2.125rem] md:flex-1 md:min-w-0 md:justify-center">
               {/* Nav Links */}
-              <div className="flex space-x-8.5">
+              <div className="flex space-x-[2.125rem] shrink-0">
                 {workerNavItems.map((item) => (
                   <NavItem
                     key={item.to}
@@ -60,7 +60,7 @@ const WorkerNavbar = () => {
               </div>
 
               {/* Search Bar */}
-              <div className="relative">
+              <div className="relative min-w-0">
                 <FiSearch
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   size={14}
@@ -70,13 +70,14 @@ const WorkerNavbar = () => {
                   placeholder="Search job request"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 w-48 text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#74C7F2] focus:border-[#74C7F2] bg-sky-50"
+                  aria-label="Search job request"
+                  className="pl-8 pr-3 py-1.5 w-40 lg:w-56 xl:w-64 max-w-full text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#74C7F2] focus:border-[#74C7F2] bg-sky-50"
                 />
               </div>
             </div>
 
             {/* Right Icons - Far Right */}
-            <div className="hidden md:flex items-center space-x-3">
+            <div className="hidden md:flex items-center space-x-3 shrink-0">
               <div onClick={() => navigate("/chat")}>
                 <IconButton
                   icon={<FiMessageSquare size={14} color="#74C7F2" />}
@@ -102,6 +103,7 @@ const WorkerNavbar = () => {
               <button
                 onClick={toggleMobileMenu}
                 className="w-8 h-8 flex items-center justify-center rounded-full border border-sky-200 bg-sky-50 hover:bg-sky-100 transition"
+                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
               >
                 {isMobileMenuOpen ? (
                   <FiX size={14} color="#74C7F2" />
@@ -114,36 +116,54 @@ const WorkerNavbar = () => {
         </div>
       </nav>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu as overlay */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-white shadow-lg rounded-lg mx-4 mt-2 border border-sky-100">
-          <div className="px-4 py-3 space-y-2">
-            {/* Mobile Search */}
-            <div className="mb-3">
-              <div className="relative">
-                <FiSearch
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                  size={14}
-                />
-                <input
-                  type="text"
-                  placeholder="Search job request"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8 pr-3 py-1.5 w-full text-xs border border-sky-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#74C7F2] focus:border-[#74C7F2] bg-sky-50"
-                />
+        <div
+          className="md:hidden fixed inset-0 z-[60]"
+          role="dialog"
+          aria-modal="true"
+        >
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/20"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          {/* Panel under navbar (h-14) */}
+          <div className="absolute left-0 right-0 top-14">
+            <div className="mx-4">
+              <div className="bg-white shadow-lg rounded-lg border border-sky-100 overflow-hidden transition-transform duration-200 ease-out translate-y-0">
+                <div className="px-4 py-3 space-y-2 max-h-[70vh] overflow-y-auto">
+                  {/* Mobile Search */}
+                  <div className="mb-2">
+                    <div className="relative">
+                      <FiSearch
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                        size={14}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Search job request"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        aria-label="Search job request"
+                        className="pl-8 pr-3 py-1.5 w-full text-xs border border-sky-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#74C7F2] focus:border-[#74C7F2] bg-sky-50"
+                      />
+                    </div>
+                  </div>
+
+                  {workerNavItems.map((item) => (
+                    <MobileNavItem
+                      key={item.to}
+                      icon={<item.icon size={14} />}
+                      label={item.label}
+                      to={item.to}
+                      onNavigate={() => setIsMobileMenuOpen(false)}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
-
-            {workerNavItems.map((item) => (
-              <MobileNavItem
-                key={item.to}
-                icon={<item.icon size={14} />}
-                label={item.label}
-                to={item.to}
-                onNavigate={() => setIsMobileMenuOpen(false)}
-              />
-            ))}
           </div>
         </div>
       )}
@@ -217,7 +237,7 @@ const WorkerFooter = () => {
 
 const WorkerLayout = () => {
   return (
-    <div className="min-h-dvh flex flex-col bg-gray-50">
+    <div className="min-h-dvh flex flex-col bg-gray-50 pt-14 md:pt-0">
       <ScrollToTop />
       <WorkerNavbar />
       <main className="flex-1">

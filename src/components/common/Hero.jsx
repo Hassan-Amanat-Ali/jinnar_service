@@ -6,11 +6,13 @@ import services2 from "../../assets/images/services-image-2.jpg";
 import services3 from "../../assets/images/services-image-3.jpg";
 import services4 from "../../assets/images/services-image-4.jpg";
 import Dropdown from "./DropDown";
+import { twMerge } from "tailwind-merge";
 
 const Hero = ({
   place = "home",
   title = "Explore All Services",
   subtitle = "Find the right service for your needs from trusted local workers",
+  className = "",
 }) => {
   const [price, setPrice] = React.useState(50);
   const [openDropdown, setOpenDropdown] = React.useState(null);
@@ -22,15 +24,17 @@ const Hero = ({
   return (
     <>
       <div
-        className={`relative ${
+        className={twMerge(
+          "relative mb-10 w-full bg-gradient-to-b from-[#afe0f9] to-[#c4e6ff]",
           place === "home"
             ? "h-[33rem] md:h-[30rem] lg:h-[33rem]"
             : place === "Worker"
             ? "h-[15rem]"
             : place === "chat"
             ? "h-[12rem]"
-            : "h-[28rem] md:h-[28rem] lg:h-[28rem]"
-        } mb-10 w-full bg-gradient-to-b from-[#afe0f9] to-[#c4e6ff]`}
+            : "h-[33rem] md:h-[30rem] lg:h-[33rem]",
+          className
+        )}
       >
         <div className="absolute bottom-0 left-0 right-0 top-0 bg-[linear-gradient(to_right,#c4e9fb_1px,transparent_1px),linear-gradient(to_bottom,#c4e9fb_1px,transparent_1px)] bg-[size:84px_74px] ]">
           <div className=" top-0 h-auto">
@@ -110,7 +114,10 @@ const Hero = ({
                       <Dropdown
                         className="text-neutral-500 text-sm"
                         icon={
-                          <Calendar size={18} className="text-sky-500 mr-2" />
+                          <Calendar
+                            size={18}
+                            className="text-sky-500              mr-2"
+                          />
                         }
                         placeholder="All Availability"
                         options={["Available Now", "Weekdays", "Weekends"]}
@@ -192,7 +199,7 @@ const Hero = ({
               {place === "My Bookings" && (
                 <div>
                   <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 ">
-                    <div className="flex items-center justify-start sm:justify-center gap-2 sm:gap-3 md:gap-4 overflow-x-auto scrollbar-hide py-3">
+                    <div className="flex items-center justify-center sm:justify-center gap-2 sm:gap-3 md:gap-4  scrollbar-hide py-3">
                       {services.map((service, index) => (
                         <button
                           key={index}
@@ -223,7 +230,45 @@ const Hero = ({
                 </div>
               )}
             </div>
-            <div></div>
+            <div>
+              {place === "job-worker" && (
+                <div className="max-w-5xl w-full py-4.5 px-4 sm:px-6 lg:px-8 mt-2 rounded-4xl mx-auto bg-white">
+                  {/* Search input with icon */}
+                  <div className="relative">
+                    <img
+                      src={search}
+                      alt=""
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search by name or service type"
+                      className="w-full h-8 sm:h-9 border border-gray-300 rounded-lg text-xs sm:text-sm font-medium pl-8 pr-3 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Filters: responsive grid 1/2/4 cols */}
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+                    <Dropdown
+                      placeholder="All Categories"
+                      className="text-xs sm:text-sm text-gray-600 w-full"
+                    />
+                    <Dropdown
+                      placeholder="All Services"
+                      className="text-xs sm:text-sm text-gray-600 w-full"
+                    />
+                    <Dropdown
+                      placeholder="All Locations"
+                      className="text-xs sm:text-sm text-gray-600 w-full"
+                    />
+                    <Dropdown
+                      placeholder="All Dates"
+                      className="text-xs sm:text-sm text-gray-600 w-full"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

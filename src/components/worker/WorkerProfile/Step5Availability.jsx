@@ -8,6 +8,7 @@ import {
   Clock,
 } from "lucide-react";
 import Dropdown from "../../common/DropDown";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const times = [
@@ -85,6 +86,202 @@ const Row = ({ label, value, onToggle, start, end, onStart, onEnd }) => {
   );
 };
 
+// Calendar-based availability editor
+const CalendarAvailability = ({ slots, setSlots }) => {
+  const [cursor, setCursor] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const [selected, setSelected] = useState(null); // Date object
+
+  const monthLabel = cursor.toLocaleString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+
+  const startOfCalendar = () => {
+    const firstDay = new Date(cursor.getFullYear(), cursor.getMonth(), 1);
+    // Monday-first offset
+    const day = firstDay.getDay(); // 0(Sun) - 6(Sat)
+    const offset = (day + 6) % 7; // 0(Mon) - 6(Sun)
+    return new Date(cursor.getFullYear(), cursor.getMonth(), 1 - offset);
+  };
+
+  const daysMatrix = () => {
+    const start = startOfCalendar();
+    const days = [];
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(
+        start.getFullYear(),
+        start.getMonth(),
+        start.getDate() + i
+      );
+      days.push(d);
+    }
+    return days;
+  };
+
+  const keyOf = (d) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate()
+    ).padStart(2, "0")}`;
+
+  const isCurrentMonth = (d) => d.getMonth() === cursor.getMonth();
+  const isSelected = (d) =>
+    selected && d.toDateString() === selected.toDateString();
+
+  const selectedKey = selected ? keyOf(selected) : null;
+  const selectedSlot = selectedKey
+    ? slots[selectedKey] || { on: true, start: "09:00", end: "17:00" }
+    : null;
+
+  const updateSelected = (patch) => {
+    if (!selectedKey) return;
+    setSlots((prev) => ({
+      ...prev,
+      [selectedKey]: {
+        ...(prev[selectedKey] || { on: true, start: "09:00", end: "17:00" }),
+        ...patch,
+      },
+    }));
+  };
+
+  // Dropdown open states for editor
+  const [openStart, setOpenStart] = useState(false);
+  const [openEnd, setOpenEnd] = useState(false);
+
+  return (
+    <div>
+      {/* Month navigation */}
+      <div className="flex items-center justify-between mb-3">
+        <button
+          className="p-1 rounded-md border border-gray-200 hover:bg-gray-50"
+          onClick={() =>
+            setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))
+          }
+          aria-label="Previous month"
+        >
+          <ChevronLeft className="w-4 h-4 text-gray-600" />
+        </button>
+        <div className="text-sm font-semibold text-gray-900">{monthLabel}</div>
+        <button
+          className="p-1 rounded-md border border-gray-200 hover:bg-gray-50"
+          onClick={() =>
+            setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))
+          }
+          aria-label="Next month"
+        >
+          <ChevronRight className="w-4 h-4 text-gray-600" />
+        </button>
+      </div>
+
+      {/* Weekday headers */}
+      <div className="grid grid-cols-7 gap-1 text-[11px] text-gray-500 mb-1">
+        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((w) => (
+          <div key={w} className="text-center">
+            {w}
+          </div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7 gap-1">
+        {daysMatrix().map((d) => {
+          const key = keyOf(d);
+          const slot = slots[key];
+          const inMonth = isCurrentMonth(d);
+          const selectedCls = isSelected(d)
+            ? "ring-2 ring-sky-300 border-sky-300"
+            : "border-gray-200";
+          const activeCls =
+            inMonth && slot?.on ? "bg-[#F0F7FF] border-sky-200" : "bg-white";
+          const textCls = inMonth ? "text-gray-900" : "text-gray-300";
+          return (
+            <button
+              key={key}
+              onClick={() => setSelected(new Date(d))}
+              className={`relative h-16 rounded-lg border ${selectedCls} ${activeCls} ${textCls} hover:bg-sky-50 transition`}
+            >
+              <div className="absolute top-1 left-1 text-[11px]">
+                {d.getDate()}
+              </div>
+              {slot?.on && inMonth && (
+                <div className="absolute bottom-1 left-1 right-1 text-[10px] text-sky-700 truncate">
+                  {slot.start} – {slot.end}
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Editor for selected date */}
+      <div className="mt-4 rounded-xl border border-gray-200 bg-white p-3">
+        {selected ? (
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="text-sm font-medium text-gray-800">
+              {selected.toLocaleDateString(undefined, {
+                weekday: "short",
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Toggle
+                  checked={!!selectedSlot?.on}
+                  onChange={(v) => updateSelected({ on: v })}
+                />
+                <span className="text-xs text-gray-600">Available</span>
+              </div>
+              <div
+                className={`flex items-center gap-2 ${
+                  !selectedSlot?.on ? "opacity-50 pointer-events-none" : ""
+                }`}
+              >
+                <Dropdown
+                  icon={<Clock size={14} className="text-gray-400 mr-2" />}
+                  placeholder={selectedSlot?.start || "09:00"}
+                  options={times}
+                  isOpen={openStart}
+                  onToggle={() =>
+                    setOpenStart((o) => (selectedSlot?.on ? !o : o))
+                  }
+                  onSelect={(opt) => {
+                    updateSelected({ start: opt });
+                    setOpenStart(false);
+                  }}
+                  className="h-9 text-sm min-w-[5.5rem]"
+                />
+                <span className="text-xs text-gray-500">to</span>
+                <Dropdown
+                  icon={<Clock size={14} className="text-gray-400 mr-2" />}
+                  placeholder={selectedSlot?.end || "17:00"}
+                  options={times}
+                  isOpen={openEnd}
+                  onToggle={() =>
+                    setOpenEnd((o) => (selectedSlot?.on ? !o : o))
+                  }
+                  onSelect={(opt) => {
+                    updateSelected({ end: opt });
+                    setOpenEnd(false);
+                  }}
+                  className="h-9 text-sm min-w-[5.5rem]"
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-xs text-gray-500">
+            Select a date to edit availability
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const Step5Availability = () => {
   const [method, setMethod] = useState("timeblocks");
   const [emergency, setEmergency] = useState(true);
@@ -94,6 +291,7 @@ const Step5Availability = () => {
       return acc;
     }, {})
   );
+  const [calendarSlots, setCalendarSlots] = useState({}); // { 'YYYY-MM-DD': { on, start, end } }
 
   const setDay = (day, key, value) =>
     setSchedule((prev) => ({ ...prev, [day]: { ...prev[day], [key]: value } }));
@@ -164,25 +362,34 @@ const Step5Availability = () => {
         </div>
       </div>
 
-      {/* Weekly schedule */}
+      {/* Availability editor - conditional */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
         <div className="text-sm font-semibold text-gray-900 mb-3">
-          Set Your Weekly Schedule
+          {method === "calendar"
+            ? "Set Your Calendar Availability"
+            : "Set Your Weekly Schedule"}
         </div>
-        <div className="divide-y divide-gray-100">
-          {days.map((d) => (
-            <Row
-              key={d}
-              label={d}
-              value={schedule[d].on}
-              onToggle={(val) => setDay(d, "on", val)}
-              start={schedule[d].start}
-              end={schedule[d].end}
-              onStart={(v) => setDay(d, "start", v)}
-              onEnd={(v) => setDay(d, "end", v)}
-            />
-          ))}
-        </div>
+        {method === "calendar" ? (
+          <CalendarAvailability
+            slots={calendarSlots}
+            setSlots={setCalendarSlots}
+          />
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {days.map((d) => (
+              <Row
+                key={d}
+                label={d}
+                value={schedule[d].on}
+                onToggle={(val) => setDay(d, "on", val)}
+                start={schedule[d].start}
+                end={schedule[d].end}
+                onStart={(v) => setDay(d, "start", v)}
+                onEnd={(v) => setDay(d, "end", v)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Emergency */}
