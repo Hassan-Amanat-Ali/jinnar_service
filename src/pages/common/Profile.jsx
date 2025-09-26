@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useLocation } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import {
   User,
@@ -11,9 +11,10 @@ import {
   LogOut,
   Menu,
   X,
+  CreditCard,
 } from "lucide-react";
 
-// Import profile components
+// Import customer profile components
 import ProfileOverview from "../../components/profile/ProfileOverview";
 import ComplaintSubmission from "../../components/profile/ComplaintSubmission";
 import Notifications from "../../components/profile/Notifications";
@@ -21,16 +22,27 @@ import HelpAndSupport from "../../components/profile/HelpAndSupport";
 import PrivacyPolicy from "../../components/profile/PrivacyPolicy";
 import TermsAndConditions from "../../components/profile/TermsAndConditions";
 
+// Import worker profile components
+import WorkerProfileOverview from "../../components/profile/WorkerProfileOverview";
+import WorkerPaymentMethod from "../../components/profile/WorkerPaymentMethod";
+import WorkerNotifications from "../../components/profile/WorkerNotifications";
+import WorkerHelpAndSupport from "../../components/profile/WorkerHelpAndSupport";
+
 const Profile = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("profile");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Determine if this is a worker profile based on the route
+  const isWorkerProfile = location.pathname.includes("/worker/profile");
 
   const validTabs = useMemo(
     () =>
       new Set([
         "profile",
         "complaint",
+        "payment",
         "notifications",
         "help",
         "privacy",
@@ -56,65 +68,104 @@ const Profile = () => {
     setSearchParams(next, { replace: true });
   };
 
-  // Function to render the active component
+  // Function to render the active component based on user type
   const renderActiveComponent = () => {
-    switch (activeTab) {
-      case "profile":
-        return <ProfileOverview />;
-      case "complaint":
-        return <ComplaintSubmission />;
-      case "notifications":
-        return <Notifications />;
-      case "help":
-        return <HelpAndSupport />;
-      case "privacy":
-        return <PrivacyPolicy />;
-      case "terms":
-        return <TermsAndConditions />;
-      default:
-        return <ProfileOverview />;
+    if (isWorkerProfile) {
+      // Worker-specific components
+      switch (activeTab) {
+        case "profile":
+          return <WorkerProfileOverview />;
+        case "payment":
+          return <WorkerPaymentMethod />;
+        case "notifications":
+          return <Notifications />;
+        case "help":
+          return <HelpAndSupport />;
+        case "privacy":
+          return <PrivacyPolicy />; // Same for both
+        case "terms":
+          return <TermsAndConditions />; // Same for both
+        default:
+          return <WorkerProfileOverview />;
+      }
+    } else {
+      // Customer-specific components
+      switch (activeTab) {
+        case "profile":
+          return <ProfileOverview />;
+        case "complaint":
+          return <ComplaintSubmission />;
+        case "notifications":
+          return <Notifications />;
+        case "help":
+          return <HelpAndSupport />;
+        case "privacy":
+          return <PrivacyPolicy />;
+        case "terms":
+          return <TermsAndConditions />;
+        default:
+          return <ProfileOverview />;
+      }
     }
   };
 
-  const sidebarItems = [
-    {
-      id: "profile",
-      label: "Profile Overview",
-      icon: User,
-      description: "View your personal details",
-      active: true,
-    },
-    {
-      id: "complaint",
-      label: "Complaint Submission",
-      icon: AlertTriangle,
-      description: "Report issue or problems",
-    },
-    {
-      id: "notifications",
-      label: "Notifications",
-      icon: Bell,
-      description: "Manage Notifications preferences",
-    },
-    {
-      id: "help",
-      label: "Help and Support",
-      icon: HelpCircle,
-      description: "Get help and contact support",
-    },
-    {
-      id: "privacy",
-      label: "Privacy Policy",
-      icon: FileText,
-      description: "Read our privacy policy",
-    },
-    {
-      id: "terms",
-      label: "Terms and Conditions",
-      icon: TerminalSquare,
-      description: "Review terms and conditions",
-    },
-  ];
+  // Define sidebar items based on user type
+  const sidebarItems = useMemo(() => {
+    const baseItems = [
+      {
+        id: "profile",
+        label: "Profile Overview",
+        icon: User,
+        description: "View your personal details",
+        active: true,
+      },
+      {
+        id: "notifications",
+        label: "Notifications",
+        icon: Bell,
+        description: "Manage Notifications preferences",
+      },
+      {
+        id: "help",
+        label: "Help and Support",
+        icon: HelpCircle,
+        description: "Get help and contact support",
+      },
+      {
+        id: "privacy",
+        label: "Privacy Policy",
+        icon: FileText,
+        description: "Read our privacy policy",
+      },
+      {
+        id: "terms",
+        label: "Terms and Conditions",
+        icon: TerminalSquare,
+        description: "Review terms and conditions",
+      },
+    ];
+
+    // Add different tabs based on user type
+    if (isWorkerProfile) {
+      // Add payment method tab for workers
+      baseItems.splice(1, 0, {
+        id: "payment",
+        label: "Payment Method",
+        icon: CreditCard,
+        description: "Manage payment methods",
+      });
+    } else {
+      // Add complaint tab for customers
+      baseItems.splice(1, 0, {
+        id: "complaint",
+        label: "Complaint Submission",
+        icon: AlertTriangle,
+        description: "Report issue or problems",
+      });
+    }
+
+    return baseItems;
+  }, [isWorkerProfile]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -136,9 +187,13 @@ const Profile = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
               <div className="mb-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-2">
-                  Settings
+                  {isWorkerProfile ? "Worker Settings" : "Settings"}
                 </h2>
-                <p className="text-sm text-gray-500">Manage your account</p>
+                <p className="text-sm text-gray-500">
+                  {isWorkerProfile
+                    ? "Manage your worker account"
+                    : "Manage your account"}
+                </p>
               </div>
 
               <nav className="space-y-2">
@@ -225,10 +280,12 @@ const Profile = () => {
                     <div className="flex items-center justify-between mb-8">
                       <div>
                         <h2 className="text-xl font-bold text-gray-900 mb-1">
-                          Settings
+                          {isWorkerProfile ? "Worker Settings" : "Settings"}
                         </h2>
                         <p className="text-sm text-gray-500">
-                          Manage your account
+                          {isWorkerProfile
+                            ? "Manage your worker account"
+                            : "Manage your account"}
                         </p>
                       </div>
                       <button

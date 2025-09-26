@@ -104,6 +104,7 @@ const CustomerBookings = () => {
         place="My Bookings"
         title="My Bookings"
         subtitle="Track your current and past service requests"
+        className="h-[16rem] md:h-[20rem] lg:h-[22rem]"
       />
       <div className="min-h-fit py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

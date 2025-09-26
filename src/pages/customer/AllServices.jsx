@@ -153,7 +153,7 @@ const AllServices = () => {
 
   return (
     <>
-      <Hero />
+      <Hero className="h-[22rem] lg:h-[35rem]" />
       <Nav />
       <div className="my-6 mt-16 px-4 sm:px-6 md:px-8 lg:px-4 xl:px-0 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6 xl:gap-8 justify-items-center">

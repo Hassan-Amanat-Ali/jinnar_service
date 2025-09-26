@@ -1,23 +1,71 @@
-import customerHome from "../../assets/images/customer-home.jpg";
-import Dropdown from "../../components/common/DropDown";
-import { Wrench, MapPin, Clock, DollarSign, Sheet } from "lucide-react";
 import { useState } from "react";
-import PopularServices from "../../components/Landing/PopularServices";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay } from "swiper/modules";
+import "swiper/css";
+
+import { Wrench, MapPin, Clock, DollarSign, Sheet } from "lucide-react";
+
+import customerHome from "../../assets/images/customer-home.jpg";
+import customerHome2 from "../../assets/images/customer-home2.jpg";
+import customerHome3 from "../../assets/images/customer-home3.jpg";
+import customerHome4 from "../../assets/images/customer-home4.jpg";
+import customerHome5 from "../../assets/images/customer-home5.jpg";
+
 import search2 from "../../assets/icons/search2.png";
 import people from "../../assets/icons/people.png";
 import shield from "../../assets/icons/shield.png";
 import correct from "../../assets/icons/correct.png";
-import Card from "../common/Card";
+
 import service1 from "../../assets/images/All-services-1.jpg";
 import service2 from "../../assets/images/all-services-2.jpg";
 import service3 from "../../assets/images/all-services-3.jpg";
 import service4 from "../../assets/images/all-services-4.jpg";
+
+import PopularServices from "../../components/Landing/PopularServices";
 import TopWorkers from "../../components/Landing/TopWorkers";
 import Testimonials from "../../components/Landing/Testimonials";
 import BookingCard from "../../components/customer/BookinCard";
+import Dropdown from "../../components/common/DropDown";
+import Card from "../common/Card";
 
 const CustomerHome = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
+  const navigate = useNavigate();
+
+  // Hero slider data
+  const heroSlides = [
+    {
+      image: customerHome,
+      title: "Welcome, Sarah!",
+      subtitle: "Find Trusted Workers Anytime, Anywhere",
+      description:
+        "Book instantly or schedule later safe, simple, and reliable.",
+    },
+    {
+      image: customerHome2,
+      title: "Welcome, Sarah!",
+      subtitle: "Quality Services at Your Doorstep",
+      description: "Connect with verified professionals for all your needs.",
+    },
+    {
+      image: customerHome3,
+      title: "Welcome, Sarah!",
+      subtitle: "Reliable Workers in Your Area",
+      description: "Get expert help when you need it, where you need it.",
+    },
+    {
+      image: customerHome4,
+      title: "Welcome, Sarah!",
+      subtitle: "Book Trusted Professionals",
+      description: "Safe, secure, and satisfaction guaranteed.",
+    },
+    {
+      image: customerHome5,
+      title: "Welcome, Sarah!",
+      subtitle: "Your Home Service Solution",
+      description: "From repairs to cleaning, we've got you covered.",
+    },
+  ];
 
   // Dropdown options
   const serviceOptions = [
@@ -254,13 +302,30 @@ const CustomerHome = () => {
   return (
     <>
       <div className="relative h-fit w-full min-h-screen md:min-h-[70vh] lg:min-h-fit">
-        <div className="bg-black/50 absolute inset-0"></div>
-        <img
-          src={customerHome}
-          alt=""
-          className="h-full min-h-screen md:min-h-[70vh] lg:h-122 w-full object-cover"
-        />
-        <div className="absolute top-0 text-white inset-0 flex flex-col items-center justify-center px-4 md:px-6 lg:px-4 text-center ">
+        {/* Background Image Slider */}
+        <Swiper
+          modules={[Autoplay]}
+          autoplay={{
+            delay: 5000,
+            disableOnInteraction: false,
+          }}
+          loop={true}
+          className="absolute inset-0 h-full min-h-screen md:min-h-[70vh] lg:h-122 w-full"
+        >
+          {heroSlides.map((slide, index) => (
+            <SwiperSlide key={index}>
+              <img
+                src={slide.image}
+                alt=""
+                className="h-full min-h-screen md:min-h-[70vh] lg:h-122 w-full object-cover"
+              />
+            </SwiperSlide>
+          ))}
+        </Swiper>
+
+        {/* Static Overlay and Content */}
+        <div className="bg-black/50 absolute inset-0 z-10"></div>
+        <div className="absolute top-0 text-white inset-0 flex flex-col items-center justify-center px-4 md:px-6 lg:px-4 text-center z-20">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold">
             Welcome, Sarah!
           </h1>
@@ -480,7 +545,7 @@ const CustomerHome = () => {
               Trending services in your area
             </p>
           </div>
-          <button className="border-2 text-[#74C7F2] border-[#74C7F2] rounded-lg py-2.5 px-6 text-sm font-medium cursor-pointer hover:bg-[#74C7F2] hover:text-white hover:shadow-lg transition-all duration-300 w-fit whitespace-nowrap">
+          <button className="border-2 text-[#74C7F2] border-[#74C7F2] rounded-lg py-2.5 px-6 text-sm font-medium cursor-pointer hover:bg-[#74C7F2] hover:text-white hover:shadow-lg transition-all duration-300 w-fit whitespace-nowrap" onClick={()=>{navigate("/services")}}>
             View All Services
           </button>
         </div>

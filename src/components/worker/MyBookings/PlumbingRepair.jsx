@@ -1,4 +1,3 @@
-import React from "react";
 import {
   MapPin,
   Calendar,
@@ -11,6 +10,7 @@ import {
   Clock1,
   Eye,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Pill = ({
   children,
@@ -43,6 +43,7 @@ const BookingCard = ({ booking }) => {
     return icons[category] || <Wrench size={18} />;
   };
 
+  const navigate = useNavigate();
   return (
     <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-5 last:mb-10">
       <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-3 sm:gap-4 md:gap-6">
@@ -111,8 +112,11 @@ const BookingCard = ({ booking }) => {
               $ {booking.price}
             </div>
           </div>
-          <button className="inline-flex items-center justify-center bg-[#87CEEB] text-white rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 font-medium shadow-sm gap-1.5 sm:gap-2 text-[11px] sm:text-sm text-nowrap ">
-            <Eye size={11} />
+          <button
+            className="inline-flex items-center justify-center bg-[#87CEEB] text-white rounded-lg px-2.5 sm:px-4 py-1.5 sm:py-2 font-medium shadow-sm gap-1.5 sm:gap-2 text-[11px] sm:text-sm text-nowrap "
+            onClick={() => navigate(`/worker-booking/${booking.id}`)}
+          >
+            <Eye size={15} />
             View Details
           </button>
         </div>

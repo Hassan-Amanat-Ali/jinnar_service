@@ -6,7 +6,9 @@ import service2 from "../../assets/images/all-services-2.jpg";
 import service3 from "../../assets/images/all-services-3.jpg";
 import BookingCard from "../../components/customer/BookinCard";
 import Testimonials from "../../components/Landing/Testimonials";
+import { useNavigate } from "react-router-dom";
 const Home = () => {
+  const navigate = useNavigate();
   return (
     <div>
       <Hero />
@@ -22,7 +24,10 @@ const Home = () => {
               Track your ongoing and upcoming services
             </p>
           </div>
-          <button className="border-2 text-[#74C7F2] border-[#74C7F2] rounded-md py-1.5 px-3 text-sm cursor-pointer hover:bg-[#74C7F2] hover:text-white transition-all duration-300 w-fit">
+          <button
+            className="border-2 text-[#74C7F2] border-[#74C7F2] rounded-md py-1.5 px-3 text-sm cursor-pointer hover:bg-[#74C7F2] hover:text-white transition-all duration-300 w-fit"
+            onClick={() => navigate("/jobs")}
+          >
             View All Bookings
           </button>
         </div>

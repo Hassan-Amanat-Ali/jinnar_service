@@ -1,11 +1,16 @@
 import React from "react";
 import { MapPin, Calendar, Star } from "lucide-react";
+
 import search from "../../assets/icons/search.png";
 import services1 from "../../assets/images/services-image-1.jpg";
 import services2 from "../../assets/images/services-image-2.jpg";
 import services3 from "../../assets/images/services-image-3.jpg";
 import services4 from "../../assets/images/services-image-4.jpg";
+import services5 from "../../assets/images/services-image-5.jpg";
+import services6 from "../../assets/images/services-image-6.jpg";
+
 import Dropdown from "./DropDown";
+
 import { twMerge } from "tailwind-merge";
 
 const Hero = ({
@@ -18,6 +23,23 @@ const Hero = ({
   const [openDropdown, setOpenDropdown] = React.useState(null);
   const services = ["All", "Active", "Completed", "Cancelled"];
   const [selectedService, setSelectedService] = React.useState("All");
+
+  // Images for the infinite slider
+  const serviceImages = [
+    services1,
+    services2,
+    services3,
+    services4,
+    services5,
+    services6,
+    services1,
+    services2,
+    services3,
+    services4,
+    services5,
+    services6, // Duplicate for seamless loop
+  ];
+
   const handleDropdownToggle = (dropdownId) => {
     setOpenDropdown(openDropdown === dropdownId ? null : dropdownId);
   };
@@ -63,36 +85,59 @@ const Hero = ({
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 px-4 sm:px-6 lg:px-8 my-6 sm:my-8 md:my-10 lg:mt-18 w-full sm:w-[90%] md:w-[85%] lg:w-[100%] xl:w-[99%] 2xl:w-[90%] max-w-7xl mx-auto relative">
-                    <div className="h-48 sm:h-56 md:h-64 lg:h-68">
-                      <img
-                        src={services1}
-                        alt=""
-                        className="rounded-xl h-full w-full object-cover"
-                      />
+                  {/* Infinite Horizontal Slider */}
+                  <div className="relative w-full overflow-hidden my-6 sm:my-8 md:my-10 lg:mt-18">
+                    <style jsx>{`
+                      @keyframes slide {
+                        0% {
+                          transform: translateX(0);
+                        }
+                        100% {
+                          transform: translateX(-50%);
+                        }
+                      }
+                      .slider-track {
+                        animation: slide 20s linear infinite;
+                        transition: animation-duration 1s ease;
+                      }
+                      .slider-track:hover {
+                        animation-duration: 40s;
+                      }
+                    `}</style>
+
+                    <div className="flex slider-track gap-4 sm:gap-6 md:gap-8 items-end">
+                      {serviceImages.map((image, index) => {
+                        // Create different height patterns
+                        const heightClasses = [
+                          "h-48 sm:h-56 md:h-64 lg:h-68", // Tall
+                          "h-40 sm:h-48 md:h-56 lg:h-60", // Medium-Short
+                          "h-52 sm:h-60 md:h-68 lg:h-72", // Very Tall
+                          "h-44 sm:h-52 md:h-60 lg:h-64", // Medium
+                          "h-36 sm:h-44 md:h-52 lg:h-56", // Short
+                          "h-50 sm:h-58 md:h-66 lg:h-70", // Medium-Tall
+                        ];
+
+                        return (
+                          <div
+                            key={index}
+                            className="flex-shrink-0 w-48 sm:w-56 md:w-64 lg:w-72"
+                          >
+                            <img
+                              src={image}
+                              alt={`Service ${index + 1}`}
+                              className={`rounded-xl w-full object-cover shadow-lg ${
+                                heightClasses[index % 6]
+                              }`}
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="h-40 sm:h-48 md:h-56 lg:h-60 self-end">
-                      <img
-                        src={services2}
-                        alt=""
-                        className="rounded-xl h-full w-full object-cover"
-                      />
-                    </div>
-                    <div className="h-52 sm:h-60 md:h-68 lg:h-70">
-                      <img
-                        src={services3}
-                        alt=""
-                        className="rounded-xl h-full w-full object-cover"
-                      />
-                    </div>
-                    <div className="h-44 sm:h-52 md:h-60 lg:h-64 self-end">
-                      <img
-                        src={services4}
-                        alt=""
-                        className="rounded-xl h-full w-full object-cover"
-                      />
-                    </div>
-                    <div className="absolute inset-x-0 bottom-0 h-12 sm:h-16 md:h-20 lg:h-24 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
+
+                    {/* Gradient fade effects on sides */}
+                    <div className="absolute inset-y-0 left-0 w-12 sm:w-16 md:w-20 bg-gradient-to-r from-[#afe0f9] to-transparent pointer-events-none z-10" />
+                    <div className="absolute inset-y-0 right-0 w-12 sm:w-16 md:w-20 bg-gradient-to-l from-[#c4e6ff] to-transparent pointer-events-none z-10" />
+                    <div className="absolute inset-x-0 bottom-0 h-12 sm:h-16 md:h-20 lg:h-24 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none z-10" />
                   </div>
                 </>
               )}

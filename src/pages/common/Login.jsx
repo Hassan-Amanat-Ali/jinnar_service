@@ -1,37 +1,80 @@
 import { Link } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay } from "swiper/modules";
+import "swiper/css";
 import sideImg from "../../assets/images/auth.jpg";
+import auth2 from "../../assets/images/auth2.jpg";
+import auth3 from "../../assets/images/auth3.jpg";
 
 const Login = () => {
+  const sliderData = [
+    {
+      image: sideImg,
+      title: "Book Trusted Workers Anytime",
+      description:
+        "Quickly connect with skilled professionals in your area to tackle any task—from home repairs to personal services—right at your fingertips.",
+    },
+    {
+      image: auth2,
+      title: "Quality Service Guaranteed",
+      description:
+        "All our workers are verified and rated by the community. Get peace of mind knowing you're hiring trusted professionals.",
+    },
+    {
+      image: auth3,
+      title: "Fast & Reliable Solutions",
+      description:
+        "Get your tasks done quickly and efficiently. Our platform ensures prompt service delivery every time.",
+    },
+  ];
+
   return (
     <div className="min-h-dvh grid grid-cols-1 lg:grid-cols-2 bg-white pt-24 lg:pt-0">
-      {/* Left: Image panel with overlay text */}
+      {/* Left: Image panel with automatic slider */}
       <div className="relative hidden lg:block">
-        <img
-          src={sideImg}
-          alt="People collaborating"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/30" />
+        <Swiper
+          modules={[Autoplay]}
+          autoplay={{
+            delay: 4000,
+            disableOnInteraction: false,
+          }}
+          loop={true}
+          className="h-full w-full"
+        >
+          {sliderData.map((slide, index) => (
+            <SwiperSlide key={index} className="relative">
+              <img
+                src={slide.image}
+                alt={slide.title}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/30" />
 
-        <div className="absolute bottom-6 left-6 right-6 text-white">
-          <h3 className="text-lg font-semibold tracking-tight">
-            Book Trusted Workers Anytime
-          </h3>
-          <p className="text-sm text-white/85 mt-2 max-w-md">
-            Quickly connect with skilled professionals in your area to tackle
-            any task—from home repairs to personal services—right at your
-            fingertips.
-          </p>
+              <div className="absolute bottom-6 left-6 right-6 text-white">
+                <h3 className="text-lg font-semibold tracking-tight">
+                  {slide.title}
+                </h3>
+                <p className="text-sm text-white/85 mt-2 max-w-md">
+                  {slide.description}
+                </p>
 
-          {/* Slider dots (visual only) */}
-          <div className="mt-6 flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-white" />
-            <span className="h-2 w-2 rounded-full bg-white/60" />
-            <span className="h-2 w-2 rounded-full bg-white/60" />
-          </div>
-        </div>
+                {/* Slider dots in original position */}
+                <div className="mt-6 flex items-center gap-2">
+                  {sliderData.map((_, dotIndex) => (
+                    <span
+                      key={dotIndex}
+                      className={`h-2 w-2 rounded-full ${
+                        dotIndex === index ? "bg-white" : "bg-white/60"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
       </div>
 
       {/* Right: Form panel */}

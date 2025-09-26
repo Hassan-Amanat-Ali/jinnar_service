@@ -3,6 +3,7 @@ import MainLayout from "../layouts/MainLayout.jsx";
 import LandingLayout from "../layouts/LandingLayout.jsx";
 import WorkerLayout from "../layouts/WorkerLayout.jsx";
 import SetupLayout from "../layouts/SetupLayout.jsx";
+import FooterOnlyLayout from "../layouts/FooterOnlyLayout.jsx";
 import Landing from "../pages/common/Landing.jsx";
 import RoleSelection from "../pages/common/RoleSelection.jsx";
 import Login from "../pages/common/Login.jsx";
@@ -40,13 +41,13 @@ const router = createBrowserRouter([
     element: <LandingLayout />,
     children: [{ index: true, element: <Landing /> }],
   },
+  { path: "role", element: <RoleSelection /> },
   { path: "login", element: <Login /> },
   { path: "signup", element: <Signup /> },
   {
     element: <MainLayout />,
     children: [
       // Common pages
-      { path: "role", element: <RoleSelection /> },
 
       { path: "help", element: <Help /> },
       { path: "privacy", element: <PrivacyPolicy /> },
@@ -64,7 +65,7 @@ const router = createBrowserRouter([
       { path: "book-worker/:slug", element: <BookWorker /> },
       { path: "booking-confirm", element: <BookingConfirm /> },
       { path: "customer-booking/:slug", element: <CustomerBookingDetail /> },
-      { path: "worker-profile/:slug", element: <WorkerPublicProfile /> },
+      // { path: "worker-profile/:slug", element: <WorkerPublicProfile /> },
     ],
   },
   {
@@ -91,8 +92,16 @@ const router = createBrowserRouter([
       { path: "worker-bookings", element: <WorkerBookings /> },
       { path: "worker-booking/:id", element: <WorkerBookingDetail /> },
       { path: "wallet", element: <Wallet /> },
-      { path: "customer-profile/:id", element: <CustomerProfile /> },
       { path: "payment-methods", element: <PaymentMethods /> },
+      { path: "worker/profile", element: <Profile /> },
+    ],
+  },
+  {
+    element: <FooterOnlyLayout />,
+    children: [
+      // Profile pages - footer only, no navbar
+      { path: "worker-profile/:id", element: <WorkerPublicProfile /> },
+      { path: "customer-profile/:id", element: <CustomerProfile /> },
     ],
   },
 ]);
