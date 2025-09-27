@@ -11,4 +11,13 @@ export default defineConfig({
   preview: {
     historyApiFallback: true,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined,
+      },
+    },
+  },
+  // Ensure proper handling of assets and routing
+  base: "./",
 });

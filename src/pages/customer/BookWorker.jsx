@@ -58,10 +58,10 @@ const BookWorker = () => {
             </p>
           </div>
           <div className="flex gap-2 flex-col mt-2 w-[90%]">
-            <button className="text-sm bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] w-full py-3 rounded-lg text-white font-medium hover:shadow-md transition-all">
+            <button className="text-sm bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] w-full py-3 rounded-lg text-white font-medium hover:shadow-md transition-all" onClick={() => navigate("/worker-profile/slug")}>
               View Profile
             </button>
-            <button className="text-sm border border-[#74C7F2] text-[#74C7F2] w-full py-3 rounded-lg font-medium hover:bg-[#DBF0FF] transition-colors">
+            <button className="text-sm border border-[#74C7F2] text-[#74C7F2] w-full py-3 rounded-lg font-medium hover:bg-[#DBF0FF] transition-colors" onClick={() => navigate("/chat")}>
               Message Worker
             </button>
           </div>

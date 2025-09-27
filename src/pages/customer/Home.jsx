@@ -27,6 +27,7 @@ import Testimonials from "../../components/Landing/Testimonials";
 import BookingCard from "../../components/customer/BookinCard";
 import Dropdown from "../../components/common/DropDown";
 import Card from "../common/Card";
+import { useNavigate } from "react-router-dom";
 
 const CustomerHome = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -545,7 +546,12 @@ const CustomerHome = () => {
               Trending services in your area
             </p>
           </div>
-          <button className="border-2 text-[#74C7F2] border-[#74C7F2] rounded-lg py-2.5 px-6 text-sm font-medium cursor-pointer hover:bg-[#74C7F2] hover:text-white hover:shadow-lg transition-all duration-300 w-fit whitespace-nowrap" onClick={()=>{navigate("/services")}}>
+          <button
+            className="border-2 text-[#74C7F2] border-[#74C7F2] rounded-lg py-2.5 px-6 text-sm font-medium cursor-pointer hover:bg-[#74C7F2] hover:text-white hover:shadow-lg transition-all duration-300 w-fit whitespace-nowrap"
+            onClick={() => {
+              navigate("/services");
+            }}
+          >
             View All Services
           </button>
         </div>
@@ -592,7 +598,10 @@ const CustomerHome = () => {
               Track your ongoing and upcoming services
             </p>
           </div>
-          <button className="border-2 text-[#74C7F2] border-[#74C7F2] rounded-md py-1.5 px-3 text-sm cursor-pointer hover:bg-[#74C7F2] hover:text-white transition-all duration-300 w-fit">
+          <button
+            className="border-2 text-[#74C7F2] border-[#74C7F2] rounded-md py-1.5 px-3 text-sm cursor-pointer hover:bg-[#74C7F2] hover:text-white transition-all duration-300 w-fit"
+            onClick={() => navigate("/customer-bookings")}
+          >
             View All Bookings
           </button>
         </div>

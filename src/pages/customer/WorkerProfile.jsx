@@ -23,6 +23,7 @@ import work2 from "../../assets/images/services-image-2.jpg";
 import work3 from "../../assets/images/services-image-3.jpg";
 import work4 from "../../assets/images/services-image-4.jpg";
 import work5 from "../../assets/images/worker-card.jpg";
+import { useNavigate } from "react-router-dom";
 
 const RatingStars = ({ value = 5, outOf = 5, size = 16 }) => {
   const stars = Array.from({ length: outOf }, (_, i) => i < Math.round(value));
@@ -65,6 +66,7 @@ const Thumb = ({ src, alt }) => (
 );
 
 const WorkerProfile = () => {
+  const navigate = useNavigate();
   return (
     <main className="section-container py-4 md:py-6 lg:py-8 max-w-7xl">
       {/* Back link */}
@@ -134,12 +136,14 @@ const WorkerProfile = () => {
                 <button
                   className="btn-primary w-full justify-center bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white cursor-pointer"
                   aria-label="Book Now"
+                  onClick={() => navigate("/book-worker/ali-hassan")}
                 >
                   <CalendarCheck size={18} /> Book Now
                 </button>
                 <button
                   className="w-full justify-center rounded-md border border-[#74C7F2] bg-white px-4 py-3 text-sm font-semibold text-[#74C7F2] shadow-sm hover:bg-gray-50 inline-flex items-center gap-2 cursor-pointer"
                   aria-label="Message Worker"
+                  onClick={() => navigate("/chat")}
                 >
                   <MessageCircle size={18} /> Message
                 </button>
