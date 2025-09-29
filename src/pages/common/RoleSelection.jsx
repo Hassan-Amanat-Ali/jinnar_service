@@ -1,10 +1,23 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { ROLES } from "../../constants/roles.js";
 import { User, Lightbulb, ArrowRight, UserRound } from "lucide-react";
 
 const RoleSelection = () => {
   const { setRole } = useAuth();
+  const navigate = useNavigate();
+
+  const handleRoleSelection = (role) => {
+    // Store role in localStorage
+    localStorage.setItem("userRole", role);
+
+    // Set role in context
+    setRole(role);
+
+    // Navigate to login page
+    navigate("/login");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="max-w-4xl w-full">
@@ -47,14 +60,13 @@ const RoleSelection = () => {
             </ul>
 
             {/* Button */}
-            <Link
-              to="/c"
-              onClick={() => setRole(ROLES.CUSTOMER)}
+            <button
+              onClick={() => handleRoleSelection(ROLES.CUSTOMER)}
               className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium px-8 py-3 rounded-lg hover:opacity-90 transition-opacity w-full"
             >
               Continue as Customer
               <ArrowRight size={20} />
-            </Link>
+            </button>
           </div>
 
           {/* Worker Card */}
@@ -83,14 +95,13 @@ const RoleSelection = () => {
             </ul>
 
             {/* Button */}
-            <Link
-              to="/w"
-              onClick={() => setRole(ROLES.WORKER)}
+            <button
+              onClick={() => handleRoleSelection(ROLES.WORKER)}
               className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium px-8 py-3 rounded-lg hover:opacity-90 transition-opacity w-full"
             >
               Continue as Worker
               <ArrowRight size={20} />
-            </Link>
+            </button>
           </div>
         </div>
 

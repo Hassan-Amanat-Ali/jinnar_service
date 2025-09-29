@@ -35,11 +35,16 @@ import Wallet from "../pages/worker/Wallet.jsx";
 import CustomerProfile from "../pages/worker/CustomerProfile.jsx";
 import PaymentMethods from "../pages/worker/PaymentMethods.jsx";
 import CategoryService from "../pages/customer/CategoryService.jsx";
+import AboutUs from "../components/common/AboutUs.jsx";
+import Jinnar from "../components/common/Jinnar.jsx";
 
 const router = createBrowserRouter([
   {
     element: <LandingLayout />,
-    children: [{ index: true, element: <Landing /> }],
+    children: [
+      { index: true, element: <Landing /> },
+      { path: "what-is-jinnar", element: <Jinnar /> },
+    ],
   },
   { path: "role", element: <RoleSelection /> },
   { path: "login", element: <Login /> },
@@ -48,6 +53,7 @@ const router = createBrowserRouter([
     element: <MainLayout />,
     children: [
       // Common pages
+      { path: "about-us", element: <AboutUs /> },
 
       { path: "help", element: <Help /> },
       { path: "privacy", element: <PrivacyPolicy /> },

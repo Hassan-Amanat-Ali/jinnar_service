@@ -1,6 +1,7 @@
 import React from "react";
 import clockIcon from "../../assets/icons/clock.png";
 import Button from "../common/Button";
+import { useNavigate } from "react-router-dom";
 
 const BookingCard = ({
   image,
@@ -11,6 +12,7 @@ const BookingCard = ({
   status,
   price,
 }) => {
+  const navigate = useNavigate();
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full bg-white rounded-2xl shadow-sm p-4 gap-4">
       {/* Left Section */}
@@ -52,10 +54,12 @@ const BookingCard = ({
         </span>
 
         {/* View Job Button */}
-        <Button
-          title={"View Job"}
-          className="text-white h-7 w-fit text-xs sm:text-xs px-4 sm:px-4 py-0.5 hover:bg-white hover:text-[#74C7F2] border border-[#74C7F2] bg-[#74C7F2] transition-all duration-300 rounded-xl"
-        />
+        <div onClick={() => navigate("/job/id")}>
+          <Button
+            title={"View Job"}
+            className="text-white h-7 w-fit text-xs sm:text-xs px-4 sm:px-4 py-0.5 hover:bg-white hover:text-[#74C7F2] border border-[#74C7F2] bg-[#74C7F2] transition-all duration-300 rounded-xl"
+          />
+        </div>
 
         {/* Price */}
         <p className="text-sm font-semibold text-[#74C7F2]">${price}</p>

@@ -1,4 +1,5 @@
 import { MapPin, Clock, DollarSign } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const JobCard = ({
   customerName,
@@ -10,6 +11,7 @@ const JobCard = ({
   image,
   timeframe,
 }) => {
+  const navigate = useNavigate();
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       {/* Job Image */}
@@ -58,7 +60,12 @@ const JobCard = ({
         </div>
 
         {/* View Job Button */}
-        <button className="w-full bg-gradient-to-r from-[#A8D8F0] to-[#74C7F2] text-white py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+        <button
+          className="w-full bg-gradient-to-r from-[#A8D8F0] to-[#74C7F2] text-white py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer"
+          onClick={() => {
+            navigate("/job/id");
+          }}
+        >
           View Job
         </button>
       </div>

@@ -11,6 +11,8 @@ import {
 import { twMerge } from "tailwind-merge";
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import GoogleTranslate from "./GoogleTranslate.jsx";
+import logo from "../../assets/logo.png";
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,7 +28,9 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             {/* Logo */}
-            <div className="font-bold text-lg tracking-wide">LOGO HERE</div>
+            <div className="flex items-center space-x-2">
+              <img src={logo} alt="Logo" className="h-10 w-auto" />
+            </div>
 
             {/* Nav Links - Desktop */}
             <div className="hidden md:flex space-x-3.5">
@@ -68,17 +72,27 @@ export default function Navbar() {
                   }
                 />
               </div>
+              <div className="">
+                <GoogleTranslate containerId="gt-header-desktop" />
+              </div>
             </div>
 
             {/* Mobile menu button */}
             <div className="md:hidden flex items-center space-x-3">
-              <IconButton icon={<MessageSquare size={14} color="#74C7F2" />} />
-              <IconButton
-                icon={<Bell size={14} color="white" />}
-                className={
-                  "bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] border-0"
-                }
-              />
+              <div onClick={() => navigate("/chat")}>
+                <IconButton
+                  icon={<MessageSquare size={14} color="#74C7F2" />}
+                  className={"border-0 cursor-pointer"}
+                />
+              </div>
+              <div onClick={() => navigate("/profile?tab=notifications")}>
+                <IconButton
+                  icon={<Bell size={14} color="white" />}
+                  className={
+                    "bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] border-0 cursor-pointer"
+                  }
+                />
+              </div>
               <button
                 onClick={toggleMobileMenu}
                 className="w-8 h-8 flex items-center justify-center rounded-full border border-sky-200 bg-sky-50 hover:bg-sky-100 transition"
@@ -94,34 +108,96 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu as overlay */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-white shadow-lg rounded-lg mx-4 mt-2 border border-sky-100">
-          <div className="px-4 py-3 space-y-2">
-            <MobileNavItem
-              icon={<Home size={14} />}
-              label="Home"
-              to="/customer-home"
-              onNavigate={() => setIsMobileMenuOpen(false)}
-            />
-            <MobileNavItem
-              icon={<Wrench size={14} />}
-              label="Services"
-              to="/services"
-              onNavigate={() => setIsMobileMenuOpen(false)}
-            />
-            <MobileNavItem
-              icon={<Calendar size={14} />}
-              label="My Bookings"
-              to="/customer-bookings"
-              onNavigate={() => setIsMobileMenuOpen(false)}
-            />
-            <MobileNavItem
-              icon={<User size={14} />}
-              label="Profile"
-              to="/profile"
-              onNavigate={() => setIsMobileMenuOpen(false)}
-            />
+        <div
+          className="md:hidden fixed inset-0 z-[100]"
+          role="dialog"
+          aria-modal="true"
+        >
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/20"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          {/* Panel under navbar (h-14) */}
+          <div className="absolute left-0 right-0 top-14">
+            <div className="flex justify-center px-4 sm:px-6">
+              <div className="bg-white shadow-xl rounded-xl border border-sky-100 overflow-hidden transition-all duration-300 ease-out w-full max-w-sm relative z-[110]">
+                <div className="px-4 py-4 space-y-1 max-h-[calc(100vh-4rem)] overflow-y-auto">
+                  <MobileNavItem
+                    icon={<Home size={14} />}
+                    label="Home"
+                    to="/customer-home"
+                    onNavigate={() => setIsMobileMenuOpen(false)}
+                  />
+                  <MobileNavItem
+                    icon={<Wrench size={14} />}
+                    label="Services"
+                    to="/services"
+                    onNavigate={() => setIsMobileMenuOpen(false)}
+                  />
+                  <MobileNavItem
+                    icon={<Calendar size={14} />}
+                    label="My Bookings"
+                    to="/customer-bookings"
+                    onNavigate={() => setIsMobileMenuOpen(false)}
+                  />
+                  <MobileNavItem
+                    icon={<User size={14} />}
+                    label="Profile"
+                    to="/profile"
+                    onNavigate={() => setIsMobileMenuOpen(false)}
+                  />
+                  {/* Language Switcher for Mobile */}
+                  <div className="pt-3 mt-3 border-t border-sky-200">
+                    <div className="px-3 py-3 rounded-lg bg-sky-50 border border-sky-200">
+                      <p className="text-xs font-medium text-gray-600 mb-2 text-center">
+                        Language / Lugha
+                      </p>
+                      <div className="flex justify-center mb-2">
+                        <div className="relative z-[70]">
+                          <GoogleTranslate containerId="gt-header-mobile" />
+                        </div>
+                      </div>
+                      <div className="flex justify-center gap-2 text-xs">
+                        <button
+                          className="px-3 py-1.5 rounded bg-blue-100 text-blue-700 text-xs font-medium hover:bg-blue-200 transition-colors"
+                          onClick={() => {
+                            if (window.setGoogleTranslateLanguage) {
+                              window.setGoogleTranslateLanguage("en");
+                            }
+                          }}
+                        >
+                          EN
+                        </button>
+                        <button
+                          className="px-3 py-1.5 rounded bg-gray-100 text-gray-700 text-xs hover:bg-gray-200 transition-colors"
+                          onClick={() => {
+                            if (window.setGoogleTranslateLanguage) {
+                              window.setGoogleTranslateLanguage("sw");
+                            }
+                          }}
+                        >
+                          SW
+                        </button>
+                        <button
+                          className="px-3 py-1.5 rounded bg-gray-100 text-gray-700 text-xs hover:bg-gray-200 transition-colors"
+                          onClick={() => {
+                            if (window.setGoogleTranslateLanguage) {
+                              window.setGoogleTranslateLanguage("fr");
+                            }
+                          }}
+                        >
+                          FR
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -158,16 +234,18 @@ function MobileNavItem({ icon, label, to, onNavigate }) {
       onClick={onNavigate}
       className={({ isActive }) =>
         twMerge(
-          "flex items-center space-x-3 text-sm px-3 py-2.5 rounded-md transition",
+          "flex items-center space-x-3 text-sm px-4 py-3 rounded-lg transition-all duration-200 w-full",
           isActive
-            ? "bg-[#DBF0FF] text-[#74C7F2] font-medium"
-            : "text-gray-700 hover:text-[#74C7F2]"
+            ? "bg-[#DBF0FF] text-[#74C7F2] font-medium shadow-sm"
+            : "text-gray-700 hover:text-[#74C7F2] hover:bg-sky-50"
         )
       }
       end
     >
-      {icon}
-      <span>{label}</span>
+      <div className="flex items-center space-x-3 w-full">
+        {icon}
+        <span className="flex-1">{label}</span>
+      </div>
     </NavLink>
   );
 }

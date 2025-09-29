@@ -83,20 +83,45 @@ const Footer = () => {
           <div className="flex flex-col">
             <h1 className="font-semibold text-base">Quick Links</h1>
             <ul className="text-xs sm:text-sm mt-3 space-y-2 font-light text-gray-400">
-              <li className="hover:text-white cursor-pointer transition-colors">
-                Home
+              <li>
+                <Link
+                  className="hover:text-white transition-colors"
+                  to="/customer-home"
+                >
+                  Home
+                </Link>
               </li>
-              <li className="hover:text-white cursor-pointer transition-colors">
-                How It Works
+              <li>
+                <Link
+                  className="hover:text-white transition-colors"
+                  to="/#how-it-works"
+                >
+                  How It Works
+                </Link>
               </li>
-              <li className="hover:text-white cursor-pointer transition-colors">
-                Services
+              <li>
+                <Link
+                  className="hover:text-white transition-colors"
+                  to="/services"
+                >
+                  Services
+                </Link>
               </li>
-              <li className="hover:text-white cursor-pointer transition-colors">
-                Workers
+              <li>
+                <Link
+                  className="hover:text-white transition-colors"
+                  to="/services/slug"
+                >
+                  Workers
+                </Link>
               </li>
-              <li className="hover:text-white cursor-pointer transition-colors">
-                About Us
+              <li>
+                <Link
+                  className="hover:text-white transition-colors"
+                  to="/about-us"
+                >
+                  About Us
+                </Link>
               </li>
             </ul>
           </div>
@@ -105,20 +130,45 @@ const Footer = () => {
           <div className="flex flex-col">
             <h1 className="font-semibold text-base">Popular Services</h1>
             <ul className="text-xs sm:text-sm mt-3 space-y-2 font-light text-gray-400">
-              <li className="hover:text-white cursor-pointer transition-colors">
-                Help Center
+              <li>
+                <Link
+                  className="hover:text-white transition-colors"
+                  to="/profile?tab=help"
+                >
+                  Help Center
+                </Link>
               </li>
-              <li className="hover:text-white cursor-pointer transition-colors">
-                FAQ
+              <li>
+                <Link
+                  className="hover:text-white transition-colors"
+                  to="/profile?tab=help"
+                >
+                  FAQ
+                </Link>
               </li>
-              <li className="hover:text-white cursor-pointer transition-colors">
-                Contact Us
+              <li>
+                <Link
+                  className="hover:text-white transition-colors"
+                  to="/profile?tab=complaint"
+                >
+                  What is Jinnar?
+                </Link>
               </li>
-              <li className="hover:text-white cursor-pointer transition-colors">
-                Privacy Policy
+              <li>
+                <Link
+                  className="hover:text-white transition-colors"
+                  to="/profile?tab=privacy"
+                >
+                  Privacy Policy
+                </Link>
               </li>
-              <li className="hover:text-white cursor-pointer transition-colors">
-                Terms of Service
+              <li>
+                <Link
+                  className="hover:text-white transition-colors"
+                  to="/profile?tab=terms"
+                >
+                  Terms of Service
+                </Link>
               </li>
             </ul>
           </div>

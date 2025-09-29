@@ -64,6 +64,12 @@ const Hero = () => {
               <FiPlay className="text-white" />
               Join as a Worker
             </button>
+            <button
+              className="btn-outline"
+              onClick={() => navigate("/what-is-jinnar")}
+            >
+              Learn about Jinnar
+            </button>
           </div>
 
           {/* Search Card */}

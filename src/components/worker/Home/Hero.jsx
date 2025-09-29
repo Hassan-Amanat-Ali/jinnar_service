@@ -44,27 +44,27 @@ const Hero = () => {
       </div>
 
       {/* Profile Completion Section */}
-      <div className="bg-white rounded-xl p-6 border border-gray-100">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-3 sm:space-y-0">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-1">
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
               Profile Completion: 75%
             </h2>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               Complete your profile to unlock more job requests and increase
               your visibility.
             </p>
           </div>
           <Link
             to="/worker-setup-basic"
-            className="px-4 py-2 border border-[#74C7F2] text-[#74C7F2] rounded-lg text-sm font-medium hover:bg-[#74C7F2] hover:text-white transition-colors"
+            className="px-3 py-2 sm:px-4 sm:py-2 border border-[#74C7F2] text-[#74C7F2] rounded-lg text-xs sm:text-sm font-medium hover:bg-[#74C7F2] hover:text-white transition-colors whitespace-nowrap self-start sm:self-auto"
           >
             Continue Setup
           </Link>
         </div>
 
         {/* Progress Bar */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
               className="bg-gradient-to-r from-[#74C7F2] to-[#A8D8F0] h-2 rounded-full transition-all duration-500 ease-out"
@@ -73,30 +73,36 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* Completion Steps - Minimalistic */}
-        <div className="flex items-center justify-between">
+        {/* Completion Steps - Mobile Responsive */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-2">
           <div className="flex items-center gap-2">
-            <img src={check} alt="" className="h-3 w-3" />
-            <span className="text-sm text-gray-700">Add Work Samples</span>
+            <img src={check} alt="" className="h-3 w-3 flex-shrink-0" />
+            <span className="text-xs sm:text-sm text-gray-700">
+              Add Work Samples
+            </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <img src={check} alt="" className="h-3 w-3" />
-            <span className="text-sm text-gray-700">
+            <img src={check} alt="" className="h-3 w-3 flex-shrink-0" />
+            <span className="text-xs sm:text-sm text-gray-700">
               Complete Skills Assessment
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <img src={check} alt="" className="h-3 w-3" />
-            <span className="text-sm text-gray-700">
+            <img src={check} alt="" className="h-3 w-3 flex-shrink-0" />
+            <span className="text-xs sm:text-sm text-gray-700">
               Upload ID Verification
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <img src={check} alt="" className="h-3 w-3 grayscale-100" />
-            <span className="text-sm text-gray-400">
+            <img
+              src={check}
+              alt=""
+              className="h-3 w-3 grayscale-100 flex-shrink-0"
+            />
+            <span className="text-xs sm:text-sm text-gray-400">
               Set Availability Schedule
             </span>
           </div>

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -7,8 +7,26 @@ import "swiper/css";
 import sideImg from "../../assets/images/auth.jpg";
 import auth2 from "../../assets/images/auth2.jpg";
 import auth3 from "../../assets/images/auth3.jpg";
+import { ROLES } from "../../constants/roles.js";
 
 const Login = () => {
+  const navigate = useNavigate();
+
+  const handleLogin = () => {
+    // Get the stored role from localStorage
+    const storedRole = localStorage.getItem("userRole");
+
+    // Navigate based on the stored role
+    if (storedRole === ROLES.CUSTOMER) {
+      navigate("/customer-home");
+    } else if (storedRole === ROLES.WORKER) {
+      navigate("/worker-home");
+    } else {
+      // Fallback to customer home if no role is stored
+      navigate("/customer-home");
+    }
+  };
+
   const sliderData = [
     {
       image: sideImg,
@@ -120,6 +138,7 @@ const Login = () => {
 
             {/* Login button */}
             <button
+              onClick={handleLogin}
               className="mt-5 h-11 w-full rounded-full text-white text-sm font-medium shadow-sm"
               style={{ background: "var(--gradient-main)" }}
             >

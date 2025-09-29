@@ -128,7 +128,7 @@ const JobCard = ({
         <button className="flex-1 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium hover:opacity-80 transition whitespace-nowrap cursor-pointer text-xs sm:text-sm" onClick={() => navigate('/customer-booking/:slug')}>
           View Detail
         </button>
-        <button className="flex-1 px-3 sm:px-4 py-2 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-100 transition whitespace-nowrap text-xs sm:text-sm cursor-pointer">
+        <button className="flex-1 px-3 sm:px-4 py-2 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-100 transition whitespace-nowrap text-xs sm:text-sm cursor-pointer" onClick={() => navigate('/chat')}>
           Message Worker
         </button>
       </div>

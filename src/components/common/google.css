@@ -1,0 +1,129 @@
+/* Hide Google branding */
+.goog-logo-link,
+.goog-te-gadget span {
+  display: none !important;
+}
+.goog-te-gadget {
+  font-size: 0 !important; /* hide default text */
+  color: transparent !important;
+}
+.VIpgJd-ZVi9od-ORHb-OEVmcd {
+  display: none;
+}
+body {
+  top: 0 !important;
+  position: static !important;
+}
+/* Wrapper */
+.translate-wrapper {
+  display: inline-block;
+  position: relative;
+}
+
+/* Style the actual dropdown to match auth buttons */
+.goog-te-combo,
+.enhanced-translate-select {
+  padding: 8px 12px;
+  border-radius: 9999px; /* rounded-full to match auth buttons */
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(217, 217, 217, 0.35); /* matches bg-[#D9D9D9]/35 */
+  color: rgba(0, 0, 0, 0.7); /* matches text-black/70 */
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+  appearance: none; /* remove default arrow */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  min-width: 140px; /* Increased to accommodate flags */
+  text-align: left; /* Align left for flag + text */
+  font-family: inherit;
+  padding-right: 32px; /* More space for arrow */
+}
+
+/* Hover and focus effects to match button behavior */
+.goog-te-combo:hover,
+.enhanced-translate-select:hover {
+  color: rgba(0, 0, 0, 1); /* matches hover:text-black */
+  background: rgba(255, 255, 255, 1); /* matches hover:bg-white */
+  border-color: rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.goog-te-combo:focus,
+.enhanced-translate-select:focus {
+  color: rgba(0, 0, 0, 1);
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Dropdown options styling with flag support */
+.goog-te-combo option,
+.enhanced-translate-select option {
+  color: rgba(0, 0, 0, 0.8) !important;
+  background: #fff !important;
+  padding: 10px 12px !important;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.goog-te-combo option:hover,
+.enhanced-translate-select option:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Custom arrow that matches the design */
+.translate-wrapper::after {
+  content: "⌄";
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.5);
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+
+.translate-wrapper:hover::after {
+  color: rgba(0, 0, 0, 0.8);
+}
+
+/* Enhanced styling for flag display */
+.enhanced-translate-select {
+  letter-spacing: 0.02em;
+}
+
+/* Ensure flags are properly spaced */
+.enhanced-translate-select option {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+}
+/* 
+.skiptranslate{
+    display: none;  
+} */
+
+/* Additional refinements for professional look */
+.goog-te-combo::-ms-expand {
+  display: none; /* Hide default arrow in IE */
+}
+
+/* Ensure consistent height with auth buttons */
+.translate-wrapper {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.goog-te-combo {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

@@ -14,6 +14,8 @@ import { Wallet, BriefcaseBusiness } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import ScrollToTop from "../components/common/ScrollToTop.jsx";
 import Footer from "../components/common/Footer";
+import GoogleTranslate from "../components/common/GoogleTranslate.jsx";
+import logo from "../assets/logo.png";
 
 const WorkerNavbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -43,12 +45,14 @@ const WorkerNavbar = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             {/* Logo - Far Left */}
-            <div className="font-bold text-lg tracking-wide">LOGO HERE</div>
+            <div className="flex items-center space-x-2">
+              <img src={logo} alt="Logo" className="h-10 w-auto" />
+            </div>
 
             {/* Center Section - Nav Links and Search */}
-            <div className="hidden md:flex items-center space-x-[2.125rem] md:flex-1 md:min-w-0 md:justify-center">
+            <div className="hidden md:flex items-center space-x-4 md:flex-1 md:min-w-0 md:justify-center">
               {/* Nav Links */}
-              <div className="flex space-x-[2.125rem] shrink-0">
+              <div className="flex space-x-2 shrink-0">
                 {workerNavItems.map((item) => (
                   <NavItem
                     key={item.to}
@@ -60,7 +64,7 @@ const WorkerNavbar = () => {
               </div>
 
               {/* Search Bar */}
-              <div className="relative min-w-0">
+              <div className="relative min-w-0 ml-4">
                 <FiSearch
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   size={14}
@@ -71,13 +75,13 @@ const WorkerNavbar = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   aria-label="Search job request"
-                  className="pl-8 pr-3 py-1.5 w-40 lg:w-56 xl:w-64 max-w-full text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#74C7F2] focus:border-[#74C7F2] bg-sky-50"
+                  className="pl-9 pr-3 py-1.5 w-40 lg:w-48 xl:w-56 max-w-full text-xs border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#74C7F2] focus:border-[#74C7F2] bg-sky-50"
                 />
               </div>
             </div>
 
             {/* Right Icons - Far Right */}
-            <div className="hidden md:flex items-center space-x-3 shrink-0">
+            <div className="hidden md:flex items-center space-x-2 shrink-0">
               <div onClick={() => navigate("/chat")}>
                 <IconButton
                   icon={<FiMessageSquare size={14} color="#74C7F2" />}
@@ -88,10 +92,13 @@ const WorkerNavbar = () => {
                 className="bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] border-0"
                 hasNotification={true}
               />
+              <div>
+                <GoogleTranslate />
+              </div>
             </div>
 
             {/* Mobile menu button */}
-            <div className="md:hidden flex items-center space-x-3">
+            <div className="md:hidden flex items-center space-x-2">
               <IconButton
                 icon={<FiMessageSquare size={14} color="#74C7F2" />}
               />
@@ -119,7 +126,7 @@ const WorkerNavbar = () => {
       {/* Mobile Menu as overlay */}
       {isMobileMenuOpen && (
         <div
-          className="md:hidden fixed inset-0 z-[60]"
+          className="md:hidden fixed inset-0 z-[100]"
           role="dialog"
           aria-modal="true"
         >
@@ -131,11 +138,11 @@ const WorkerNavbar = () => {
 
           {/* Panel under navbar (h-14) */}
           <div className="absolute left-0 right-0 top-14">
-            <div className="mx-4">
-              <div className="bg-white shadow-lg rounded-lg border border-sky-100 overflow-hidden transition-transform duration-200 ease-out translate-y-0">
-                <div className="px-4 py-3 space-y-2 max-h-[70vh] overflow-y-auto">
+            <div className="flex justify-center px-4 sm:px-6">
+              <div className="bg-white shadow-xl rounded-xl border border-sky-100 overflow-hidden transition-all duration-300 ease-out w-full max-w-sm relative z-[110]">
+                <div className="px-4 py-4 space-y-1 max-h-[calc(100vh-4rem)] overflow-y-auto">
                   {/* Mobile Search */}
-                  <div className="mb-2">
+                  <div className="mb-3">
                     <div className="relative">
                       <FiSearch
                         className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -147,7 +154,7 @@ const WorkerNavbar = () => {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         aria-label="Search job request"
-                        className="pl-8 pr-3 py-1.5 w-full text-xs border border-sky-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#74C7F2] focus:border-[#74C7F2] bg-sky-50"
+                        className="pl-9 pr-3 py-2.5 w-full text-sm border border-sky-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#74C7F2] focus:border-[#74C7F2] bg-sky-50"
                       />
                     </div>
                   </div>
@@ -161,6 +168,53 @@ const WorkerNavbar = () => {
                       onNavigate={() => setIsMobileMenuOpen(false)}
                     />
                   ))}
+
+                  {/* Language Switcher for Mobile */}
+                  <div className="pt-3 mt-3 border-t border-sky-200">
+                    <div className="px-3 py-3 rounded-lg bg-sky-50 border border-sky-200">
+                      <p className="text-xs font-medium text-gray-600 mb-2 text-center">
+                        Language / Lugha
+                      </p>
+                      <div className="flex justify-center mb-2">
+                        <div className="relative z-[70]">
+                          <GoogleTranslate containerId="gt-worker-mobile" />
+                        </div>
+                      </div>
+                      {/* Fallback language options */}
+                      <div className="flex justify-center gap-2 text-xs">
+                        <button
+                          className="px-3 py-1.5 rounded bg-blue-100 text-blue-700 text-xs font-medium hover:bg-blue-200 transition-colors"
+                          onClick={() => {
+                            if (window.setGoogleTranslateLanguage) {
+                              window.setGoogleTranslateLanguage("en");
+                            }
+                          }}
+                        >
+                          EN
+                        </button>
+                        <button
+                          className="px-3 py-1.5 rounded bg-gray-100 text-gray-700 text-xs hover:bg-gray-200 transition-colors"
+                          onClick={() => {
+                            if (window.setGoogleTranslateLanguage) {
+                              window.setGoogleTranslateLanguage("sw");
+                            }
+                          }}
+                        >
+                          SW
+                        </button>
+                        <button
+                          className="px-3 py-1.5 rounded bg-gray-100 text-gray-700 text-xs hover:bg-gray-200 transition-colors"
+                          onClick={() => {
+                            if (window.setGoogleTranslateLanguage) {
+                              window.setGoogleTranslateLanguage("fr");
+                            }
+                          }}
+                        >
+                          FR
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -178,10 +232,10 @@ function NavItem({ icon, label, to }) {
       to={to}
       className={({ isActive }) =>
         twMerge(
-          "flex items-center space-x-1 text-xs px-2.5 py-1.5 rounded-md transition",
+          "flex items-center space-x-1.5 text-xs px-2.5 py-1.5 rounded-md transition-all duration-200",
           isActive
-            ? "bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium"
-            : "text-gray-700 hover:text-[#74C7F2]"
+            ? "bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium shadow-sm"
+            : "text-gray-700 hover:text-[#74C7F2] hover:bg-sky-50"
         )
       }
       end
@@ -200,16 +254,18 @@ function MobileNavItem({ icon, label, to, onNavigate }) {
       onClick={onNavigate}
       className={({ isActive }) =>
         twMerge(
-          "flex items-center space-x-3 text-sm px-3 py-2.5 rounded-md transition",
+          "flex items-center space-x-3 text-sm px-4 py-3 rounded-lg transition-all duration-200 w-full",
           isActive
-            ? "bg-[#DBF0FF] text-[#74C7F2] font-medium"
-            : "text-gray-700 hover:text-[#74C7F2]"
+            ? "bg-[#DBF0FF] text-[#74C7F2] font-medium shadow-sm"
+            : "text-gray-700 hover:text-[#74C7F2] hover:bg-sky-50"
         )
       }
       end
     >
-      {icon}
-      <span>{label}</span>
+      <div className="flex items-center space-x-3 w-full">
+        {icon}
+        <span className="flex-1">{label}</span>
+      </div>
     </NavLink>
   );
 }
@@ -219,13 +275,13 @@ function IconButton({ icon, className, hasNotification }) {
   return (
     <button
       className={twMerge(
-        "w-8 h-8 flex items-center justify-center rounded-full border border-sky-200 bg-sky-50 hover:bg-sky-100 transition relative",
+        "w-8 h-8 flex items-center justify-center rounded-full border border-sky-200 bg-sky-50 hover:bg-sky-100 transition-all duration-200 relative",
         className
       )}
     >
       {icon}
       {hasNotification && (
-        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
+        <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
       )}
     </button>
   );

@@ -8,8 +8,10 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Hero from "../../components/common/Hero";
+import { useNavigate } from "react-router-dom";
 
 const BookingDetail = () => {
+  const navigate = useNavigate();
   return (
     <div className="min-h-[80vh] bg-white">
       {/* Banner */}
@@ -54,10 +56,13 @@ const BookingDetail = () => {
             </div>
 
             <div className="mt-4 space-y-2">
-              <button className="w-full py-3 rounded-xl bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] text-white font-medium">
+              <button
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] text-white font-medium"
+                onClick={() => navigate("/worker-profile/slug")}
+              >
                 View Profile
               </button>
-              <button className="w-full py-3 rounded-xl border border-[#74C7F2] text-[#74C7F2] font-medium hover:bg-[#DBF0FF]">
+              <button className="w-full py-3 rounded-xl border border-[#74C7F2] text-[#74C7F2] font-medium hover:bg-[#DBF0FF]" onClick={() => navigate("/chat")}>
                 Message Worker
               </button>
             </div>
