@@ -45,13 +45,25 @@ const Row = ({ label, value, onToggle, start, end, onStart, onEnd }) => {
   const [openEnd, setOpenEnd] = useState(false);
 
   return (
-    <div className="flex items-center justify-between py-2">
-      <div className="w-16 text-sm text-gray-800">{label}</div>
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 space-y-3 sm:space-y-0">
+      <div className="flex items-center justify-between sm:justify-start sm:w-auto">
+        <div className="text-sm font-medium text-gray-800 min-w-[3rem]">
+          {label}
+        </div>
+        <div className="flex items-center gap-2 sm:hidden">
+          <Toggle checked={value} onChange={onToggle} />
+          <span className="text-xs text-gray-600">Available</span>
+        </div>
+      </div>
+
+      {/* Desktop toggle (hidden on mobile) */}
+      <div className="hidden sm:flex items-center gap-2">
         <Toggle checked={value} onChange={onToggle} />
         <span className="text-xs text-gray-600">Available</span>
       </div>
-      <div className="flex items-center gap-2">
+
+      {/* Time selectors */}
+      <div className="flex items-center gap-2 justify-center sm:justify-end">
         <div className={!value ? "opacity-50 pointer-events-none" : ""}>
           <Dropdown
             icon={<Clock size={14} className="text-gray-400 mr-2" />}
@@ -176,22 +188,23 @@ const CalendarAvailability = ({ slots, setSlots }) => {
       </div>
 
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 gap-1 text-[11px] text-gray-500 mb-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-[10px] sm:text-[11px] text-gray-500 mb-1">
         {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((w) => (
-          <div key={w} className="text-center">
-            {w}
+          <div key={w} className="text-center py-1">
+            <span className="hidden sm:inline">{w}</span>
+            <span className="sm:hidden">{w[0]}</span>
           </div>
         ))}
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5 sm:gap-1">
         {daysMatrix().map((d) => {
           const key = keyOf(d);
           const slot = slots[key];
           const inMonth = isCurrentMonth(d);
           const selectedCls = isSelected(d)
-            ? "ring-2 ring-sky-300 border-sky-300"
+            ? "ring-1 sm:ring-2 ring-sky-300 border-sky-300"
             : "border-gray-200";
           const activeCls =
             inMonth && slot?.on ? "bg-[#F0F7FF] border-sky-200" : "bg-white";
@@ -200,14 +213,17 @@ const CalendarAvailability = ({ slots, setSlots }) => {
             <button
               key={key}
               onClick={() => setSelected(new Date(d))}
-              className={`relative h-16 rounded-lg border ${selectedCls} ${activeCls} ${textCls} hover:bg-sky-50 transition`}
+              className={`relative h-12 sm:h-16 rounded-md sm:rounded-lg border ${selectedCls} ${activeCls} ${textCls} hover:bg-sky-50 transition`}
             >
-              <div className="absolute top-1 left-1 text-[11px]">
+              <div className="absolute top-0.5 sm:top-1 left-0.5 sm:left-1 text-[10px] sm:text-[11px]">
                 {d.getDate()}
               </div>
               {slot?.on && inMonth && (
-                <div className="absolute bottom-1 left-1 right-1 text-[10px] text-sky-700 truncate">
-                  {slot.start} – {slot.end}
+                <div className="absolute bottom-0.5 sm:bottom-1 left-0.5 sm:left-1 right-0.5 sm:right-1 text-[8px] sm:text-[10px] text-sky-700 truncate">
+                  <span className="hidden sm:inline">
+                    {slot.start} – {slot.end}
+                  </span>
+                  <span className="sm:hidden">•</span>
                 </div>
               )}
             </button>
@@ -218,7 +234,7 @@ const CalendarAvailability = ({ slots, setSlots }) => {
       {/* Editor for selected date */}
       <div className="mt-4 rounded-xl border border-gray-200 bg-white p-3">
         {selected ? (
-          <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="space-y-3">
             <div className="text-sm font-medium text-gray-800">
               {selected.toLocaleDateString(undefined, {
                 weekday: "short",
@@ -227,7 +243,7 @@ const CalendarAvailability = ({ slots, setSlots }) => {
                 day: "numeric",
               })}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <div className="flex items-center gap-2">
                 <Toggle
                   checked={!!selectedSlot?.on}
@@ -297,10 +313,10 @@ const Step5Availability = () => {
     setSchedule((prev) => ({ ...prev, [day]: { ...prev[day], [key]: value } }));
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6 max-w-5xl mx-auto px-4 sm:px-0">
       {/* Top helper */}
-      <div className="flex items-start gap-2 text-[#2E90FA] bg-[#EFF6FF] rounded-2xl border border-[#B6E0FE] p-5">
-        <Info className="w-5 h-5" />
+      <div className="flex items-start gap-2 text-[#2E90FA] bg-[#EFF6FF] rounded-2xl border border-[#B6E0FE] p-4 sm:p-5">
+        <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
         <div>
           <div className="text-sm font-semibold text-gray-900">
             Set Your Working Hours
@@ -314,13 +330,13 @@ const Step5Availability = () => {
       </div>
 
       {/* Method selection */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-5">
         <div className="text-sm font-semibold text-gray-900 mb-3">
           Choose Your Availability Method
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
-            className={`rounded-xl border p-4 text-left ${
+            className={`rounded-xl border p-3 sm:p-4 text-left ${
               method === "calendar"
                 ? "border-sky-300 bg-[#F0F7FF]"
                 : "border-gray-200 bg-white"
@@ -328,7 +344,7 @@ const Step5Availability = () => {
             onClick={() => setMethod("calendar")}
           >
             <div className="flex items-start gap-3">
-              <CalendarDays className="w-5 h-5 text-gray-600" />
+              <CalendarDays className="w-5 h-5 text-gray-600 flex-shrink-0" />
               <div>
                 <div className="text-sm font-semibold text-gray-900">
                   Calendar View
@@ -340,7 +356,7 @@ const Step5Availability = () => {
             </div>
           </button>
           <button
-            className={`rounded-xl border p-4 text-left ${
+            className={`rounded-xl border p-3 sm:p-4 text-left ${
               method === "timeblocks"
                 ? "border-sky-300 bg-[#F0F7FF]"
                 : "border-gray-200 bg-white"
@@ -348,7 +364,7 @@ const Step5Availability = () => {
             onClick={() => setMethod("timeblocks")}
           >
             <div className="flex items-start gap-3">
-              <Blocks className="w-5 h-5 text-gray-600" />
+              <Blocks className="w-5 h-5 text-gray-600 flex-shrink-0" />
               <div>
                 <div className="text-sm font-semibold text-gray-900">
                   Time Blocks
@@ -363,7 +379,7 @@ const Step5Availability = () => {
       </div>
 
       {/* Availability editor - conditional */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-5">
         <div className="text-sm font-semibold text-gray-900 mb-3">
           {method === "calendar"
             ? "Set Your Calendar Availability"
@@ -393,9 +409,9 @@ const Step5Availability = () => {
       </div>
 
       {/* Emergency */}
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 sm:p-5">
         <div className="flex items-start gap-3">
-          <Zap className="w-5 h-5 text-amber-600" />
+          <Zap className="w-5 h-5 text-amber-600 flex-shrink-0" />
           <div className="flex-1">
             <div className="text-sm font-semibold text-amber-900">
               Emergency/Urgent Jobs
@@ -411,9 +427,9 @@ const Step5Availability = () => {
       </div>
 
       {/* Completion banner */}
-      <div className="rounded-2xl border border-green-200 bg-green-50 p-5">
+      <div className="rounded-2xl border border-green-200 bg-green-50 p-4 sm:p-5">
         <div className="flex items-start gap-3">
-          <CheckCircle2 className="w-5 h-5 text-green-600" />
+          <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />
           <div>
             <div className="text-sm font-semibold text-green-800">
               Almost Done!
