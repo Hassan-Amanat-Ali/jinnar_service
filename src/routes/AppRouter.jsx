@@ -37,6 +37,7 @@ import PaymentMethods from "../pages/worker/PaymentMethods.jsx";
 import CategoryService from "../pages/customer/CategoryService.jsx";
 import AboutUs from "../components/common/AboutUs.jsx";
 import Jinnar from "../components/common/Jinnar.jsx";
+import JinnarDetailed from "../components/common/JinnarDetailed.jsx";
 
 const router = createBrowserRouter([
   {
@@ -44,6 +45,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Landing /> },
       { path: "what-is-jinnar", element: <Jinnar /> },
+      { path: "what-is-jinnar/detailed", element: <JinnarDetailed /> },
     ],
   },
   { path: "role", element: <RoleSelection /> },

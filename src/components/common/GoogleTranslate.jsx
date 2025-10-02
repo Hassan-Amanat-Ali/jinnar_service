@@ -1,28 +1,58 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import "./google.css";
 
 const GoogleTranslate = ({ containerId = "google_translate_element" }) => {
+  const location = useLocation();
+  const [hasCombo, setHasCombo] = useState(false);
+
   useEffect(() => {
     const ensureInitialized = (targetId) => {
-      if (
-        window.google &&
-        window.google.translate &&
-        window.google.translate.TranslateElement
-      ) {
-        try {
-          // eslint-disable-next-line no-new
-          new window.google.translate.TranslateElement(
-            {
-              pageLanguage: "en",
-              includedLanguages: "en,sw,fr",
-              autoDisplay: false,
-            },
-            targetId
-          );
-        } catch (e) {
-          // ignore
+      const doInit = () => {
+        if (
+          window.google &&
+          window.google.translate &&
+          window.google.translate.TranslateElement
+        ) {
+          try {
+            const container = document.getElementById(targetId);
+            if (!container) return;
+            // Avoid duplicate widgets in the same container
+            const alreadyHasWidget = container.querySelector(
+              ".goog-te-gadget, .goog-te-gadget-simple"
+            );
+            if (alreadyHasWidget) return;
+            // eslint-disable-next-line no-new
+            new window.google.translate.TranslateElement(
+              {
+                pageLanguage: "en",
+                includedLanguages: "en,sw,fr",
+                autoDisplay: false,
+              },
+              targetId
+            );
+          } catch (e) {
+            // ignore
+          }
         }
-      }
+      };
+
+      // If library not ready yet, poll briefly
+      let attempts = 0;
+      const maxAttempts = 20;
+      const interval = setInterval(() => {
+        attempts += 1;
+        if (
+          window.google &&
+          window.google.translate &&
+          window.google.translate.TranslateElement
+        ) {
+          clearInterval(interval);
+          doInit();
+        } else if (attempts >= maxAttempts) {
+          clearInterval(interval);
+        }
+      }, 150);
     };
 
     const filterLanguages = () => {
@@ -45,7 +75,14 @@ const GoogleTranslate = ({ containerId = "google_translate_element" }) => {
     const globalInit = () => {
       const ids = Array.from(window._gtPendingIds || []);
       ids.forEach((id) => ensureInitialized(id));
-      const observer = new MutationObserver(filterLanguages);
+      const observer = new MutationObserver(() => {
+        filterLanguages();
+        const container = document.getElementById(containerId);
+        if (container) {
+          const select = container.querySelector(".goog-te-combo");
+          setHasCombo(Boolean(select));
+        }
+      });
       observer.observe(document.body, { childList: true, subtree: true });
       window.setGoogleTranslateLanguage = function setGoogleTranslateLanguage(
         langCode
@@ -81,8 +118,19 @@ const GoogleTranslate = ({ containerId = "google_translate_element" }) => {
     }
   }, [containerId]);
 
+  // Re-initialize on route changes to handle SPA navigations
+  useEffect(() => {
+    // Small delay to allow target node to mount in new route
+    const timer = setTimeout(() => {
+      if (window.googleTranslateElementInit) {
+        window.googleTranslateElementInit();
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [location.pathname, location.search, location.hash]);
+
   return (
-    <div className="translate-wrapper">
+    <div className={`translate-wrapper ${hasCombo ? "show-arrow" : ""}`}>
       <div id={containerId}></div>
     </div>
   );

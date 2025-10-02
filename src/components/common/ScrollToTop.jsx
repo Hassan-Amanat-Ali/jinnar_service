@@ -4,7 +4,7 @@ import { useLocation } from "react-router-dom";
 // Scroll to top on route change; if a hash exists, scroll to that element smoothly
 const ScrollToTop = () => {
   const location = useLocation();
-  const { pathname, hash } = location;
+  const { pathname, hash, key } = location;
 
   useEffect(() => {
     if (hash) {
@@ -21,7 +21,7 @@ const ScrollToTop = () => {
     } else {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     }
-  }, [pathname, hash]);
+  }, [pathname, hash, key]);
 
   return null;
 };

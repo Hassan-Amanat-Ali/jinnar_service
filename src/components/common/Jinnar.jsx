@@ -253,7 +253,14 @@ const Jinnar = () => {
 
         <p className="text-xs text-gray-500 mt-6 text-center">
           Detailed Step-by-Step Breakdown is available on a dedicated page for
-          in-depth readers.
+          in-depth readers.{" "}
+          <a
+            href="/what-is-jinnar/detailed"
+            className="underline text-black hover:text-black/80"
+          >
+            View the full steps
+          </a>
+          .
         </p>
       </section>
 

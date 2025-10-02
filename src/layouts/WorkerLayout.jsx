@@ -92,21 +92,13 @@ const WorkerNavbar = () => {
                 className="bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] border-0"
                 hasNotification={true}
               />
-              <div>
-                <GoogleTranslate />
-              </div>
+            </div>
+            <div className="ml-6">
+              <GoogleTranslate containerId="gt-worker-shared" />
             </div>
 
             {/* Mobile menu button */}
             <div className="md:hidden flex items-center space-x-2">
-              <IconButton
-                icon={<FiMessageSquare size={14} color="#74C7F2" />}
-              />
-              <IconButton
-                icon={<FiBell size={14} color="white" />}
-                className="bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] border-0"
-                hasNotification={true}
-              />
               <button
                 onClick={toggleMobileMenu}
                 className="w-8 h-8 flex items-center justify-center rounded-full border border-sky-200 bg-sky-50 hover:bg-sky-100 transition"
@@ -169,52 +161,18 @@ const WorkerNavbar = () => {
                     />
                   ))}
 
-                  {/* Language Switcher for Mobile */}
-                  <div className="pt-3 mt-3 border-t border-sky-200">
-                    <div className="px-3 py-3 rounded-lg bg-sky-50 border border-sky-200">
-                      <p className="text-xs font-medium text-gray-600 mb-2 text-center">
-                        Language / Lugha
-                      </p>
-                      <div className="flex justify-center mb-2">
-                        <div className="relative z-[70]">
-                          <GoogleTranslate containerId="gt-worker-mobile" />
-                        </div>
-                      </div>
-                      {/* Fallback language options */}
-                      <div className="flex justify-center gap-2 text-xs">
-                        <button
-                          className="px-3 py-1.5 rounded bg-blue-100 text-blue-700 text-xs font-medium hover:bg-blue-200 transition-colors"
-                          onClick={() => {
-                            if (window.setGoogleTranslateLanguage) {
-                              window.setGoogleTranslateLanguage("en");
-                            }
-                          }}
-                        >
-                          EN
-                        </button>
-                        <button
-                          className="px-3 py-1.5 rounded bg-gray-100 text-gray-700 text-xs hover:bg-gray-200 transition-colors"
-                          onClick={() => {
-                            if (window.setGoogleTranslateLanguage) {
-                              window.setGoogleTranslateLanguage("sw");
-                            }
-                          }}
-                        >
-                          SW
-                        </button>
-                        <button
-                          className="px-3 py-1.5 rounded bg-gray-100 text-gray-700 text-xs hover:bg-gray-200 transition-colors"
-                          onClick={() => {
-                            if (window.setGoogleTranslateLanguage) {
-                              window.setGoogleTranslateLanguage("fr");
-                            }
-                          }}
-                        >
-                          FR
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  <MobileNavItem
+                    icon={<FiMessageSquare size={14} />}
+                    label="Messages"
+                    to="/chat"
+                    onNavigate={() => setIsMobileMenuOpen(false)}
+                  />
+                  <MobileNavItem
+                    icon={<FiBell size={14} />}
+                    label="Notifications"
+                    to="/worker-notifications"
+                    onNavigate={() => setIsMobileMenuOpen(false)}
+                  />
                 </div>
               </div>
             </div>

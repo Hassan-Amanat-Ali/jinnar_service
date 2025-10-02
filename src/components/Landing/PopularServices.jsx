@@ -16,10 +16,8 @@ import petIcon from "../../assets/icons/pet.png";
 import car from "../../assets/icons/car.png";
 import carepentryIcon from "../../assets/icons/carpentry.png";
 import Button from "../common/Button";
-import { useNavigate } from "react-router-dom";
 
 const PopularServices = () => {
-  const navigate = useNavigate();
   const services = [
     { icon: cleaningIcon, image: cleaning, name: "House Cleaning", jobs: 1200 },
     { icon: carepentryIcon, image: carepentry, name: "Carpentry", jobs: 800 },
@@ -52,8 +50,9 @@ const PopularServices = () => {
         </p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
           {services.map((service, i) => (
-            <div
+            <a
               key={i}
+              href="/services/slug"
               className="aspect-square bg-white border border-border rounded-lg sm:rounded-xl shadow-sm overflow-hidden relative cursor-pointer hover:shadow-md transition-all duration-300 group"
             >
               <img
@@ -80,16 +79,13 @@ const PopularServices = () => {
                   {service.jobs}+ Jobs
                 </p>
               </div>
-            </div>
+            </a>
           ))}
         </div>
-        <div
-          className="text-center mt-6 md:mt-8"
-          onClick={() => {
-            navigate("/services");
-          }}
-        >
-          <Button title="View All Services" />
+        <div className="text-center mt-6 md:mt-8">
+          <a href="/services" className="inline-block">
+            <Button title="View All Services" />
+          </a>
         </div>
       </div>
     </section>

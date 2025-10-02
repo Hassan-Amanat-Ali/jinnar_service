@@ -1,4 +1,3 @@
-import { Link, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -10,20 +9,18 @@ import auth3 from "../../assets/images/auth3.jpg";
 import { ROLES } from "../../constants/roles.js";
 
 const Login = () => {
-  const navigate = useNavigate();
-
   const handleLogin = () => {
     // Get the stored role from localStorage
     const storedRole = localStorage.getItem("userRole");
 
     // Navigate based on the stored role
     if (storedRole === ROLES.CUSTOMER) {
-      navigate("/customer-home");
+      window.location.href = "/customer-home";
     } else if (storedRole === ROLES.WORKER) {
-      navigate("/worker-home");
+      window.location.href = "/worker-home";
     } else {
       // Fallback to customer home if no role is stored
-      navigate("/customer-home");
+      window.location.href = "/customer-home";
     }
   };
 
@@ -122,12 +119,12 @@ const Login = () => {
                 <label className="block text-sm font-medium text-[#141414]">
                   Password
                 </label>
-                <Link
-                  to="/forgot-password"
+                <a
+                  href="/forgot-password"
                   className="text-xs text-[#74C7F2] hover:text-[#5ba8e0]"
                 >
                   Forgot Password?
-                </Link>
+                </a>
               </div>
               <input
                 type="password"
@@ -167,12 +164,12 @@ const Login = () => {
             {/* Signup prompt */}
             <p className="mt-6 text-center text-sm text-[#141414]/80">
               Don’t have an account?{" "}
-              <Link
-                to="/signup"
+              <a
+                href="/signup"
                 className="text-[#74C7F2] hover:text-[#5ba8e0] font-medium"
               >
                 Sign Up
-              </Link>
+              </a>
             </p>
           </div>
         </div>

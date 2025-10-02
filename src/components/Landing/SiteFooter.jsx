@@ -3,7 +3,6 @@ import arrow from "../../assets/icons/arrow.png";
 import bubble1 from "../../assets/icons/bubble1.png";
 import followUs from "../../assets/icons/follow-us.png";
 import { Mail, Phone, MapPin } from "lucide-react";
-import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -42,8 +41,8 @@ const Footer = () => {
               Experience the difference with our verified professionals. Quality
               service, guaranteed satisfaction.
             </p>
-            <Link
-              to="/services"
+            <a
+              href="/services"
               className="bg-white hover:bg-gray-100 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-sm md:text-base font-semibold text-gray-900 flex items-center gap-1.5 sm:gap-2 transition-all duration-300 hover:scale-105 hover:shadow-lg"
             >
               Start Booking Now
@@ -52,7 +51,7 @@ const Footer = () => {
                 alt=""
                 className="w-3 sm:w-4 md:w-5 h-2.5 sm:h-3 md:h-4"
               />
-            </Link>
+            </a>
           </div>
         </div>
       </div>
@@ -84,44 +83,44 @@ const Footer = () => {
             <h1 className="font-semibold text-base">Quick Links</h1>
             <ul className="text-xs sm:text-sm mt-3 space-y-2 font-light text-gray-400">
               <li>
-                <Link
+                <a
                   className="hover:text-secondary transition-colors"
-                  to="/customer-home"
+                  href="/customer-home"
                 >
                   Home
-                </Link>
+                </a>
               </li>
               <li>
-                <Link
+                <a
                   className="hover:text-secondary transition-colors"
-                  to="/#how-it-works"
+                  href="/#how-it-works"
                 >
                   How It Works
-                </Link>
+                </a>
               </li>
               <li>
-                <Link
+                <a
                   className="hover:text-secondary transition-colors"
-                  to="/services"
+                  href="/services"
                 >
                   Services
-                </Link>
+                </a>
               </li>
               <li>
-                <Link
+                <a
                   className="hover:text-secondary transition-colors"
-                  to="/services/slug"
+                  href="/services/slug"
                 >
                   Workers
-                </Link>
+                </a>
               </li>
               <li>
-                <Link
+                <a
                   className="hover:text-secondary transition-colors"
-                  to="/about-us"
+                  href="/about-us"
                 >
                   About Us
-                </Link>
+                </a>
               </li>
             </ul>
           </div>
@@ -131,44 +130,44 @@ const Footer = () => {
             <h1 className="font-semibold text-base">Popular Services</h1>
             <ul className="text-xs sm:text-sm mt-3 space-y-2 font-light text-gray-400">
               <li>
-                <Link
+                <a
                   className="hover:text-secondary transition-colors"
-                  to="/profile?tab=help"
+                  href="/profile?tab=help"
                 >
                   Help Center
-                </Link>
+                </a>
               </li>
               <li>
-                <Link
+                <a
                   className="hover:text-secondary transition-colors"
-                  to="/profile?tab=help"
+                  href="/profile?tab=help"
                 >
                   FAQ
-                </Link>
+                </a>
               </li>
               <li>
-                <Link
+                <a
                   className="hover:text-secondary transition-colors"
-                  to="/profile?tab=complaint"
+                  href="/what-is-jinnar"
                 >
                   What is Jinnar?
-                </Link>
+                </a>
               </li>
               <li>
-                <Link
+                <a
                   className="hover:text-secondary transition-colors"
-                  to="/profile?tab=privacy"
+                  href="/profile?tab=privacy"
                 >
                   Privacy Policy
-                </Link>
+                </a>
               </li>
               <li>
-                <Link
+                <a
                   className="hover:text-secondary transition-colors"
-                  to="/profile?tab=terms"
+                  href="/profile?tab=terms"
                 >
                   Terms of Service
-                </Link>
+                </a>
               </li>
             </ul>
           </div>

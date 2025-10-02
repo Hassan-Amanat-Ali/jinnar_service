@@ -149,7 +149,7 @@ const Footer = () => {
               <li>
                 <Link
                   className="hover:text-white transition-colors"
-                  to="/profile?tab=complaint"
+                  to="/what-is-jinnar"
                 >
                   What is Jinnar?
                 </Link>

@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import ScrollToTop from "../components/common/ScrollToTop.jsx";
 import GoogleTranslate from "../components/common/GoogleTranslate.jsx";
@@ -8,10 +8,38 @@ import logo from "../assets/logo-new.png";
 const LandingHeader = () => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [translateKey, setTranslateKey] = useState(0);
+
+  // Force GoogleTranslate remount when route changes
+  useEffect(() => {
+    setTranslateKey((prev) => prev + 1);
+    // Close mobile menu on route change
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Cleanup Google Translate on unmount
+  useEffect(() => {
+    return () => {
+      // Clean up any Google Translate elements
+      const gtDesktopContainer = document.getElementById("gt-landing-desktop");
+      if (gtDesktopContainer) {
+        gtDesktopContainer.innerHTML = "";
+      }
+      const gtMobileContainer = document.getElementById("gt-landing-mobile");
+      if (gtMobileContainer) {
+        gtMobileContainer.innerHTML = "";
+      }
+      // Remove from pending IDs
+      if (window._gtPendingIds) {
+        window._gtPendingIds.delete("gt-landing-desktop");
+        window._gtPendingIds.delete("gt-landing-mobile");
+      }
+    };
+  }, []);
 
   const navItems = [
     { to: "/", label: "Home" },
-    { to: "/#how-it-works", label: "How it Works" },
+    { to: "/what-is-jinnar", label: "What is Jinnar" },
     { to: "/customer-home", label: "Services" },
     { to: "/services/slug", label: "Workers" },
     { to: "/profile?tab=help", label: "Help" },
@@ -31,19 +59,6 @@ const LandingHeader = () => {
     }
 
     return location.pathname === targetPath;
-  };
-
-  const handleAnchorClick = (e, to) => {
-    const [, hashPartRaw] = to.split("#");
-    if (!hashPartRaw) return;
-
-    const targetId = hashPartRaw;
-    if (location.pathname === "/") {
-      e.preventDefault();
-      const el = document.getElementById(targetId);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-      window.history.replaceState(null, "", `#${targetId}`);
-    }
   };
 
   const toggleMobileMenu = () => {
@@ -71,10 +86,9 @@ const LandingHeader = () => {
             {navItems.map((item) => {
               const active = isNavActive(item.to);
               return (
-                <Link
+                <a
                   key={item.to}
-                  to={item.to}
-                  onClick={(e) => handleAnchorClick(e, item.to)}
+                  href={item.to}
                   className={
                     active
                       ? "text-secondary hover:text-secondary font-medium"
@@ -82,7 +96,7 @@ const LandingHeader = () => {
                   }
                 >
                   {item.label}
-                </Link>
+                </a>
               );
             })}
           </nav>
@@ -105,8 +119,11 @@ const LandingHeader = () => {
             </Link>
 
             {/* Google Translate - Desktop only */}
-            <div className="">
-              <GoogleTranslate />
+            <div>
+              <GoogleTranslate
+                key={`landing-translate-${translateKey}`}
+                containerId="gt-landing-desktop"
+              />
             </div>
 
             {/* Mobile Hamburger Button */}
@@ -147,13 +164,10 @@ const LandingHeader = () => {
                   {navItems.map((item) => {
                     const active = isNavActive(item.to);
                     return (
-                      <Link
+                      <a
                         key={item.to}
-                        to={item.to}
-                        onClick={(e) => {
-                          handleAnchorClick(e, item.to);
-                          closeMobileMenu();
-                        }}
+                        href={item.to}
+                        onClick={closeMobileMenu}
                         className={`block px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                           active
                             ? "bg-blue-50 text-blue-600 border border-blue-200"
@@ -161,7 +175,7 @@ const LandingHeader = () => {
                         }`}
                       >
                         {item.label}
-                      </Link>
+                      </a>
                     );
                   })}
 
