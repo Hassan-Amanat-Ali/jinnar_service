@@ -14,116 +14,155 @@ body {
   top: 0 !important;
   position: static !important;
 }
+
 /* Wrapper */
 .translate-wrapper {
   display: inline-block;
   position: relative;
-}
-
-/* Style the actual dropdown to match auth buttons */
-.goog-te-combo,
-.enhanced-translate-select {
-  padding: 8px 12px;
-  border-radius: 9999px; /* rounded-full to match auth buttons */
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background: rgba(217, 217, 217, 0.35); /* matches bg-[#D9D9D9]/35 */
-  color: rgba(0, 0, 0, 0.7); /* matches text-black/70 */
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.2s ease;
-  appearance: none; /* remove default arrow */
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  min-width: 140px; /* Increased to accommodate flags */
-  text-align: left; /* Align left for flag + text */
-  font-family: inherit;
-  padding-right: 32px; /* More space for arrow */
-}
-
-/* Hover and focus effects to match button behavior */
-.goog-te-combo:hover,
-.enhanced-translate-select:hover {
-  color: rgba(0, 0, 0, 1); /* matches hover:text-black */
-  background: rgba(255, 255, 255, 1); /* matches hover:bg-white */
-  border-color: rgba(0, 0, 0, 0.15);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.goog-te-combo:focus,
-.enhanced-translate-select:focus {
-  color: rgba(0, 0, 0, 1);
-  background: rgba(255, 255, 255, 1);
-  border-color: rgba(0, 0, 0, 0.2);
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.05);
-}
-
-/* Dropdown options styling with flag support */
-.goog-te-combo option,
-.enhanced-translate-select option {
-  color: rgba(0, 0, 0, 0.8) !important;
-  background: #fff !important;
-  padding: 10px 12px !important;
-  font-weight: 500;
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.goog-te-combo option:hover,
-.enhanced-translate-select option:hover {
-  background: rgba(0, 0, 0, 0.05) !important;
-}
-
-/* Custom arrow that matches the design */
-.translate-wrapper::after {
-  content: "⌄";
-  font-size: 12px;
-  color: rgba(0, 0, 0, 0.5);
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  transition: color 0.2s ease;
-}
-
-.translate-wrapper:hover::after {
-  color: rgba(0, 0, 0, 0.8);
-}
-
-/* Enhanced styling for flag display */
-.enhanced-translate-select {
-  letter-spacing: 0.02em;
-}
-
-/* Ensure flags are properly spaced */
-.enhanced-translate-select option {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  line-height: 1.5;
-}
-/* 
-.skiptranslate{
-    display: none;  
-} */
-
-/* Additional refinements for professional look */
-.goog-te-combo::-ms-expand {
-  display: none; /* Hide default arrow in IE */
-}
-
-/* Ensure consistent height with auth buttons */
-.translate-wrapper {
-  height: 40px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
 }
 
-.goog-te-combo {
-  height: 40px;
+/* Style the actual dropdown to match professional design */
+.goog-te-combo,
+.enhanced-translate-select {
+  padding: 4px 6px 4px 6px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #1f2937;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  min-width: 70px;
+  text-align: left;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  padding-right: 20px;
+  height: 28px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+/* Hover and focus effects for professional look */
+.goog-te-combo:hover,
+.enhanced-translate-select:hover {
+  color: #111827;
+  background: #f9fafb;
+  border-color: #d1d5db;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.goog-te-combo:focus,
+.enhanced-translate-select:focus {
+  color: #111827;
+  background: #ffffff;
+  border-color: #6b7280;
+  box-shadow: 0 0 0 1px rgba(107, 114, 128, 0.1), 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+/* Dropdown options styling */
+.goog-te-combo option,
+.enhanced-translate-select option {
+  color: #374151 !important;
+  background: #ffffff !important;
+  padding: 6px 8px !important;
+  font-weight: 500;
+  font-size: 11px;
+  line-height: 1.3;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.goog-te-combo option:hover,
+.enhanced-translate-select option:hover {
+  background: #f8fafc !important;
+  color: #111827 !important;
+}
+
+.goog-te-combo option:checked,
+.enhanced-translate-select option:checked {
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+  font-weight: 600;
+}
+
+/* Professional dropdown arrow */
+.translate-wrapper::after {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-top: 3px solid #6b7280;
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.translate-wrapper:hover::after {
+  border-top-color: #374151;
+}
+
+.goog-te-combo:focus + .translate-wrapper::after,
+.enhanced-translate-select:focus + .translate-wrapper::after {
+  border-top-color: #1f2937;
+}
+
+/* Enhanced styling for professional appearance */
+.enhanced-translate-select {
+  letter-spacing: 0.01em;
+  line-height: 1.5;
+}
+
+/* Ensure flags are properly spaced in options */
+.enhanced-translate-select option {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+}
+
+/* Remove default IE arrow */
+.goog-te-combo::-ms-expand,
+.enhanced-translate-select::-ms-expand {
+  display: none;
+}
+
+/* Active/selected state for better UX */
+.goog-te-combo:active,
+.enhanced-translate-select:active {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .goog-te-combo,
+  .enhanced-translate-select {
+    min-width: 60px;
+    font-size: 10px;
+    padding: 3px 5px 3px 4px;
+    height: 24px;
+    padding-right: 16px;
+  }
+
+  .translate-wrapper {
+    height: 24px;
+  }
+
+  .translate-wrapper::after {
+    right: 5px;
+    border-left-width: 2px;
+    border-right-width: 2px;
+    border-top-width: 2px;
+  }
 }
