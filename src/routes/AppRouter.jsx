@@ -38,6 +38,7 @@ import CategoryService from "../pages/customer/CategoryService.jsx";
 import AboutUs from "../components/common/AboutUs.jsx";
 import Jinnar from "../components/common/Jinnar.jsx";
 import JinnarDetailed from "../components/common/JinnarDetailed.jsx";
+import HowTrainingWorks from "../components/common/HowTrainingWorks.jsx";
 
 const router = createBrowserRouter([
   {
@@ -46,6 +47,7 @@ const router = createBrowserRouter([
       { index: true, element: <Landing /> },
       { path: "what-is-jinnar", element: <Jinnar /> },
       { path: "what-is-jinnar/detailed", element: <JinnarDetailed /> },
+      { path: "how-training-works", element: <HowTrainingWorks /> },
     ],
   },
   { path: "role", element: <RoleSelection /> },

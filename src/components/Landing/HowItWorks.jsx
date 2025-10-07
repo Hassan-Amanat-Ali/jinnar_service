@@ -107,6 +107,18 @@ const HowItWorks = () => {
             )
           )}
         </div>
+        {/* How Training Works section */}
+        <div
+          id="training-info"
+          className="mt-14 rounded-2xl border border-border bg-white p-6 text-center"
+        >
+          <h3 className="text-xl font-semibold mb-3 text-black">
+            Ready to start your learning journey?
+          </h3>
+          <a href="/how-training-works" className="btn-primary">
+            How Training Works
+          </a>
+        </div>
       </div>
     </section>
   );

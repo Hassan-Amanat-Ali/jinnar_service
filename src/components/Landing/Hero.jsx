@@ -42,28 +42,24 @@ const Hero = () => {
             </span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tight">
-            Find Trusted Workers <span className="text-secondary">Anytime</span>
+            Get Verified. Earn Your{" "}
+            <span className="text-secondary">Jinnar Badge</span> — For Free.
           </h1>
           <div className="h-1 w-24 sm:w-40 md:w-56 lg:w-72 bg-white/80 my-2" />
           <p className="mt-1 max-w-2xl text-white/90 text-base sm:text-lg">
-            Your reliable connection to skilled workers in your community.
+            Take short, self-paced lessons that fit your schedule — all at no
+            cost. Boost your visibility, build trust, and grow your earnings.
           </p>
 
           <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-            <button
+            <a
+              href="https://jinnar.vercel.app/signup"
+              target="_blank"
+              rel="noopener noreferrer"
               className="btn-primary"
-              onClick={() => navigate("/customer-home")}
             >
-              <FiUsers className="text-black" />
-              Find a Worker
-            </button>
-            <button
-              className="btn-outline"
-              onClick={() => navigate("/worker-home")}
-            >
-              <FiPlay className="text-white" />
-              Join as a Worker
-            </button>
+              Start Free Training
+            </a>
             <button
               className="btn-outline"
               onClick={() => navigate("/what-is-jinnar")}
