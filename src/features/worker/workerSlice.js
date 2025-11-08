@@ -1,38 +1,26 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { workerApi } from '../../api/workerApi';
+import { createSlice } from "@reduxjs/toolkit";
 
-export const fetchWorkerJobs = createAsyncThunk(
-  'worker/fetchJobs',
-  async (_, { rejectWithValue }) => {
-    try {
-      return await workerApi.getJobs();
-    } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
-    }
-  }
-);
-
+// Simple worker slice for managing worker-specific UI state
+// API calls are now handled by RTK Query (see services/api.js)
+// Use hooks like useGetJobsQuery(), useAddJobMutation(), useUpdateJobMutation() instead
 const workerSlice = createSlice({
-  name: 'worker',
+  name: "worker",
   initialState: {
-    jobs: [],
-    loading: false,
-    error: null,
+    selectedJob: null,
+    filters: {},
   },
-  extraReducers: (builder) => {
-    builder
-      .addCase(fetchWorkerJobs.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(fetchWorkerJobs.fulfilled, (state, action) => {
-        state.loading = false;
-        state.jobs = action.payload;
-      })
-      .addCase(fetchWorkerJobs.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
+  reducers: {
+    setSelectedJob: (state, action) => {
+      state.selectedJob = action.payload;
+    },
+    setFilters: (state, action) => {
+      state.filters = action.payload;
+    },
+    clearFilters: (state) => {
+      state.filters = {};
+    },
   },
 });
 
+export const { setSelectedJob, setFilters, clearFilters } = workerSlice.actions;
 export default workerSlice.reducer;

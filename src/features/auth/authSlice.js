@@ -1,94 +1,29 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { authApi } from '../../api/authApi';
-import { ROLES } from '../../constants/roles';
+import { createSlice } from "@reduxjs/toolkit";
 
-export const loginUser = createAsyncThunk(
-  'auth/loginUser',
-  async ({ role, credentials }, { rejectWithValue }) => {
-    try {
-      const res =
-        role === 'customer'
-          ? await authApi.customerLogin(credentials)
-          : await authApi.workerLogin(credentials);
-
-      localStorage.setItem('token', res.token);
-      localStorage.setItem('role', role);
-      return res.user;
-    } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
-    }
-  }
-);
-
-// Register (signup) thunk. Backend expects { mobileNumber, role: 'buyer'|'seller' }
-export const registerUser = createAsyncThunk(
-  'auth/registerUser',
-  async ({ role, data }, { rejectWithValue }) => {
-    try {
-      // Map frontend role to backend role names
-      const backendRole = role === ROLES.CUSTOMER ? 'buyer' : 'seller';
-      const payload = { ...data, role: backendRole };
-
-      const res =
-        role === ROLES.CUSTOMER
-          ? await authApi.customerSignup(payload)
-          : await authApi.workerSignup(payload);
-
-      // Persist token + frontend role
-      localStorage.setItem('token', res.token);
-      localStorage.setItem('role', role);
-      return res.user;
-    } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
-    }
-  }
-);
-
+// Simple auth slice for managing user state
+// API calls are now handled by RTK Query (see services/api.js)
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState: {
     user: null,
-    role: localStorage.getItem('role') || null,
-    loading: false,
-    error: null,
+    role: localStorage.getItem("role") || null,
+    token: localStorage.getItem("token") || null,
   },
   reducers: {
+    setUser: (state, action) => {
+      state.user = action.payload.user;
+      state.role = action.payload.role;
+      state.token = action.payload.token;
+    },
     logout: (state) => {
       state.user = null;
       state.role = null;
-      localStorage.removeItem('token');
-      localStorage.removeItem('role');
+      state.token = null;
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
     },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(loginUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(loginUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user = action.payload;
-      })
-      .addCase(loginUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
-    builder
-      .addCase(registerUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(registerUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user = action.payload;
-      })
-      .addCase(registerUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { setUser, logout } = authSlice.actions;
 export default authSlice.reducer;

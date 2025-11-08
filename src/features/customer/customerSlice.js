@@ -1,38 +1,27 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { customerApi } from '../../api/customerApi';
+import { createSlice } from "@reduxjs/toolkit";
 
-export const fetchCustomerBookings = createAsyncThunk(
-  'customer/fetchBookings',
-  async (_, { rejectWithValue }) => {
-    try {
-      return await customerApi.getBookings();
-    } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
-    }
-  }
-);
-
+// Simple customer slice for managing customer-specific UI state
+// API calls are now handled by RTK Query (see services/api.js)
+// Use hooks like useGetBookingsQuery(), useCreateBookingMutation() instead
 const customerSlice = createSlice({
-  name: 'customer',
+  name: "customer",
   initialState: {
-    bookings: [],
-    loading: false,
-    error: null,
+    selectedService: null,
+    filters: {},
   },
-  extraReducers: (builder) => {
-    builder
-      .addCase(fetchCustomerBookings.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(fetchCustomerBookings.fulfilled, (state, action) => {
-        state.loading = false;
-        state.bookings = action.payload;
-      })
-      .addCase(fetchCustomerBookings.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
+  reducers: {
+    setSelectedService: (state, action) => {
+      state.selectedService = action.payload;
+    },
+    setFilters: (state, action) => {
+      state.filters = action.payload;
+    },
+    clearFilters: (state) => {
+      state.filters = {};
+    },
   },
 });
 
+export const { setSelectedService, setFilters, clearFilters } =
+  customerSlice.actions;
 export default customerSlice.reducer;

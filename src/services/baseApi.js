@@ -1,0 +1,44 @@
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+// Base query with automatic token injection
+const baseQuery = fetchBaseQuery({
+  baseUrl: "https://jinnar-marketplace.onrender.com/api",
+  prepareHeaders: (headers) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+    headers.set("Content-Type", "application/json");
+    return headers;
+  },
+});
+
+// Base query with error handling
+const baseQueryWithErrorHandling = async (args, api, extraOptions) => {
+  const result = await baseQuery(args, api, extraOptions);
+
+  // Handle 401 errors globally
+  if (result.error && result.error.status === 401) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    window.location.href = "/login";
+  }
+
+  return result;
+};
+
+// Create the base API service
+export const baseApi = createApi({
+  reducerPath: "api",
+  baseQuery: baseQueryWithErrorHandling,
+  tagTypes: [
+    "Profile",
+    "Orders",
+    "Jobs",
+    "Gigs",
+    "Wallet",
+    "Notifications",
+    "Conversations",
+  ],
+  endpoints: () => ({}), // Endpoints will be injected in separate files
+});
