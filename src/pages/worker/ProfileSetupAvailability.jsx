@@ -1,13 +1,34 @@
 import { useNavigate } from "react-router-dom";
+import { useRef } from "react";
 import { ArrowLeft } from "lucide-react";
 import SetupProgress from "../../components/worker/WorkerProfile/SetupProgress";
 import Step5Availability from "../../components/worker/WorkerProfile/Step5Availability";
+import { useGetMyProfileQuery } from "../../services/workerApi";
 
 const ProfileSetupAvailability = () => {
   const navigate = useNavigate();
+  const step5FormRef = useRef(null);
 
-  const handleFinish = () => {
-    // For now, navigate to worker home; replace with submit flow later.
+  // Fetch profile data
+  const { data: profileData, isLoading, error } = useGetMyProfileQuery();
+
+  const handleFinish = async () => {
+    // Save data before finishing
+    if (step5FormRef.current) {
+      const saved = await step5FormRef.current.handleSave();
+      if (saved) {
+        navigate("/worker-home");
+      }
+    } else {
+      navigate("/worker-home");
+    }
+  };
+
+  const handleSaveAndExit = async () => {
+    // Save data before exiting
+    if (step5FormRef.current) {
+      await step5FormRef.current.handleSave();
+    }
     navigate("/worker-home");
   };
 
@@ -32,7 +53,10 @@ const ProfileSetupAvailability = () => {
             Profile Setup
           </h1>
 
-          <button className="flex items-center gap-2 text-[#74C7F2] text-xs sm:text-sm font-medium">
+          <button
+            onClick={handleSaveAndExit}
+            className="flex items-center gap-2 text-[#74C7F2] text-xs sm:text-sm font-medium"
+          >
             <span>Save & Exit</span>
           </button>
         </div>
@@ -49,7 +73,12 @@ const ProfileSetupAvailability = () => {
           </h2>
         </div>
 
-        <Step5Availability />
+        <Step5Availability
+          ref={step5FormRef}
+          profileData={profileData?.profile}
+          isLoading={isLoading}
+          error={error}
+        />
 
         {/* Footer Buttons */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-8 sm:mt-12 pt-6 gap-4 sm:gap-0">
@@ -61,7 +90,7 @@ const ProfileSetupAvailability = () => {
               onClick={handleBack}
               className="w-full sm:w-auto px-6 py-2.5 sm:py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm sm:text-xs"
             >
-              ← Back: Pricing
+              Back: Pricing
             </button>
             <button
               onClick={handleFinish}

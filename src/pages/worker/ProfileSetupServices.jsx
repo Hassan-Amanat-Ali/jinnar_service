@@ -1,17 +1,41 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { useRef } from "react";
 import Step2Fom from "../../components/worker/WorkerProfile/Step2Fom";
 import SetupProgress from "../../components/worker/WorkerProfile/SetupProgress";
+import { useGetMyProfileQuery } from "../../services/workerApi";
 
 const ProfileSetupServices = () => {
   const navigate = useNavigate();
+  const { data, isLoading, error } = useGetMyProfileQuery();
+  const step2FormRef = useRef();
 
-  const handleNext = () => {
-    navigate("/worker-setup-experience");
+  const handleNext = async () => {
+    // Save before navigating
+    if (step2FormRef.current?.handleSave) {
+      const saved = await step2FormRef.current.handleSave();
+      if (saved) {
+        navigate("/worker-setup-experience");
+      }
+    } else {
+      navigate("/worker-setup-experience");
+    }
   };
 
   const handleBack = () => {
     navigate("/worker-setup-basic");
+  };
+
+  const handleSaveAndExit = async () => {
+    // Save before exiting
+    if (step2FormRef.current?.handleSave) {
+      const saved = await step2FormRef.current.handleSave();
+      if (saved) {
+        navigate("/worker/profile");
+      }
+    } else {
+      navigate("/worker/profile");
+    }
   };
 
   return (
@@ -31,7 +55,10 @@ const ProfileSetupServices = () => {
             Profile Setup
           </h1>
 
-          <button className="flex items-center gap-2 text-[#74C7F2] text-xs sm:text-sm font-medium">
+          <button
+            onClick={handleSaveAndExit}
+            className="flex items-center gap-2 text-[#74C7F2] text-xs sm:text-sm font-medium hover:text-[#5ba8e0] transition-colors"
+          >
             <span>Save & Exit</span>
           </button>
         </div>
@@ -48,7 +75,12 @@ const ProfileSetupServices = () => {
           </h2>
         </div>
 
-        <Step2Fom />
+        <Step2Fom
+          ref={step2FormRef}
+          profileData={data?.profile}
+          isLoading={isLoading}
+          error={error}
+        />
 
         {/* Footer Buttons */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-8 sm:mt-12 pt-6 gap-4 sm:gap-0">
@@ -60,13 +92,13 @@ const ProfileSetupServices = () => {
               onClick={handleBack}
               className="w-full sm:w-auto px-6 py-2.5 sm:py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm sm:text-xs"
             >
-              ← Back: Personal Info
+              Back: Personal Info
             </button>
             <button
               onClick={handleNext}
               className="w-full sm:w-auto px-8 py-2.5 sm:py-2 bg-[#74C7F2] text-white rounded-lg font-medium hover:bg-[#5ba8e0] transition-colors text-sm sm:text-xs"
             >
-              Next: Work Experience →
+              Next: Work Experience
             </button>
           </div>
         </div>

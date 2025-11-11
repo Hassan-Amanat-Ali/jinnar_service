@@ -1,7 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useDispatch } from "react-redux";
+import { toast } from "react-hot-toast";
 import { Info, Plus, BadgeCheck, House } from "lucide-react";
 import Dropdown from "../../common/DropDown.jsx";
 import { Wrench, Scissors, Smile, Axe, Car } from "lucide-react";
+import {
+  useUpdateProfileMutation,
+  useUploadCertificatesMutation,
+} from "../../../services/workerApi";
+import { setProfile } from "../../../features/worker/profileSlice";
 
 const serviceCatalog = [
   {
@@ -50,7 +57,12 @@ const serviceCatalog = [
   },
 ];
 
-const Step2Fom = () => {
+const Step2Fom = forwardRef(({ profileData, isLoading, error }, ref) => {
+  const dispatch = useDispatch();
+  const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
+  const [uploadCertificates, { isLoading: isUploadingCert }] =
+    useUploadCertificatesMutation();
+
   const [selected, setSelected] = useState(["plumbing"]);
   const [customService, setCustomService] = useState("");
   const [isExpOpen, setIsExpOpen] = useState(false);
@@ -76,6 +88,145 @@ const Step2Fom = () => {
     if (!selected.includes(id)) setSelected((p) => [...p, id]);
     setCustomService("");
   };
+
+  // Populate form data when profile data is loaded
+  useEffect(() => {
+    if (profileData) {
+      console.log("Step2Form - Profile Data:", profileData);
+
+      // Set skills from profile
+      if (profileData.skills && profileData.skills.length > 0) {
+        console.log("Loading skills:", profileData.skills);
+        setSelected(profileData.skills);
+        // Set first skill as primary for detail panel
+        setDetail((prev) => ({ ...prev, serviceId: profileData.skills[0] }));
+      } else {
+        console.log("No skills found in profileData");
+      }
+    }
+  }, [profileData]);
+
+  // Save profile data
+  const handleSave = async () => {
+    let loadingToast = null;
+    try {
+      if (selected.length === 0) {
+        toast.error("Please select at least one service");
+        return false;
+      }
+
+      console.log("Step2Form - Saving skills:", selected);
+      loadingToast = toast.loading("Saving services...");
+
+      // Step 1: Upload certificate if provided
+      let certificateData = null;
+      if (detail.certificate instanceof File) {
+        console.log("Certificate file selected:", {
+          name: detail.certificate.name,
+          type: detail.certificate.type,
+          size: detail.certificate.size,
+        });
+
+        // Validate file type (must be PDF)
+        if (detail.certificate.type !== "application/pdf") {
+          toast.dismiss(loadingToast);
+          toast.error("Certificate must be a PDF file");
+          return false;
+        }
+
+        try {
+          // Update loading message
+          toast.loading("Uploading certificate...", { id: loadingToast });
+          console.log("Uploading certificate...");
+          const certFormData = new FormData();
+          certFormData.append("certificates", detail.certificate);
+
+          const certResult = await uploadCertificates(certFormData).unwrap();
+          certificateData = certResult.files; // Array of { url, publicId }
+          console.log("Certificate uploaded:", certificateData);
+        } catch (certError) {
+          console.error("Certificate upload error:", certError);
+          toast.dismiss(loadingToast);
+          toast.error(
+            certError?.data?.error ||
+              "Failed to upload certificate. You can add it later."
+          );
+          return false;
+        }
+      }
+
+      // Step 2: Update profile with skills
+      // Update loading message
+      toast.loading("Updating profile...", { id: loadingToast });
+
+      const updateData = {
+        skills: selected,
+      };
+
+      // Add certificates if uploaded successfully
+      if (certificateData && certificateData.length > 0) {
+        updateData.certificates = certificateData;
+      }
+
+      console.log("Sending update data:", updateData);
+      const result = await updateProfile(updateData).unwrap();
+      console.log("Update result:", result);
+
+      // Update Redux store
+      dispatch(setProfile(result.user));
+
+      // Dismiss loading and show success only after everything is complete
+      toast.dismiss(loadingToast);
+      toast.success("Services updated successfully!");
+
+      return true;
+    } catch (err) {
+      console.error("Failed to save services:", err);
+      // Dismiss loading toast if it exists
+      if (loadingToast) {
+        toast.dismiss(loadingToast);
+      }
+      toast.error(
+        err?.data?.error || "Failed to save services. Please try again."
+      );
+      return false;
+    }
+  };
+
+  // Expose handleSave to parent component via ref
+  useImperativeHandle(ref, () => ({
+    handleSave,
+  }));
+
+  // Show loading skeleton if data is still loading
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-pulse">
+          <div className="space-y-4">
+            <div className="h-6 bg-gray-300 rounded w-48"></div>
+            <div className="h-4 bg-gray-300 rounded w-full"></div>
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              <div className="h-24 bg-gray-300 rounded"></div>
+              <div className="h-24 bg-gray-300 rounded"></div>
+              <div className="h-24 bg-gray-300 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error message if there's an error
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-600 text-sm">
+          Failed to load profile data. Please try again.
+        </p>
+      </div>
+    );
+  }
 
   const primaryService =
     serviceCatalog.find((s) => s.id === detail.serviceId) || serviceCatalog[0];
@@ -105,7 +256,7 @@ const Step2Fom = () => {
                   onClick={() => toggleService(s.id)}
                   className={`relative text-left rounded-xl border p-3 transition shadow-sm hover:shadow-md ${
                     isActive
-                      ? "border-sky-300 bg-gradient-to-br from-[#F0F7FF] to-white"
+                      ? "border-sky-300 bg-linear-to-br from-[#F0F7FF] to-white"
                       : "border-gray-200 bg-white"
                   }`}
                 >
@@ -251,7 +402,7 @@ const Step2Fom = () => {
             </label>
             <div className="rounded-md border border-gray-300 bg-gray-50 p-4 text-center">
               <p className="text-xs text-gray-600">
-                Upload certification or license
+                Upload certification or license (PDF only)
               </p>
               <label
                 className="mt-2 inline-flex items-center justify-center h-9 px-4 rounded-md text-sm font-medium text-white cursor-pointer"
@@ -260,6 +411,7 @@ const Step2Fom = () => {
                 Choose File
                 <input
                   type="file"
+                  accept="application/pdf"
                   className="hidden"
                   onChange={(e) =>
                     setDetail({
@@ -269,11 +421,16 @@ const Step2Fom = () => {
                   }
                 />
               </label>
+              {detail.certificate && (
+                <p className="mt-2 text-xs text-green-600">
+                  Selected: {detail.certificate.name}
+                </p>
+              )}
             </div>
           </div>
           <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mt-5">
             <div className="flex items-start gap-3">
-              <Info className="w-5 h-5 text-[#74C7F2] mt-0.5 flex-shrink-0" />
+              <Info className="w-5 h-5 text-[#74C7F2] mt-0.5 shrink-0" />
               <div>
                 <h4 className="text-sm font-medium text-[#74C7F2] mb-1">
                   💡 Pro Tip
@@ -289,6 +446,8 @@ const Step2Fom = () => {
       </div>
     </div>
   );
-};
+});
+
+Step2Fom.displayName = "Step2Fom";
 
 export default Step2Fom;

@@ -10,6 +10,34 @@ export const workerApi = baseApi.injectEndpoints({
       query: (data) => ({ url: "/user/update", method: "POST", body: data }),
       invalidatesTags: ["Profile"],
     }),
+    uploadProfilePicture: builder.mutation({
+      query: (formData) => ({
+        url: "/upload/profile-picture",
+        method: "POST",
+        body: formData,
+      }),
+    }),
+    uploadPortfolioImages: builder.mutation({
+      query: (formData) => ({
+        url: "/upload/portfolio",
+        method: "POST",
+        body: formData,
+      }),
+    }),
+    uploadVideos: builder.mutation({
+      query: (formData) => ({
+        url: "/upload/videos",
+        method: "POST",
+        body: formData,
+      }),
+    }),
+    uploadCertificates: builder.mutation({
+      query: (formData) => ({
+        url: "/upload/certificates",
+        method: "POST",
+        body: formData,
+      }),
+    }),
     getMyGigs: builder.query({
       query: () => "/gigs/my-gigs",
       providesTags: ["Gigs"],
@@ -95,6 +123,10 @@ export const workerApi = baseApi.injectEndpoints({
 export const {
   useGetMyProfileQuery,
   useUpdateProfileMutation,
+  useUploadProfilePictureMutation,
+  useUploadPortfolioImagesMutation,
+  useUploadVideosMutation,
+  useUploadCertificatesMutation,
   useGetMyGigsQuery,
   useCreateGigMutation,
   useUpdateGigMutation,

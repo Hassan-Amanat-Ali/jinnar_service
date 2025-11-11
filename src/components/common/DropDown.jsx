@@ -11,8 +11,12 @@ function Dropdown({
   onSelect,
   className = "",
   showStars = false,
+  value = "", // Add value prop for controlled component
 }) {
   const [selected, setSelected] = useState("");
+
+  // Use value prop if provided, otherwise use internal state
+  const displayValue = value || selected;
 
   const renderStars = (rating) => {
     const stars = [];
@@ -43,7 +47,7 @@ function Dropdown({
         onClick={onToggle}
       >
         {icon}
-        <span className="flex-1">{selected || placeholder}</span>
+        <span className="flex-1">{displayValue || placeholder}</span>
         <ChevronDown
           size={16}
           className={`text-gray-400 ml-2 transition-transform ${

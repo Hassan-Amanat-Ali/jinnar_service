@@ -60,13 +60,13 @@ const ProfileSetupPricing = () => {
               onClick={handleBack}
               className="w-full sm:w-auto px-6 py-2.5 sm:py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm sm:text-xs"
             >
-              ← Back: Work Experience
+              Back: Work Experience
             </button>
             <button
               onClick={handleNext}
               className="w-full sm:w-auto px-8 py-2.5 sm:py-2 bg-[#74C7F2] text-white rounded-lg font-medium hover:bg-[#5ba8e0] transition-colors text-sm sm:text-xs"
             >
-              Next: Availability →
+              Next: Availability
             </button>
           </div>
         </div>

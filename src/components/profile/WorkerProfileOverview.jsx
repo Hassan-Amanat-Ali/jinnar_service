@@ -338,13 +338,28 @@ const WorkerProfileOverview = () => {
   };
 
   const getAvailabilitySchedule = (availability) => {
-    if (!availability || availability.length === 0) return "Not set";
-    const days = availability.map((a) => a.day.substring(0, 3)).join(", ");
-    const firstSlot = availability[0];
-    const times = firstSlot.timeSlots || [];
-    const timeRange =
-      times.length > 0 ? `${times[0]} - ${times[times.length - 1]}` : "All day";
-    return `${days}: ${timeRange}`;
+    if (!availability || availability.length === 0) {
+      return { hasSchedule: false, days: [], summary: "Not set" };
+    }
+
+    // Group by day and format time slots
+    const daySchedule = availability.map((slot) => ({
+      day: slot.day,
+      slots: slot.timeSlots || [],
+    }));
+
+    // Create a short summary
+    const dayCount = daySchedule.length;
+    const summary =
+      dayCount === 7
+        ? "Available every day"
+        : `Available ${dayCount} day${dayCount > 1 ? "s" : ""}/week`;
+
+    return {
+      hasSchedule: true,
+      days: daySchedule,
+      summary: summary,
+    };
   };
 
   const getCategoryIcon = (skill) => {
@@ -380,6 +395,12 @@ const WorkerProfileOverview = () => {
   };
 
   // Prepare worker data from API
+  const availabilityData = getAvailabilitySchedule(profile.availability);
+
+  // Debug: Log createdAt to verify it's being received
+  console.log("Profile createdAt:", profile.createdAt);
+  console.log("Formatted joinDate:", formatDate(profile.createdAt));
+
   const worker = {
     initials: getInitials(profile.name),
     name: profile.name || "No name",
@@ -391,16 +412,12 @@ const WorkerProfileOverview = () => {
     completedJobs: profile.orderHistory?.length || 0,
     joinDate: formatDate(profile.createdAt),
     isVerified: profile.isVerified || false,
-    isAvailable: profile.availability?.length > 0,
+    isAvailable: availabilityData.hasSchedule,
     location: getLocationString(profile.selectedAreas),
     experience: `${profile.yearsOfExperience || 0}+ years`,
     phone: profile.mobileNumber,
     email: profile.email || "Not provided",
-    availability: {
-      status: profile.availability?.length > 0 ? "Available" : "Not Available",
-      schedule: getAvailabilitySchedule(profile.availability),
-      nextSlot: "Contact for scheduling",
-    },
+    availability: availabilityData,
   };
 
   return (
@@ -469,7 +486,7 @@ const WorkerProfileOverview = () => {
               <div className="flex flex-wrap gap-2 mb-4">
                 <Badge variant="verified">
                   <CheckCircle size={12} />
-                  Verified since {worker.joinDate}
+                  Member since {worker.joinDate}
                 </Badge>
                 <Badge variant="available">
                   <Clock size={12} />
@@ -477,7 +494,7 @@ const WorkerProfileOverview = () => {
                 </Badge>
                 <Badge variant="years">
                   <Star size={12} />
-                  5+ years
+                  {profile.yearsOfExperience || 0}+ years
                 </Badge>
                 <Badge variant="location">
                   <MapPin size={12} />
@@ -761,32 +778,59 @@ const WorkerProfileOverview = () => {
               <h3 className="text-lg font-bold text-gray-900">Availability</h3>
             </div>
 
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <CheckCircle className="text-green-600" size={24} />
-              </div>
-              <div className="text-lg font-bold text-green-700 mb-1">
-                Available
-              </div>
-              <div className="text-sm text-gray-600">
-                Usually responds within 2 hours
-              </div>
-            </div>
+            {worker.availability.hasSchedule ? (
+              <>
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle className="text-green-600" size={24} />
+                  </div>
+                  <div className="text-lg font-bold text-green-700 mb-1">
+                    Available
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {worker.availability.summary}
+                  </div>
+                </div>
 
-            <div className="space-y-3 mb-6">
-              <div>
-                <div className="text-sm text-gray-600">Working Hours:</div>
-                <div className="font-semibold text-gray-900">
-                  {worker.availability.schedule}
+                <div className="space-y-2 mb-6">
+                  <div className="text-xs font-semibold text-gray-700 mb-3">
+                    Weekly Schedule
+                  </div>
+                  {worker.availability.days.map((dayData, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0"
+                    >
+                      <span className="text-sm font-medium text-gray-700 w-24">
+                        {dayData.day}
+                      </span>
+                      <div className="flex gap-1">
+                        {dayData.slots.map((slot, slotIdx) => (
+                          <span
+                            key={slotIdx}
+                            className="text-xs px-2 py-1 bg-green-50 text-green-700 rounded border border-green-200"
+                          >
+                            {slot.charAt(0).toUpperCase() + slot.slice(1)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Clock className="text-gray-400" size={24} />
+                </div>
+                <div className="text-sm font-medium text-gray-600 mb-1">
+                  Schedule Not Set
+                </div>
+                <div className="text-xs text-gray-500 mb-6">
+                  Contact for availability
                 </div>
               </div>
-              <div>
-                <div className="text-sm text-gray-600">Next Available:</div>
-                <div className="font-semibold text-gray-900">
-                  {worker.availability.nextSlot}
-                </div>
-              </div>
-            </div>
+            )}
 
             <button className="w-full bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium py-3 rounded-lg hover:opacity-90 transition-opacity">
               Book Now
