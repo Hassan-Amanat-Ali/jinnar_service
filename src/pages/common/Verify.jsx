@@ -4,8 +4,10 @@ import {
   useVerifySignupMutation,
   useVerifySigninMutation,
 } from "../../services/authApi";
-import { ROLES } from "../../constants/roles";
+import { useGetMyProfileQuery } from "../../services/customerApi";
+import { ROLES, mapApiRoleToAppRole } from "../../constants/roles";
 import { toast } from "react-toastify";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const Verify = () => {
   const loc = useLocation();
@@ -14,7 +16,9 @@ const Verify = () => {
   const role = state.role || ROLES.CUSTOMER;
   const action = state.action || "signup";
 
+  const { setRole, setUser } = useAuth();
   const [code, setCode] = useState("");
+  const [shouldFetchProfile, setShouldFetchProfile] = useState(false);
 
   // RTK Query hooks
   const [verifySignup, { isLoading: isSignupLoading }] =
@@ -22,7 +26,31 @@ const Verify = () => {
   const [verifySignin, { isLoading: isSigninLoading }] =
     useVerifySigninMutation();
 
-  const loading = isSignupLoading || isSigninLoading;
+  // Fetch user profile after successful verification
+  const { data: profileData, isLoading: isProfileLoading } =
+    useGetMyProfileQuery(undefined, {
+      skip: !shouldFetchProfile,
+    });
+
+  const loading = isSignupLoading || isSigninLoading || isProfileLoading;
+
+  // When profile data is fetched, set role and user in AuthContext
+  if (profileData?.profile && shouldFetchProfile) {
+    const apiRole = profileData.profile.role;
+    const appRole = mapApiRoleToAppRole(apiRole);
+
+    if (appRole) {
+      setRole(appRole);
+      setUser(profileData.profile);
+      setShouldFetchProfile(false);
+
+      // Navigate to the appropriate home page based on the role from API
+      const redirectPath =
+        appRole === ROLES.CUSTOMER ? "/customer-home" : "/worker-home";
+      toast.success("Verification successful! Welcome aboard");
+      window.location.href = redirectPath;
+    }
+  }
 
   const handleVerify = async (e) => {
     e?.preventDefault();
@@ -55,14 +83,11 @@ const Verify = () => {
 
       // Expect token in response on successful verification
       if (result && result.token) {
+        // Store token and trigger profile fetch
         localStorage.setItem("token", result.token);
-        localStorage.setItem("role", role);
-        toast.success("Verification successful! Welcome aboard");
-        if (role === ROLES.CUSTOMER) {
-          window.location.href = "/customer-home";
-        } else {
-          window.location.href = "/worker-home";
-        }
+
+        // Trigger profile fetch which will set the role from API response
+        setShouldFetchProfile(true);
       } else {
         // If no token, still provide feedback and fallback
         toast.success("Verification successful!");

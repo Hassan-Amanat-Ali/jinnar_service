@@ -6,21 +6,25 @@ import "swiper/css";
 import sideImg from "../../assets/images/auth.jpg";
 import auth2 from "../../assets/images/auth2.jpg";
 import auth3 from "../../assets/images/auth3.jpg";
-import { ROLES } from "../../constants/roles.js";
+import { ROLES, mapApiRoleToAppRole } from "../../constants/roles.js";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   useCustomerLoginMutation,
   useWorkerLoginMutation,
 } from "../../services/authApi";
+import { useGetMyProfileQuery } from "../../services/customerApi";
 import { toast } from "react-toastify";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { setRole, setUser } = useAuth();
   const [mobile, setMobile] = useState("");
-  const [role, setRole] = useState(
+  const [role, setLocalRole] = useState(
     localStorage.getItem("userRole") || ROLES.CUSTOMER
   );
+  const [shouldFetchProfile, setShouldFetchProfile] = useState(false);
 
   // RTK Query hooks
   const [customerLogin, { isLoading: isCustomerLoading }] =
@@ -28,7 +32,31 @@ const Login = () => {
   const [workerLogin, { isLoading: isWorkerLoading }] =
     useWorkerLoginMutation();
 
-  const loading = isCustomerLoading || isWorkerLoading;
+  // Fetch user profile after successful login
+  const { data: profileData, isLoading: isProfileLoading } =
+    useGetMyProfileQuery(undefined, {
+      skip: !shouldFetchProfile,
+    });
+
+  const loading = isCustomerLoading || isWorkerLoading || isProfileLoading;
+
+  // When profile data is fetched, set role and user in AuthContext
+  if (profileData?.profile && shouldFetchProfile) {
+    const apiRole = profileData.profile.role;
+    const appRole = mapApiRoleToAppRole(apiRole);
+
+    if (appRole) {
+      setRole(appRole);
+      setUser(profileData.profile);
+      setShouldFetchProfile(false);
+
+      // Navigate to the appropriate home page based on the role from API
+      const redirectPath =
+        appRole === ROLES.CUSTOMER ? "/customer-home" : "/worker-home";
+      toast.success("Welcome back! Login successful");
+      window.location.href = redirectPath;
+    }
+  }
 
   const handleLogin = async (e) => {
     e?.preventDefault();
@@ -51,14 +79,11 @@ const Login = () => {
       const result = await loginMutation({ mobileNumber: mobile }).unwrap();
 
       if (result && result.token) {
+        // Store token and trigger profile fetch
         localStorage.setItem("token", result.token);
-        localStorage.setItem("role", role);
-        toast.success("Welcome back! Login successful");
-        if (role === ROLES.CUSTOMER) {
-          window.location.href = "/customer-home";
-        } else {
-          window.location.href = "/worker-home";
-        }
+
+        // Trigger profile fetch which will set the role from API response
+        setShouldFetchProfile(true);
       } else {
         toast.info("Verification code sent to your mobile");
         navigate("/verify", { state: { mobile, role, action: "signin" } });
