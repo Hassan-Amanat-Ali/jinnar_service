@@ -348,7 +348,7 @@ const Jinnar = () => {
             <Link to="/signup" className="btn-outline">
               Sign Up Now
             </Link>
-            <Link to="/about-us" className="btn-outline">
+            <Link to="/contact" className="btn-outline">
               Contact Us
             </Link>
           </div>

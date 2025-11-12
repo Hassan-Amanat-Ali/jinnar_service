@@ -35,31 +35,28 @@ const Hero = () => {
       >
         <div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-primary/35 to-transparent" />
 
-        <div className="relative z-10 max-w-5xl mx-auto px-4  h-full flex flex-col items-center justify-center text-center text-white">
+        <div className="relative z-10 max-w-5xl mx-auto px-4 h-full flex flex-col items-center justify-center text-center text-white">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur px-3 py-1 text-xs mb-4">
             <span className="opacity-80">
               Your reliable connection to skilled workers
             </span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tight">
-            Get Verified. Earn Your{" "}
-            <span className="text-secondary">Jinnar Badge</span> — For Free.
+            Find Trusted Local Professionals In Minutes
           </h1>
           <div className="h-1 w-24 sm:w-40 md:w-56 lg:w-72 bg-white/80 my-2" />
           <p className="mt-1 max-w-2xl text-white/90 text-base sm:text-lg">
-            Take short, self-paced lessons that fit your schedule — all at no
-            cost. Boost your visibility, build trust, and grow your earnings.
+            Discover verified workers across every service category, compare
+            options, and book confidently wherever you are in Tanzania.
           </p>
 
           <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-            <a
-              href="https://jinnar.vercel.app/signup"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
               className="btn-primary"
+              onClick={() => navigate("/customer-home")}
             >
-              Start Free Training
-            </a>
+              Browse Services
+            </button>
             <button
               className="btn-outline"
               onClick={() => navigate("/what-is-jinnar")}

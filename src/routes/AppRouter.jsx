@@ -10,6 +10,7 @@ import Login from "../pages/common/Login.jsx";
 import Signup from "../pages/common/Signup.jsx";
 import Verify from "../pages/common/Verify.jsx";
 import Help from "../pages/common/Help.jsx";
+import Contact from "../pages/common/Contact.jsx";
 import PrivacyPolicy from "../pages/common/PrivacyPolicy.jsx";
 import Notifications from "../pages/common/Notifications.jsx";
 import Chat from "../pages/common/Chat.jsx";
@@ -40,8 +41,6 @@ import AboutUs from "../components/common/AboutUs.jsx";
 import Jinnar from "../components/common/Jinnar.jsx";
 import JinnarDetailed from "../components/common/JinnarDetailed.jsx";
 import HowTrainingWorks from "../components/common/HowTrainingWorks.jsx";
-import RoleGuard from "../components/common/RoleGuard.jsx";
-import { ROLES } from "../constants/roles.js";
 
 const router = createBrowserRouter([
   {
@@ -62,6 +61,7 @@ const router = createBrowserRouter([
     children: [
       // Common pages
       { path: "about-us", element: <AboutUs /> },
+      { path: "contact", element: <Contact /> },
 
       { path: "help", element: <Help /> },
       { path: "privacy", element: <PrivacyPolicy /> },
