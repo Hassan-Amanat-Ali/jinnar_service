@@ -1,15 +1,12 @@
 import React, { useState } from "react";
 import {
   CreditCard,
-  Plus,
   Trash2,
   Edit,
   Check,
   X,
   Building2,
   Smartphone,
-  Wallet,
-  DollarSign,
 } from "lucide-react";
 
 const WorkerPaymentMethod = () => {
@@ -74,25 +71,35 @@ const WorkerPaymentMethod = () => {
             };
 
             const getBorderColor = () => {
-              // Default/selected method gets black border with green background (Easypaisa)
-              if (method.isDefault && method.name === "Easypaisa") {
-                return "border-2 border-gray-900 bg-green-50";
-              }
+              // Check if this method is currently selected
+              const isSelected = selectedDefault === method.name;
 
-              // Default method with different provider
-              if (method.isDefault) {
+              // Selected method gets bold border and colored background
+              if (isSelected) {
+                if (method.name === "Easypaisa") {
+                  return "border-2 border-green-600 bg-green-50";
+                }
+                if (method.name === "JazzCash") {
+                  return "border-2 border-orange-600 bg-orange-50";
+                }
+                if (method.name === "Bank Transfer") {
+                  return "border-2 border-blue-600 bg-blue-50";
+                }
                 return "border-2 border-gray-900 bg-white";
               }
 
-              // Other methods get colored backgrounds based on type/status
+              // Non-selected methods - use border-2 with transparent to prevent layout shift
+              if (method.name === "Easypaisa") {
+                return "border-2 border-green-200 bg-white";
+              }
               if (method.name === "JazzCash") {
-                return "border border-orange-200 bg-orange-50";
+                return "border-2 border-orange-200 bg-white";
               }
               if (method.name === "Bank Transfer") {
-                return "border border-blue-200 bg-blue-50";
+                return "border-2 border-blue-200 bg-white";
               }
 
-              return "border border-gray-200 bg-gray-50";
+              return "border-2 border-gray-200 bg-white";
             };
 
             const getIcon = () => {
@@ -111,57 +118,84 @@ const WorkerPaymentMethod = () => {
             return (
               <div
                 key={method.id}
-                className={`rounded-lg p-4 ${getBorderColor()}`}
+                className={`rounded-lg p-4 ${getBorderColor()} cursor-pointer transition-colors duration-200 min-h-[88px]`}
+                onClick={() => setSelectedDefault(method.name)}
               >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 flex items-center justify-center">
+                  <div className="flex items-center gap-3 flex-1">
+                    {/* Radio button indicator - fixed width */}
+                    <div className="flex items-center w-4 shrink-0">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        checked={selectedDefault === method.name}
+                        onChange={() => setSelectedDefault(method.name)}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
+                      />
+                    </div>
+                    {/* Icon - fixed width */}
+                    <div className="w-8 h-8 flex items-center justify-center shrink-0">
                       {getIcon()}
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
+                    {/* Content - flexible */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
                         <h4 className="font-semibold text-gray-900">
                           {method.name}
                         </h4>
                         {method.isDefault && (
-                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-medium">
+                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded font-medium whitespace-nowrap">
                             Default
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-600 truncate">
                         {method.accountNumber}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      {method.status === "Connected" && (
-                        <Check className="text-green-600" size={16} />
-                      )}
-                      {method.status === "Not Connected" && (
-                        <X className="text-red-600" size={16} />
-                      )}
+                  {/* Right side - fixed width */}
+                  <div className="flex items-center gap-4 shrink-0 ml-4">
+                    {/* Status - fixed width */}
+                    <div className="flex items-center gap-2 w-32">
+                      <div className="w-4 h-4 shrink-0">
+                        {method.status === "Connected" && (
+                          <Check className="text-green-600" size={16} />
+                        )}
+                        {method.status === "Not Connected" && (
+                          <X className="text-red-600" size={16} />
+                        )}
+                      </div>
                       <span
                         className={`text-sm font-medium ${getStatusColor(
                           method.status
-                        )}`}
+                        )} whitespace-nowrap`}
                       >
                         {method.status}
                       </span>
                     </div>
 
-                    <button className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium">
+                    {/* Manage button - fixed width */}
+                    <button
+                      className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium whitespace-nowrap w-20"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Edit size={14} />
                       Manage
                     </button>
 
-                    {method.name === "JazzCash" && (
-                      <button className="text-red-600 hover:text-red-800">
-                        <Trash2 size={16} />
-                      </button>
-                    )}
+                    {/* Delete button - fixed width */}
+                    <div className="w-4 shrink-0">
+                      {method.name === "JazzCash" && (
+                        <button
+                          className="text-red-600 hover:text-red-800"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -191,8 +225,8 @@ const WorkerPaymentMethod = () => {
 
           <div className="space-y-3">
             {/* Easypaisa - Selected */}
-            <div className="flex items-center gap-3 p-3">
-              <div className="flex items-center">
+            <div className="flex items-center gap-3 p-3 min-h-[64px]">
+              <div className="flex items-center w-4 shrink-0">
                 <input
                   type="radio"
                   name="defaultPayment"
@@ -202,11 +236,11 @@ const WorkerPaymentMethod = () => {
                   className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
                 />
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 flex items-center justify-center">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="w-8 h-8 flex items-center justify-center shrink-0">
                   <CreditCard className="text-green-600" size={20} />
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="font-medium text-gray-900">Easypaisa</div>
                   <div className="text-sm text-gray-600">03XX-XXXXXXX</div>
                 </div>
@@ -214,8 +248,8 @@ const WorkerPaymentMethod = () => {
             </div>
 
             {/* Bank Transfer - Not Selected */}
-            <div className="flex items-center gap-3 p-3">
-              <div className="flex items-center">
+            <div className="flex items-center gap-3 p-3 min-h-[64px]">
+              <div className="flex items-center w-4 shrink-0">
                 <input
                   type="radio"
                   name="defaultPayment"
@@ -225,11 +259,11 @@ const WorkerPaymentMethod = () => {
                   className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
                 />
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 flex items-center justify-center">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="w-8 h-8 flex items-center justify-center shrink-0">
                   <Building2 className="text-blue-600" size={20} />
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="font-medium text-gray-900">Bank Transfer</div>
                   <div className="text-sm text-gray-600">
                     XXXX-XXXX-XXXX-1234

@@ -41,6 +41,8 @@ import AboutUs from "../components/common/AboutUs.jsx";
 import Jinnar from "../components/common/Jinnar.jsx";
 import JinnarDetailed from "../components/common/JinnarDetailed.jsx";
 import HowTrainingWorks from "../components/common/HowTrainingWorks.jsx";
+import { ROLES } from "../constants/roles.js";
+import RoleGuard from "../components/common/RoleGuard.jsx";
 
 const router = createBrowserRouter([
   {

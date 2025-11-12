@@ -397,10 +397,6 @@ const WorkerProfileOverview = () => {
   // Prepare worker data from API
   const availabilityData = getAvailabilitySchedule(profile.availability);
 
-  // Debug: Log createdAt to verify it's being received
-  console.log("Profile createdAt:", profile.createdAt);
-  console.log("Formatted joinDate:", formatDate(profile.createdAt));
-
   const worker = {
     initials: getInitials(profile.name),
     name: profile.name || "No name",

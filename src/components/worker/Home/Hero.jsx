@@ -2,8 +2,59 @@ import { Link } from "react-router-dom";
 import { CheckCircle, Briefcase, Check, DollarSign, Star } from "lucide-react";
 import bag from "../../../assets/icons/worker-bag.png";
 import check from "../../../assets/icons/check.png";
+import { useGetMyProfileQuery } from "../../../services/workerApi";
 
 const Hero = () => {
+  // Fetch real-time profile data
+  const { data } = useGetMyProfileQuery();
+  const profile = data?.profile;
+
+  // Calculate profile completion percentage
+  const calculateProfileCompletion = () => {
+    if (!profile) return 0;
+
+    let completed = 0;
+    let total = 8; // Total steps to complete
+
+    // Basic info (25%)
+    if (profile.name) completed += 1;
+    if (profile.bio) completed += 1;
+
+    // Skills (12.5%)
+    if (profile.skills && profile.skills.length > 0) completed += 1;
+
+    // Work samples (25%)
+    if (profile.portfolioImages && profile.portfolioImages.length > 0)
+      completed += 1;
+    if (profile.videos && profile.videos.length > 0) completed += 1;
+
+    // Certificates/Verification (12.5%)
+    if (profile.certificates && profile.certificates.length > 0) completed += 1;
+
+    // Availability (12.5%)
+    if (profile.availability && profile.availability.length > 0) completed += 1;
+
+    // Profile picture (12.5%)
+    if (profile.profileImage && profile.profileImage.url) completed += 1;
+
+    return Math.round((completed / total) * 100);
+  };
+
+  const completionPercentage = calculateProfileCompletion();
+
+  // Check individual completion status
+  const hasWorkSamples =
+    profile?.portfolioImages?.length > 0 || profile?.videos?.length > 0;
+  const hasSkills = profile?.skills && profile?.skills.length > 0;
+  const hasVerification =
+    profile?.certificates && profile?.certificates.length > 0;
+  const hasAvailability =
+    profile?.availability && profile?.availability.length > 0;
+
+  // Get stats from profile
+  const jobsCompleted = profile?.orderHistory?.length || 0;
+  const rating = profile?.rating?.average || 0;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 xl:px-5 my-8 space-y-6">
       {/* Hero Banner */}
@@ -48,7 +99,7 @@ const Hero = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 space-y-3 sm:space-y-0">
           <div>
             <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-1">
-              Profile Completion: 75%
+              Profile Completion: {completionPercentage}%
             </h2>
             <p className="text-xs sm:text-sm text-gray-600">
               Complete your profile to unlock more job requests and increase
@@ -68,7 +119,7 @@ const Hero = () => {
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
               className="bg-gradient-to-r from-[#74C7F2] to-[#A8D8F0] h-2 rounded-full transition-all duration-500 ease-out"
-              style={{ width: "75%" }}
+              style={{ width: `${completionPercentage}%` }}
             ></div>
           </div>
         </div>
@@ -76,22 +127,52 @@ const Hero = () => {
         {/* Completion Steps - Mobile Responsive */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-2">
           <div className="flex items-center gap-2">
-            <img src={check} alt="" className="h-3 w-3 flex-shrink-0" />
-            <span className="text-xs sm:text-sm text-gray-700">
+            <img
+              src={check}
+              alt=""
+              className={`h-3 w-3 flex-shrink-0 ${
+                !hasWorkSamples ? "grayscale-100" : ""
+              }`}
+            />
+            <span
+              className={`text-xs sm:text-sm ${
+                hasWorkSamples ? "text-gray-700" : "text-gray-400"
+              }`}
+            >
               Add Work Samples
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <img src={check} alt="" className="h-3 w-3 flex-shrink-0" />
-            <span className="text-xs sm:text-sm text-gray-700">
+            <img
+              src={check}
+              alt=""
+              className={`h-3 w-3 flex-shrink-0 ${
+                !hasSkills ? "grayscale-100" : ""
+              }`}
+            />
+            <span
+              className={`text-xs sm:text-sm ${
+                hasSkills ? "text-gray-700" : "text-gray-400"
+              }`}
+            >
               Complete Skills Assessment
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <img src={check} alt="" className="h-3 w-3 flex-shrink-0" />
-            <span className="text-xs sm:text-sm text-gray-700">
+            <img
+              src={check}
+              alt=""
+              className={`h-3 w-3 flex-shrink-0 ${
+                !hasVerification ? "grayscale-100" : ""
+              }`}
+            />
+            <span
+              className={`text-xs sm:text-sm ${
+                hasVerification ? "text-gray-700" : "text-gray-400"
+              }`}
+            >
               Upload ID Verification
             </span>
           </div>
@@ -100,9 +181,15 @@ const Hero = () => {
             <img
               src={check}
               alt=""
-              className="h-3 w-3 grayscale-100 flex-shrink-0"
+              className={`h-3 w-3 flex-shrink-0 ${
+                !hasAvailability ? "grayscale-100" : ""
+              }`}
             />
-            <span className="text-xs sm:text-sm text-gray-400">
+            <span
+              className={`text-xs sm:text-sm ${
+                hasAvailability ? "text-gray-700" : "text-gray-400"
+              }`}
+            >
               Set Availability Schedule
             </span>
           </div>
@@ -120,7 +207,7 @@ const Hero = () => {
             <span className="text-xs font-medium text-green-600">↗ +12%</span>
           </div>
           <p className="text-xs text-gray-600 mb-1">Jobs Completed</p>
-          <p className="text-2xl font-bold text-gray-900">156</p>
+          <p className="text-2xl font-bold text-gray-900">{jobsCompleted}</p>
         </div>
 
         {/* Earnings This Month */}
@@ -156,7 +243,9 @@ const Hero = () => {
             <span className="text-xs font-medium text-green-600">↗ +12%</span>
           </div>
           <p className="text-xs text-gray-600 mb-1">Rating</p>
-          <p className="text-2xl font-bold text-gray-900">4.9</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {rating > 0 ? rating.toFixed(1) : "N/A"}
+          </p>
         </div>
       </div>
     </div>
