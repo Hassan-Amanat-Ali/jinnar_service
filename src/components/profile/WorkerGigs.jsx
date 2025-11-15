@@ -9,12 +9,14 @@ import {
   FileText,
   X,
   Upload,
+  AlertTriangle,
 } from "lucide-react";
 import {
   useGetMyGigsQuery,
   useCreateGigMutation,
   useUpdateGigMutation,
   useDeleteGigMutation,
+  useUploadOtherImagesMutation,
 } from "../../services/workerApi";
 import toast from "react-hot-toast";
 
@@ -23,19 +25,31 @@ const WorkerGigs = () => {
   const [createGig, { isLoading: isCreating }] = useCreateGigMutation();
   const [updateGig, { isLoading: isUpdating }] = useUpdateGigMutation();
   const [deleteGig, { isLoading: isDeleting }] = useDeleteGigMutation();
+  const [uploadOtherImages, { isLoading: isUploadingImages }] =
+    useUploadOtherImagesMutation();
 
   const [showModal, setShowModal] = useState(false);
   const [editingGig, setEditingGig] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [gigToDelete, setGigToDelete] = useState(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     pricingMethod: "fixed",
     price: "",
     images: [],
+    skills: [],
   });
   const [imagePreview, setImagePreview] = useState([]);
 
   const gigs = data?.gigs || [];
+
+  // Skeleton Component with Shimmer
+  const Skeleton = ({ className = "" }) => (
+    <div className={`bg-gray-200 rounded animate-pulse ${className}`}>
+      <div className="shimmer"></div>
+    </div>
+  );
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -78,6 +92,7 @@ const WorkerGigs = () => {
       pricingMethod: "fixed",
       price: "",
       images: [],
+      skills: [],
     });
     setImagePreview([]);
     setShowModal(true);
@@ -92,6 +107,7 @@ const WorkerGigs = () => {
       pricingMethod: gig.pricing.method,
       price: gig.pricing.price || "",
       images: [],
+      skills: gig.skills || [],
     });
     setImagePreview(gig.images?.map((img) => img.url) || []);
     setShowModal(true);
@@ -114,35 +130,55 @@ const WorkerGigs = () => {
       toast.error("Price is required for fixed/hourly pricing");
       return;
     }
+    if (!formData.skills || formData.skills.length === 0) {
+      toast.error("At least one skill/category is required");
+      return;
+    }
 
     const loadingToast = toast.loading(
       editingGig ? "Updating gig..." : "Creating gig..."
     );
 
     try {
+      // Upload new images if any
+      let uploadedImageUrls = [];
+      if (formData.images.length > 0) {
+        toast.loading("Uploading images...", { id: loadingToast });
+
+        const formDataImages = new FormData();
+        formData.images.forEach((image) => {
+          formDataImages.append("otherImages", image);
+        });
+
+        const uploadResult = await uploadOtherImages(formDataImages).unwrap();
+        uploadedImageUrls = uploadResult.files.map((file) => file.url); // Extract only URLs
+      }
+
+      // For editing, preserve existing images and add new ones
+      let finalImages = uploadedImageUrls;
+      if (editingGig && editingGig.images) {
+        // Keep existing images that weren't removed
+        const existingImageUrls = editingGig.images
+          .filter((img) => imagePreview.includes(img.url))
+          .map((img) => img.url);
+        finalImages = [...existingImageUrls, ...uploadedImageUrls];
+      }
+
+      toast.loading(editingGig ? "Updating gig..." : "Creating gig...", {
+        id: loadingToast,
+      });
+
       const gigData = {
         title: formData.title,
         description: formData.description,
-        pricing: {
-          method: formData.pricingMethod,
-          price:
-            formData.pricingMethod !== "negotiable"
-              ? Number(formData.price)
-              : undefined,
-        },
+        pricingMethod: formData.pricingMethod,
+        price:
+          formData.pricingMethod !== "negotiable"
+            ? Number(formData.price)
+            : undefined,
+        images: finalImages,
+        skills: formData.skills,
       };
-
-      // Handle image upload if new images are added
-      if (formData.images.length > 0) {
-        const formDataImages = new FormData();
-        formData.images.forEach((image) => {
-          formDataImages.append("images", image);
-        });
-
-        // Note: You may need to add an upload endpoint for gig images
-        // For now, we'll include images in the gig data
-        gigData.images = formData.images;
-      }
 
       if (editingGig) {
         await updateGig({ id: editingGig._id, ...gigData }).unwrap();
@@ -159,6 +195,7 @@ const WorkerGigs = () => {
         pricingMethod: "fixed",
         price: "",
         images: [],
+        skills: [],
       });
       setImagePreview([]);
     } catch (err) {
@@ -169,13 +206,20 @@ const WorkerGigs = () => {
   };
 
   // Handle delete
-  const handleDelete = async (gigId) => {
-    if (!window.confirm("Are you sure you want to delete this gig?")) return;
+  const handleDeleteClick = (gig) => {
+    setGigToDelete(gig);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!gigToDelete) return;
 
     const loadingToast = toast.loading("Deleting gig...");
     try {
-      await deleteGig(gigId).unwrap();
+      await deleteGig(gigToDelete._id).unwrap();
       toast.success("Gig deleted successfully", { id: loadingToast });
+      setShowDeleteConfirm(false);
+      setGigToDelete(null);
     } catch (err) {
       toast.error(err?.data?.error || "Failed to delete gig", {
         id: loadingToast,
@@ -183,20 +227,187 @@ const WorkerGigs = () => {
     }
   };
 
-  // Loading skeleton
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <div className="animate-pulse">
-            <div className="h-8 w-48 bg-gray-200 rounded mb-2"></div>
-            <div className="h-4 w-64 bg-gray-200 rounded mb-6"></div>
-            <div className="h-10 w-32 bg-gray-200 rounded"></div>
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setGigToDelete(null);
+  };
+
+  // Render loading skeleton only for gigs grid
+  const renderGigsGrid = () => {
+    if (isLoading) {
+      return (
+        <>
+          <style>{`
+            @keyframes shimmer {
+              0% {
+                background-position: -1000px 0;
+              }
+              100% {
+                background-position: 1000px 0;
+              }
+            }
+            .shimmer {
+              animation: shimmer 2s infinite;
+              background: linear-gradient(
+                to right,
+                transparent 0%,
+                rgba(255, 255, 255, 0.6) 50%,
+                transparent 100%
+              );
+              background-size: 1000px 100%;
+            }
+          `}</style>
+
+          {/* Gigs Grid Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+              >
+                {/* Image Skeleton */}
+                <div className="relative h-48 bg-gray-200">
+                  <Skeleton className="w-full h-full" />
+                  {/* Price Badge Skeleton */}
+                  <div className="absolute top-3 right-3">
+                    <Skeleton className="h-8 w-24 rounded-full" />
+                  </div>
+                </div>
+
+                {/* Content Skeleton */}
+                <div className="p-4">
+                  {/* Title Skeleton */}
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+
+                  {/* Description Skeleton */}
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-5/6 mb-4" />
+
+                  {/* Badges Skeleton */}
+                  <div className="flex items-center gap-2 mb-4">
+                    <Skeleton className="h-6 w-20 rounded" />
+                    <Skeleton className="h-6 w-20 rounded" />
+                  </div>
+
+                  {/* Action Buttons Skeleton */}
+                  <div className="flex gap-2">
+                    <Skeleton className="flex-1 h-10 rounded-lg" />
+                    <Skeleton className="h-10 w-24 rounded-lg" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
+        </>
+      );
+    }
+
+    if (gigs.length === 0) {
+      return (
+        <div className="col-span-full bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FileText className="text-gray-400" size={32} />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No Gigs Yet
+          </h3>
+          <p className="text-sm text-gray-500 mb-6">
+            Create your first gig to start receiving job requests
+          </p>
+          <button
+            onClick={handleCreateNew}
+            className="inline-flex items-center gap-2 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+          >
+            <Plus size={18} />
+            Create Your First Gig
+          </button>
         </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {gigs.map((gig) => (
+          <div
+            key={gig._id}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
+          >
+            {/* Gig Image */}
+            <div className="relative h-48 bg-gray-200">
+              {gig.images && gig.images.length > 0 ? (
+                <img
+                  src={gig.images[0].url}
+                  alt={gig.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <ImageIcon className="text-gray-400" size={48} />
+                </div>
+              )}
+              {/* Pricing Badge */}
+              <div className="absolute top-3 right-3 bg-white px-3 py-1.5 rounded-full shadow-md">
+                <div className="flex items-center gap-1">
+                  <DollarSign size={14} className="text-green-600" />
+                  <span className="text-sm font-bold text-gray-900">
+                    {gig.pricing.method === "negotiable"
+                      ? "Negotiable"
+                      : `TZS ${gig.pricing.price?.toLocaleString()}`}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Gig Content */}
+            <div className="p-4">
+              <div className="flex items-start justify-between mb-2">
+                <h3 className="text-lg font-bold text-gray-900 flex-1 line-clamp-1">
+                  {gig.title}
+                </h3>
+              </div>
+
+              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                {gig.description}
+              </p>
+
+              {/* Pricing Method Badge */}
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium">
+                  <Clock size={12} />
+                  <span className="capitalize">{gig.pricing.method}</span>
+                </div>
+                {gig.images && gig.images.length > 1 && (
+                  <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">
+                    <ImageIcon size={12} />
+                    <span>{gig.images.length} images</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleEdit(gig)}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
+                >
+                  <Edit size={14} />
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteClick(gig)}
+                  disabled={isDeleting}
+                  className="flex items-center justify-center gap-2 px-4 py-2 border border-red-600 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
+                >
+                  <Trash2 size={14} />
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     );
-  }
+  };
 
   // Error state
   if (error) {
@@ -231,115 +442,24 @@ const WorkerGigs = () => {
         </p>
       </div>
 
-      {/* Gigs List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {gigs.length === 0 ? (
-          <div className="col-span-full bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FileText className="text-gray-400" size={32} />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No Gigs Yet
-            </h3>
-            <p className="text-sm text-gray-500 mb-6">
-              Create your first gig to start receiving job requests
-            </p>
-            <button
-              onClick={handleCreateNew}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
-            >
-              <Plus size={18} />
-              Create Your First Gig
-            </button>
-          </div>
-        ) : (
-          gigs.map((gig) => (
-            <div
-              key={gig._id}
-              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
-            >
-              {/* Gig Image */}
-              <div className="relative h-48 bg-gray-200">
-                {gig.images && gig.images.length > 0 ? (
-                  <img
-                    src={gig.images[0].url}
-                    alt={gig.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <ImageIcon className="text-gray-400" size={48} />
-                  </div>
-                )}
-                {/* Pricing Badge */}
-                <div className="absolute top-3 right-3 bg-white px-3 py-1.5 rounded-full shadow-md">
-                  <div className="flex items-center gap-1">
-                    <DollarSign size={14} className="text-green-600" />
-                    <span className="text-sm font-bold text-gray-900">
-                      {gig.pricing.method === "negotiable"
-                        ? "Negotiable"
-                        : `TZS ${gig.pricing.price?.toLocaleString()}`}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Gig Content */}
-              <div className="p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-lg font-bold text-gray-900 flex-1 line-clamp-1">
-                    {gig.title}
-                  </h3>
-                </div>
-
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {gig.description}
-                </p>
-
-                {/* Pricing Method Badge */}
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium">
-                    <Clock size={12} />
-                    <span className="capitalize">{gig.pricing.method}</span>
-                  </div>
-                  {gig.images && gig.images.length > 1 && (
-                    <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">
-                      <ImageIcon size={12} />
-                      <span>{gig.images.length} images</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleEdit(gig)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-blue-600 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors"
-                  >
-                    <Edit size={14} />
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(gig._id)}
-                    disabled={isDeleting}
-                    className="flex items-center justify-center gap-2 px-4 py-2 border border-red-600 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 transition-colors disabled:opacity-50"
-                  >
-                    <Trash2 size={14} />
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      {/* Gigs List - Dynamic Content with Shimmer */}
+      {renderGigsGrid()}
 
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
+            <style>{`
+              .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+              }
+              .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+              }
+            `}</style>
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
               <h3 className="text-xl font-bold text-gray-900">
                 {editingGig ? "Edit Gig" : "Create New Gig"}
               </h3>
@@ -391,6 +511,85 @@ const WorkerGigs = () => {
                 <p className="text-xs text-gray-500 mt-1">
                   {formData.description.length}/1000 characters
                 </p>
+              </div>
+
+              {/* Skills/Categories */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Skills/Categories <span className="text-red-500">*</span>
+                </label>
+                <div className="space-y-3">
+                  {/* Selected Skills */}
+                  {formData.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {formData.skills.map((skill, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm"
+                        >
+                          <span>{skill}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                skills: prev.skills.filter(
+                                  (_, i) => i !== index
+                                ),
+                              }));
+                            }}
+                            className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add Skill Input */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Add skill or category"
+                      onKeyPress={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const value = e.target.value.trim();
+                          if (value && !formData.skills.includes(value)) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              skills: [...prev.skills, value],
+                            }));
+                            e.target.value = "";
+                          }
+                        }
+                      }}
+                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        const input = e.target.previousSibling;
+                        const value = input.value.trim();
+                        if (value && !formData.skills.includes(value)) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            skills: [...prev.skills, value],
+                          }));
+                          input.value = "";
+                        }
+                      }}
+                      className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                    >
+                      <Plus size={18} />
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Press Enter or click + to add skills. Add skills like
+                    "Plumbing", "Electrical", "Carpentry", etc.
+                  </p>
+                </div>
               </div>
 
               {/* Pricing Method */}
@@ -525,6 +724,50 @@ const WorkerGigs = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && gigToDelete && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+            {/* Icon */}
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="text-red-600" size={32} />
+            </div>
+
+            {/* Title */}
+            <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+              Delete Gig?
+            </h3>
+
+            {/* Description */}
+            <p className="text-sm text-gray-600 text-center mb-6">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-gray-900">
+                "{gigToDelete.title}"
+              </span>
+              ? This action cannot be undone.
+            </p>
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={cancelDelete}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="flex-1 bg-red-600 text-white font-medium px-4 py-2.5 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-sm"
+              >
+                {isDeleting ? "Deleting..." : "Delete Gig"}
+              </button>
+            </div>
           </div>
         </div>
       )}

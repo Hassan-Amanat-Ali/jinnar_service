@@ -1,13 +1,24 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { useRef } from "react";
+import { useGetMyProfileQuery } from "../../services/workerApi";
 import SetupProgress from "../../components/worker/WorkerProfile/SetupProgress";
-import Step4Pricing from "../../components/worker/WorkerProfile/Step4Pricing";
+import Step4Location from "../../components/worker/WorkerProfile/Step4Location";
 
 const ProfileSetupPricing = () => {
   const navigate = useNavigate();
+  const step4Ref = useRef();
 
-  const handleNext = () => {
-    navigate("/worker-setup-availability");
+  const { data: profileData, isLoading, error } = useGetMyProfileQuery();
+
+  const handleNext = async () => {
+    // Save Step 4 data before moving to next step
+    if (step4Ref.current) {
+      const saved = await step4Ref.current.handleSave();
+      if (saved) {
+        navigate("/worker-setup-availability");
+      }
+    }
   };
 
   const handleBack = () => {
@@ -44,11 +55,16 @@ const ProfileSetupPricing = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-            Step 4 of 5: Set your service pricing
+            Step 4 of 5: Set your location
           </h2>
         </div>
 
-        <Step4Pricing />
+        <Step4Location
+          ref={step4Ref}
+          profileData={profileData?.profile}
+          isLoading={isLoading}
+          error={error}
+        />
 
         {/* Footer Buttons */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-8 sm:mt-12 pt-6 gap-4 sm:gap-0">

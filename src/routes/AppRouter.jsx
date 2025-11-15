@@ -107,7 +107,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "book-worker/:slug",
+        path: "book-worker/:sellerId/:gigId",
         element: (
           <RoleGuard allow={[ROLES.CUSTOMER, ROLES.WORKER]}>
             <BookWorker />

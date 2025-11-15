@@ -8,7 +8,7 @@ const WorkerBookings = () => {
         place="My Bookings"
         title="My Bookings"
         subtitle=""
-        className="lg:h-[22rem] h-[12rem] md:h-[18rem]"
+        className="lg:h-88 h-48 md:h-72"
       />
       <div className="px-6 mx-auto">
         <PlumbingRepair />

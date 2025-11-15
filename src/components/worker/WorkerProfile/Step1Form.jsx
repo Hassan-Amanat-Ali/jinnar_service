@@ -47,12 +47,12 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
       });
 
       // Set profile image preview if exists
-      if (profileData.profileImage?.url) {
+      if (profileData.profilePicture) {
         console.log(
           "Setting profile image preview:",
-          profileData.profileImage.url
+          profileData.profilePicture
         );
-        setProfileImagePreview(profileData.profileImage.url);
+        setProfileImagePreview(profileData.profilePicture);
       } else {
         console.log("No profile image found in profileData");
       }

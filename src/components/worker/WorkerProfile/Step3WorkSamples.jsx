@@ -32,8 +32,15 @@ const humanFileType = (file) => {
   return "file";
 };
 
-const Thumb = ({ file, onRemove }) => {
-  const kind = humanFileType(file);
+const Thumb = ({ file, onRemove, isExisting = false }) => {
+  const kind = isExisting
+    ? file.url?.includes("/videos/")
+      ? "video"
+      : file.url?.includes("/certificates/")
+      ? "pdf"
+      : "image"
+    : humanFileType(file);
+
   const Icon =
     kind === "image"
       ? FileImage
@@ -42,20 +49,38 @@ const Thumb = ({ file, onRemove }) => {
       : kind === "pdf"
       ? FileText
       : FileText;
+
+  const displayName = isExisting
+    ? file.url?.split("/").pop()?.split("?")[0] || "Uploaded file"
+    : file.name || "file";
+
   return (
-    <div className="relative w-40 h-28 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center">
-      <Icon className="w-10 h-10 text-gray-400" />
+    <div className="relative w-40 h-28 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center group">
+      {isExisting && kind === "image" ? (
+        <img
+          src={file.url}
+          alt={displayName}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <Icon className="w-10 h-10 text-gray-400" />
+      )}
       <button
         type="button"
         onClick={onRemove}
-        className="absolute -top-2 -right-2 bg-white border border-gray-300 text-gray-500 rounded-full p-1 shadow-sm hover:text-gray-700"
+        className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity z-10"
         aria-label="Remove file"
       >
-        <X className="w-3 h-3" />
+        <X className="w-3.5 h-3.5" />
       </button>
       <div className="absolute bottom-0 left-0 right-0 bg-white/80 px-2 py-1 text-[11px] text-gray-600 truncate">
-        {file.name || "file"}
+        {displayName}
       </div>
+      {isExisting && (
+        <div className="absolute top-1 left-1 bg-green-500 text-white text-[9px] px-1.5 py-0.5 rounded">
+          Uploaded
+        </div>
+      )}
     </div>
   );
 };
@@ -70,6 +95,7 @@ const Step3WorkSamples = forwardRef(
 
     const inputRef = useRef(null);
     const [files, setFiles] = useState([]);
+    const [existingFiles, setExistingFiles] = useState([]);
     const [bio, setBio] = useState("");
     const [dragOver, setDragOver] = useState(false);
 
@@ -83,9 +109,33 @@ const Step3WorkSamples = forwardRef(
           setBio(profileData.bio);
         }
 
-        // Note: Existing uploaded files from backend are not displayed in the file list
-        // because we only show newly selected files before upload
-        // The backend already has portfolioImages, videos, and certificates arrays
+        // Load existing uploaded files
+        const existing = [];
+        if (
+          profileData.portfolioImages &&
+          profileData.portfolioImages.length > 0
+        ) {
+          existing.push(
+            ...profileData.portfolioImages.map((img) => ({
+              ...img,
+              type: "portfolio",
+            }))
+          );
+        }
+        if (profileData.videos && profileData.videos.length > 0) {
+          existing.push(
+            ...profileData.videos.map((vid) => ({ ...vid, type: "video" }))
+          );
+        }
+        if (profileData.certificates && profileData.certificates.length > 0) {
+          existing.push(
+            ...profileData.certificates.map((cert) => ({
+              ...cert,
+              type: "certificate",
+            }))
+          );
+        }
+        setExistingFiles(existing);
       }
     }, [profileData]);
 
@@ -296,6 +346,11 @@ const Step3WorkSamples = forwardRef(
     const removeAt = (idx) =>
       setFiles((prev) => prev.filter((_, i) => i !== idx));
 
+    const removeExisting = (idx) =>
+      setExistingFiles((prev) => prev.filter((_, i) => i !== idx));
+
+    const totalFiles = existingFiles.length + files.length;
+
     return (
       <div className="space-y-6 max-w-5xl mx-auto">
         {/* Upload helper card */}
@@ -362,19 +417,28 @@ const Step3WorkSamples = forwardRef(
         {/* Files list */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
           <div className="text-sm font-semibold text-gray-900 mb-3">
-            Your Work Samples ({files.length})
+            Your Work Samples ({totalFiles})
           </div>
-          {files.length === 0 ? (
+          {totalFiles === 0 ? (
             <p className="text-xs text-gray-500">
               No files yet. Add images, short videos, or PDFs of certificates.
             </p>
           ) : (
             <div className="flex flex-wrap gap-4">
+              {existingFiles.map((f, i) => (
+                <Thumb
+                  key={`existing-${f.publicId || i}`}
+                  file={f}
+                  onRemove={() => removeExisting(i)}
+                  isExisting={true}
+                />
+              ))}
               {files.map((f, i) => (
                 <Thumb
-                  key={`${f.name}-${i}`}
+                  key={`new-${f.name}-${i}`}
                   file={f}
                   onRemove={() => removeAt(i)}
+                  isExisting={false}
                 />
               ))}
             </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -36,7 +36,6 @@ import WorkerHelpAndSupport from "../../components/profile/WorkerHelpAndSupport"
 const Profile = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState("profile");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Determine if this is a worker profile based on the route
@@ -57,18 +56,14 @@ const Profile = () => {
     []
   );
 
-  // Sync state from URL on mount and whenever ?tab changes
-  useEffect(() => {
-    const tabFromUrl = searchParams.get("tab");
-    if (tabFromUrl && validTabs.has(tabFromUrl) && tabFromUrl !== activeTab) {
-      setActiveTab(tabFromUrl);
-    }
-  }, [searchParams, activeTab, validTabs]);
+  // Initialize activeTab from URL or default to "profile"
+  const tabFromUrl = searchParams.get("tab");
+  const activeTab =
+    tabFromUrl && validTabs.has(tabFromUrl) ? tabFromUrl : "profile";
 
   // Helper to update both state and URL
   const updateActiveTab = (tabId) => {
     if (!validTabs.has(tabId)) return;
-    setActiveTab(tabId);
     const next = new URLSearchParams(searchParams);
     next.set("tab", tabId);
     setSearchParams(next, { replace: true });
@@ -76,45 +71,74 @@ const Profile = () => {
 
   // Function to render the active component based on user type
   const renderActiveComponent = () => {
+    let component;
+
     if (isWorkerProfile) {
       // Worker-specific components
       switch (activeTab) {
         case "profile":
-          return <WorkerProfileOverview />;
+          component = <WorkerProfileOverview />;
+          break;
         case "gigs":
-          return <WorkerGigs />;
+          component = <WorkerGigs />;
+          break;
         case "payment":
-          return <WorkerPaymentMethod />;
+          component = <WorkerPaymentMethod />;
+          break;
         case "notifications":
-          return <Notifications />;
+          component = <Notifications />;
+          break;
         case "help":
-          return <HelpAndSupport />;
+          component = <HelpAndSupport />;
+          break;
         case "privacy":
-          return <PrivacyPolicy />; // Same for both
+          component = <PrivacyPolicy />;
+          break;
         case "terms":
-          return <TermsAndConditions />; // Same for both
+          component = <TermsAndConditions />;
+          break;
         default:
-          return <WorkerProfileOverview />;
+          component = <WorkerProfileOverview />;
       }
     } else {
       // Customer-specific components
       switch (activeTab) {
         case "profile":
-          return <ProfileOverview />;
+          component = <ProfileOverview />;
+          break;
         case "complaint":
-          return <ComplaintSubmission />;
+          component = <ComplaintSubmission />;
+          break;
         case "notifications":
-          return <Notifications />;
+          component = <Notifications />;
+          break;
         case "help":
-          return <HelpAndSupport />;
+          component = <HelpAndSupport />;
+          break;
         case "privacy":
-          return <PrivacyPolicy />;
+          component = <PrivacyPolicy />;
+          break;
         case "terms":
-          return <TermsAndConditions />;
+          component = <TermsAndConditions />;
+          break;
         default:
-          return <ProfileOverview />;
+          component = <ProfileOverview />;
       }
     }
+
+    return (
+      <motion.div
+        key={activeTab}
+        initial={{ opacity: 0, x: 10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{
+          duration: 0.2,
+          ease: "easeOut",
+        }}
+      >
+        {component}
+      </motion.div>
+    );
   };
 
   // Define sidebar items based on user type

@@ -18,6 +18,10 @@ export const customerApi = baseApi.injectEndpoints({
       query: () => "/orders/my-orders",
       providesTags: ["Orders"],
     }),
+    getOrderById: builder.query({
+      query: (id) => `/orders/${id}`,
+      providesTags: (result, error, id) => [{ type: "Orders", id }],
+    }),
     getActiveJobs: builder.query({
       query: () => "/orders/active-jobs",
       providesTags: ["Orders"],
@@ -109,6 +113,7 @@ export const {
   useGetPublicProfileQuery,
   useUpdateProfileMutation,
   useGetMyOrdersQuery,
+  useGetOrderByIdQuery,
   useGetActiveJobsQuery,
   useGetCompletedOrdersQuery,
   useGetCancelledOrdersQuery,

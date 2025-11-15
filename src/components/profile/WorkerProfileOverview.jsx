@@ -85,8 +85,8 @@ const InfoRow = ({ icon, label, value, isLink = false }) => (
 const WorkerProfileOverview = () => {
   const navigate = useNavigate();
   const { data, isLoading, error } = useGetMyProfileQuery();
+  console.log("Profile data:", data);
 
-  // Get profile data from API response
   const profile = data?.profile;
 
   // Handler for edit profile button
@@ -102,35 +102,42 @@ const WorkerProfileOverview = () => {
     </div>
   );
 
+  // Shimmer styles
+  const shimmerStyles = `
+    @keyframes shimmer {
+      0% {
+        background-position: -1000px 0;
+      }
+      100% {
+        background-position: 1000px 0;
+      }
+    }
+    .shimmer {
+      animation: shimmer 2s infinite;
+      background: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(255, 255, 255, 0.6) 50%,
+        transparent 100%
+      );
+      background-size: 1000px 100%;
+    }
+  `;
+
   // Loading state with Skeleton
   if (isLoading) {
     return (
       <div className="space-y-2">
-        <style>{`
-          @keyframes shimmer {
-            0% {
-              background-position: -1000px 0;
-            }
-            100% {
-              background-position: 1000px 0;
-            }
-          }
-          .shimmer {
-            animation: shimmer 2s infinite;
-            background: linear-gradient(
-              to right,
-              transparent 0%,
-              rgba(255, 255, 255, 0.6) 50%,
-              transparent 100%
-            );
-            background-size: 1000px 100%;
-          }
-        `}</style>
+        <style>{shimmerStyles}</style>
 
-        {/* Header Skeleton */}
+        {/* Header - Static */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-4 w-64 mb-6" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-1">
+            Profile Overview
+          </h2>
+          <p className="text-sm text-gray-500 mb-6">
+            Your account information and personal details
+          </p>
 
           {/* Profile Section Skeleton */}
           <div className="flex flex-col md:flex-row gap-6">
@@ -382,7 +389,7 @@ const WorkerProfileOverview = () => {
   };
 
   const getLocationString = (areas) => {
-    if (!areas || areas.length === 0) return "Not specified";
+    if (!areas || areas.length === 0) return null;
     // For simplicity, just show count. In production, you'd reverse geocode
     return `${areas.length} service area${
       areas.length !== 1 ? "s" : ""
@@ -390,7 +397,7 @@ const WorkerProfileOverview = () => {
   };
 
   const getServiceRadius = (areas) => {
-    if (!areas || areas.length === 0) return "Not set";
+    if (!areas || areas.length === 0) return null;
     return `${areas.length} location${areas.length !== 1 ? "s" : ""}`;
   };
 
@@ -431,10 +438,11 @@ const WorkerProfileOverview = () => {
         <div className="flex flex-col md:flex-row gap-6">
           {/* Left: Avatar and Basic Info */}
           <div className="flex flex-col md:flex-row gap-4 flex-1">
+            {console.log("Rendering profile:", profile)}
             <div className="shrink-0">
-              {profile.profileImage?.url ? (
+              {profile.profilePicture ? (
                 <img
-                  src={profile.profileImage.url}
+                  src={profile.profilePicture}
                   alt={profile.name}
                   className="w-20 h-20 rounded-full object-cover"
                 />
@@ -480,10 +488,12 @@ const WorkerProfileOverview = () => {
 
               {/* Badges */}
               <div className="flex flex-wrap gap-2 mb-4">
-                <Badge variant="verified">
-                  <CheckCircle size={12} />
-                  Member since {worker.joinDate}
-                </Badge>
+                {profile.createdAt && (
+                  <Badge variant="verified">
+                    <CheckCircle size={12} />
+                    Member since {worker.joinDate}
+                  </Badge>
+                )}
                 <Badge variant="available">
                   <Clock size={12} />
                   Available
@@ -492,10 +502,13 @@ const WorkerProfileOverview = () => {
                   <Star size={12} />
                   {profile.yearsOfExperience || 0}+ years
                 </Badge>
-                <Badge variant="location">
-                  <MapPin size={12} />
-                  Dar es Salaam
-                </Badge>
+                {profile.selectedAreas && profile.selectedAreas.length > 0 && (
+                  <Badge variant="location">
+                    <MapPin size={12} />
+                    {profile.selectedAreas.length} service area
+                    {profile.selectedAreas.length !== 1 ? "s" : ""}
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
@@ -572,14 +585,21 @@ const WorkerProfileOverview = () => {
                   Location & Service Area
                 </h4>
                 <div className="space-y-3">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900 mb-1">
-                      {getLocationString(profile.selectedAreas)}
+                  {getLocationString(profile.selectedAreas) ? (
+                    <div>
+                      <div className="text-sm font-medium text-gray-900 mb-1">
+                        {getLocationString(profile.selectedAreas)}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Service Radius:{" "}
+                        {getServiceRadius(profile.selectedAreas)}
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      Service Radius: {getServiceRadius(profile.selectedAreas)}
+                  ) : (
+                    <div className="text-sm text-gray-500 italic">
+                      No location added
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 <h4 className="text-sm font-semibold text-gray-700 mb-4 mt-6">

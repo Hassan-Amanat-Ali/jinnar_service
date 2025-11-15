@@ -38,9 +38,24 @@ export const workerApi = baseApi.injectEndpoints({
         body: formData,
       }),
     }),
+    uploadOtherImages: builder.mutation({
+      query: (formData) => ({
+        url: "/upload/other-images",
+        method: "POST",
+        body: formData,
+      }),
+    }),
     getMyGigs: builder.query({
       query: () => "/gigs/my-gigs",
       providesTags: ["Gigs"],
+    }),
+    getAllGigs: builder.query({
+      query: () => "/gigs",
+      providesTags: ["Gigs"],
+    }),
+    getGigById: builder.query({
+      query: (id) => `/gigs/${id}`,
+      providesTags: (result, error, id) => [{ type: "Gigs", id }],
     }),
     createGig: builder.mutation({
       query: (data) => ({ url: "/gigs/create", method: "POST", body: data }),
@@ -110,6 +125,10 @@ export const workerApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Notifications"],
     }),
+    getPublicProfile: builder.query({
+      query: (id) => `/user/public/${id}`,
+      providesTags: (result, error, id) => [{ type: "PublicProfile", id }],
+    }),
     sendOrderMessage: builder.mutation({
       query: (data) => ({ url: "/orders/message", method: "POST", body: data }),
     }),
@@ -127,7 +146,10 @@ export const {
   useUploadPortfolioImagesMutation,
   useUploadVideosMutation,
   useUploadCertificatesMutation,
+  useUploadOtherImagesMutation,
   useGetMyGigsQuery,
+  useGetAllGigsQuery,
+  useGetGigByIdQuery,
   useCreateGigMutation,
   useUpdateGigMutation,
   useDeleteGigMutation,
@@ -142,6 +164,7 @@ export const {
   useWithdrawWalletMutation,
   useGetNotificationsQuery,
   useMarkNotificationsAsReadMutation,
+  useGetPublicProfileQuery,
   useSendOrderMessageMutation,
   useMarkOrderMessagesReadMutation,
 } = workerApi;
