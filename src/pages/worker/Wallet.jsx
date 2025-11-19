@@ -2,453 +2,584 @@ import React, { useState } from "react";
 import Hero from "../../components/common/Hero";
 import {
   Wallet as WalletIcon,
-  TrendingUp,
-  ArrowUp,
+  ArrowDownLeft,
+  ArrowUpRight,
   Plus,
-  MoreVertical,
-  Home,
-  Wrench,
-  Zap,
-  Droplets,
-  Scissors,
-  Trees,
   X,
   Clock,
   CheckCircle,
+  CreditCard,
+  Smartphone,
   AlertCircle,
 } from "lucide-react";
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+  useGetWalletQuery,
+  useDepositMoneyMutation,
+  useWithdrawWalletMutation,
+} from "../../services/workerApi";
+
+// Tanzania Mobile Money Providers with correct API format
+const providers = [
+  { id: "MPESA_TZA", name: "M-Pesa", color: "green" },
+  { id: "AIRTEL_TZA", name: "Airtel Money", color: "red" },
+  { id: "TIGO_TZA", name: "Tigo Pesa", color: "blue" },
+  { id: "VODACOM_TZA", name: "Vodacom M-Pesa", color: "red" },
+  { id: "HALOTEL_TZA", name: "Halotel Money", color: "purple" },
+];
 
 // Stats Card Component
-const StatsCard = ({ title, amount, icon, iconBg, hasAlert = false }) => (
-  <div className="relative rounded-2xl bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] p-5 text-white overflow-hidden">
+const StatsCard = ({ title, amount, icon, gradient, description }) => (
+  <div className={`relative rounded-2xl ${gradient} p-6 text-white overflow-hidden`}>
     <div className="relative z-10">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-medium opacity-90">{title}</span>
-        <div className={`p-2 rounded-lg ${iconBg || "bg-white/20"}`}>
+        <div className="p-2 rounded-lg bg-white/20">
           {icon}
         </div>
       </div>
-      <div className="text-2xl font-bold">{amount}</div>
-      {hasAlert && (
-        <div className="flex items-center gap-1 mt-2 text-xs">
-          <AlertCircle size={12} className="text-orange-200" />
-          <span className="text-orange-100">Withdraw Now</span>
-        </div>
-      )}
+      <div className="text-3xl font-bold mb-1">{amount}</div>
+      <div className="text-xs opacity-75">{description}</div>
     </div>
     {/* Background Pattern */}
-    <div className="absolute top-0 right-0 w-20 h-20 opacity-10">
-      <div className="w-full h-full bg-white/20 rounded-full transform translate-x-6 -translate-y-6"></div>
+    <div className="absolute top-0 right-0 w-24 h-24 opacity-10">
+      <div className="w-full h-full bg-white/20 rounded-full transform translate-x-8 -translate-y-8"></div>
     </div>
   </div>
 );
 
-// Chart Section
-const EarningsChart = () => {
-  const chartData = [
-    { name: "Mon", value: 80000 },
-    { name: "Tue", value: 120000 },
-    { name: "Wed", value: 60000 },
-    { name: "Thu", value: 90000 },
-    { name: "Fri", value: 110000 },
-    { name: "Sat", value: 130000 },
-    { name: "Sun", value: 95000 },
-  ];
+// Transaction Item Component
+const TransactionItem = ({ type, amount, createdAt, status, paymentMethod, description }) => {
+  // Format date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-xl font-bold text-gray-900">Earnings Overview</h3>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-green-600 text-sm font-medium flex items-center gap-1">
-              <TrendingUp size={14} />
-              +26% vs last week
-            </span>
-          </div>
-        </div>
-        <button className="text-sky-600 text-sm font-medium hover:text-sky-700">
-          View Details
-        </button>
+    <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:shadow-sm transition-shadow">
+      <div className={`p-3 rounded-full ${type === 'deposit' ? 'bg-green-100' : 'bg-blue-100'}`}>
+        {type === 'deposit' ? (
+          <ArrowDownLeft className={`w-5 h-5 ${type === 'deposit' ? 'text-green-600' : 'text-blue-600'}`} />
+        ) : (
+          <ArrowUpRight className={`w-5 h-5 ${type === 'deposit' ? 'text-green-600' : 'text-blue-600'}`} />
+        )}
       </div>
+      <div className="flex-1">
+        <div className="flex items-center justify-between mb-1">
+          <h4 className="text-sm font-semibold text-gray-900">{description}</h4>
+          <span className={`text-sm font-bold ${type === 'deposit' ? 'text-green-600' : 'text-blue-600'}`}>
+            {type === 'deposit' ? '+' : '-'}TZS {amount?.toLocaleString()}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <span>{formatDate(createdAt)}</span>
+          <span>•</span>
+          <span>{paymentMethod || 'Unknown'}</span>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+            status === 'completed' ? 'bg-green-100 text-green-700' :
+            status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+            'bg-red-100 text-red-700'
+          }`}>
+            {status}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-      <div className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+// Deposit Modal Component
+const DepositModal = ({ isOpen, onClose, onDeposit }) => {
+  const [amount, setAmount] = useState("");
+  const [selectedProvider, setSelectedProvider] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!amount || !selectedProvider || !phoneNumber) return;
+
+    setIsLoading(true);
+    setError("");
+    
+    try {
+      const depositData = {
+        provider: selectedProvider,
+        amount: parseFloat(amount),
+        currency: "TZS",
+        country: "TZA",
+        phoneNumber: phoneNumber.startsWith("255") ? phoneNumber : `255${phoneNumber.replace(/^0+/, "")}`
+      };
+
+      await onDeposit(depositData);
+      setAmount("");
+      setSelectedProvider("");
+      setPhoneNumber("");
+      setError("");
+      onClose();
+    } catch (error) {
+      console.error("Deposit error:", error);
+      setError(error?.data?.message || error?.message || "Failed to deposit money. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900">Deposit Money</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <XAxis
-              dataKey="name"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: "#6B7280" }}
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Amount Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Amount (TZS)
+            </label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Enter amount"
+              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              min="1000"
+              required
             />
-            <YAxis hide />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]} fill="#74C7F2">
-              {chartData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={index === 5 ? "#3B82F6" : "#74C7F2"}
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+          </div>
 
-      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-        <div>
-          <div className="text-sm text-gray-600">This Week</div>
-          <div className="text-lg font-bold text-gray-900">TZS 130,000</div>
-        </div>
-        <div>
-          <div className="text-sm text-gray-600">Last Week</div>
-          <div className="text-lg font-bold text-gray-900">TZS 95,000</div>
-        </div>
+          {/* Provider Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Payment Method
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {providers.map((provider) => (
+                <button
+                  key={provider.id}
+                  type="button"
+                  onClick={() => setSelectedProvider(provider.id)}
+                  className={`p-3 rounded-lg border transition-colors ${
+                    selectedProvider === provider.id
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <div className="text-sm font-medium text-gray-900">
+                    {provider.name}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Phone Number */}
+          {selectedProvider && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="Enter phone number (e.g., 0683456129 or 255683456129)"
+                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-3 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading || !amount || !selectedProvider || !phoneNumber}
+              className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isLoading ? "Processing..." : "Deposit"}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
 };
 
-// Quick Stats Sidebar
-const QuickStats = () => (
-  <div className="space-y-4">
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-      <h3 className="text-base font-bold text-gray-900 mb-4">Quick Stats</h3>
+// Withdraw Modal Component
+const WithdrawModal = ({ isOpen, onClose, onWithdraw, availableBalance }) => {
+  const [amount, setAmount] = useState("");
+  const [selectedProvider, setSelectedProvider] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-      <div className="space-y-4">
-        <div className="bg-green-50 rounded-xl p-4">
-          <div className="text-green-800 text-lg font-bold">TZS 120,000</div>
-          <div className="text-green-600 text-sm">This Week</div>
-        </div>
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!amount || !selectedProvider || !phoneNumber) return;
 
-        <div className="bg-blue-50 rounded-xl p-4">
-          <div className="flex items-center gap-2 mb-1">
-            <ArrowUp className="text-blue-600" size={16} />
-            <span className="text-blue-800 text-lg font-bold">+26%</span>
-          </div>
-          <div className="text-blue-600 text-sm">Growth in Last Week</div>
-        </div>
+    const withdrawAmount = parseFloat(amount);
+    if (withdrawAmount > availableBalance) {
+      setError("Insufficient balance");
+      return;
+    }
 
-        <div className="bg-purple-50 rounded-xl p-4">
-          <div className="text-purple-800 text-lg font-bold">5</div>
-          <div className="text-purple-600 text-sm">Completed Jobs</div>
-        </div>
-      </div>
-    </div>
+    setIsLoading(true);
+    setError("");
+    
+    try {
+      const withdrawData = {
+        provider: selectedProvider,
+        amount: withdrawAmount,
+        currency: "TZS",
+        country: "TZA",
+        phoneNumber: phoneNumber.startsWith("255") ? phoneNumber : `255${phoneNumber.replace(/^0+/, "")}`
+      };
 
-    <LinkedAccounts />
-  </div>
-);
-
-// Linked Accounts Section
-const LinkedAccounts = () => (
-  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-    <div className="flex items-center justify-between mb-4">
-      <h3 className="text-base font-bold text-gray-900">Linked Accounts</h3>
-      <button className="text-sky-600 text-sm font-medium hover:text-sky-700">
-        + Add
-      </button>
-    </div>
-
-    <div className="space-y-3">
-      <div className="flex items-center justify-between p-3 rounded-xl border border-gray-100">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-            <span className="text-green-600 text-xs font-bold">MP</span>
-          </div>
-          <div>
-            <div className="font-medium text-sm text-gray-900">M-Pesa</div>
-            <div className="text-xs text-gray-500">**** 1234</div>
-          </div>
-        </div>
-        <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-          Primary
-        </span>
-      </div>
-
-      <div className="flex items-center justify-between p-3 rounded-xl border border-gray-100">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-            <span className="text-blue-600 text-xs font-bold">CB</span>
-          </div>
-          <div>
-            <div className="font-medium text-sm text-gray-900">CRDB Bank</div>
-            <div className="text-xs text-gray-500">**** 5678</div>
-          </div>
-        </div>
-        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-          Pending
-        </span>
-      </div>
-    </div>
-
-    <button className="w-full mt-4 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium text-sm py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
-      <ArrowUp size={16} />
-      Withdraw Now
-    </button>
-  </div>
-);
-
-// Service Icon Helper
-const getServiceIcon = (service) => {
-  const icons = {
-    "House Cleaning": <Home size={16} />,
-    "Plumbing Repair": <Droplets size={16} />,
-    "Withdrawal to M-Pesa": <WalletIcon size={16} />,
-    "Electrical Installation": <Zap size={16} />,
-    "Platform Fee": <Scissors size={16} />,
-    "Garden Maintenance": <Trees size={16} />,
-    "Carpentry Work": <Wrench size={16} />,
-  };
-  return icons[service] || <Wrench size={16} />;
-};
-
-// Transaction Row Component
-const TransactionRow = ({ transaction }) => {
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Completed":
-        return "bg-green-100 text-green-700";
-      case "Pending":
-        return "bg-yellow-100 text-yellow-700";
-      case "Cancelled":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-gray-100 text-gray-700";
+      await onWithdraw(withdrawData);
+      setAmount("");
+      setSelectedProvider("");
+      setPhoneNumber("");
+      setError("");
+      onClose();
+    } catch (error) {
+      console.error("Withdraw error:", error);
+      setError(error?.data?.message || error?.message || "Failed to withdraw money. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "Completed":
-        return <CheckCircle size={12} />;
-      case "Pending":
-        return <Clock size={12} />;
-      case "Cancelled":
-        return <X size={12} />;
-      default:
-        return <AlertCircle size={12} />;
-    }
-  };
+  if (!isOpen) return null;
 
   return (
-    <tr className="border-b border-gray-50 hover:bg-gray-50/50">
-      <td className="py-4 px-1">
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              transaction.type === "withdrawal"
-                ? "bg-blue-100 text-blue-600"
-                : "bg-green-100 text-green-600"
-            }`}
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900">Withdraw Money</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            {getServiceIcon(transaction.service)}
-          </div>
-          <div>
-            <div className="font-medium text-sm text-gray-900">
-              {transaction.service}
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Available Balance */}
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="text-sm text-blue-600 mb-1">Available Balance</div>
+            <div className="text-xl font-bold text-blue-900">
+              TZS {availableBalance?.toLocaleString() || '0'}
             </div>
-            <div className="text-xs text-gray-500">{transaction.date}</div>
           </div>
-        </div>
-      </td>
-      <td className="py-4 px-1">
-        <span
-          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-            transaction.status
-          )}`}
-        >
-          {getStatusIcon(transaction.status)}
-          {transaction.status}
-        </span>
-      </td>
-      <td className="py-4 px-1 text-right">
-        <div
-          className={`font-bold text-sm ${
-            transaction.type === "withdrawal"
-              ? "text-red-600"
-              : "text-green-600"
-          }`}
-        >
-          {transaction.type === "withdrawal" ? "-" : "+"}
-          {transaction.amount}
-        </div>
-      </td>
-    </tr>
+
+          {/* Amount Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Amount (TZS)
+            </label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Enter amount"
+              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              max={availableBalance}
+              min="1000"
+              required
+            />
+          </div>
+
+          {/* Provider Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Payment Method
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {providers.map((provider) => (
+                <button
+                  key={provider.id}
+                  type="button"
+                  onClick={() => setSelectedProvider(provider.id)}
+                  className={`p-3 rounded-lg border transition-colors ${
+                    selectedProvider === provider.id
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <div className="text-sm font-medium text-gray-900">
+                    {provider.name}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Phone Number */}
+          {selectedProvider && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="Enter phone number (e.g., 0683456129 or 255683456129)"
+                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-3 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading || !amount || !selectedProvider || !phoneNumber}
+              className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isLoading ? "Processing..." : "Withdraw"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 };
 
-// Transaction History Section
-const TransactionHistory = () => {
+// Main Wallet Component
+const Wallet = () => {
+  const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [filter, setFilter] = useState("All");
 
-  const transactions = [
-    {
-      id: 1,
-      service: "House Cleaning",
-      date: "Dec 16, 2023 • 2:35 PM",
-      status: "Completed",
-      amount: "TZS 25,000",
-      type: "earning",
-    },
-    {
-      id: 2,
-      service: "Plumbing Repair",
-      date: "Dec 15, 2023 • 11:30 AM",
-      status: "Completed",
-      amount: "TZS 50,000",
-      type: "earning",
-    },
-    {
-      id: 3,
-      service: "Withdrawal to M-Pesa",
-      date: "Dec 14, 2023 • 09:15 AM",
-      status: "Completed",
-      amount: "TZS 800,000",
-      type: "withdrawal",
-    },
-    {
-      id: 4,
-      service: "Electrical Installation",
-      date: "Dec 13, 2023 • 04:22 PM",
-      status: "Pending",
-      amount: "TZS 75,000",
-      type: "earning",
-    },
-    {
-      id: 5,
-      service: "Platform Fee",
-      date: "Dec 12, 2023 • 12:00 PM",
-      status: "Completed",
-      amount: "TZS 5,750",
-      type: "withdrawal",
-    },
-    {
-      id: 6,
-      service: "Garden Maintenance",
-      date: "Dec 11, 2023 • 10:00 AM",
-      status: "Completed",
-      amount: "TZS 30,000",
-      type: "earning",
-    },
-    {
-      id: 7,
-      service: "Carpentry Work",
-      date: "Dec 10, 2023 • 02:30 PM",
-      status: "Cancelled",
-      amount: "TZS 80,000",
-      type: "earning",
-    },
-  ];
+  // API Queries and Mutations
+  const { data: walletData, isLoading, error: walletError, refetch } = useGetWalletQuery();
+  const [depositMoney] = useDepositMoneyMutation();
+  const [withdrawWallet] = useWithdrawWalletMutation();
 
-  const filteredTransactions = transactions.filter((t) => {
+  // Handle deposit
+  const handleDeposit = async (depositData) => {
+    try {
+      await depositMoney(depositData).unwrap();
+      refetch();
+    } catch (error) {
+      console.error("Failed to deposit:", error);
+      throw error;
+    }
+  };
+
+  // Handle withdraw
+  const handleWithdraw = async (withdrawData) => {
+    try {
+      await withdrawWallet(withdrawData).unwrap();
+      refetch();
+    } catch (error) {
+      console.error("Failed to withdraw:", error);
+      throw error;
+    }
+  };
+
+  // Extract data from API response
+  const balance = walletData?.balance || 0;
+  const transactions = walletData?.transactions || [];
+
+  // Calculate stats from real transactions
+  const deposits = transactions.filter(t => t.type === 'deposit');
+  const withdrawals = transactions.filter(t => t.type === 'withdrawal');
+  
+  const totalDeposits = deposits.reduce((sum, t) => sum + (t.amount || 0), 0);
+  const totalWithdrawals = withdrawals.reduce((sum, t) => sum + (t.amount || 0), 0);
+
+  // Filter transactions
+  const filteredTransactions = transactions.filter(transaction => {
     if (filter === "All") return true;
-    return t.status === filter;
+    if (filter === "Deposits") return transaction.type === "deposit";
+    if (filter === "Withdrawals") return transaction.type === "withdrawal";
+    return true;
   });
 
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-bold text-gray-900">Transaction History</h3>
-        <button className="text-sky-600 text-sm font-medium hover:text-sky-700 flex items-center gap-1">
-          All Time
-          <MoreVertical size={14} />
-        </button>
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-xl">Loading wallet...</div>
       </div>
+    );
+  }
 
-      {/* Filter Tabs */}
-      <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-lg w-full overflow-x-auto sm:w-fit">
-        {["All", "Completed", "Pending", "Cancelled"].map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setFilter(tab)}
-            className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-              filter === tab
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+  if (walletError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="text-xl text-red-600 mb-2">Error loading wallet</div>
+          <div className="text-sm text-gray-500">
+            {walletError?.data?.message || walletError?.message || "Please try refreshing the page"}
+          </div>
+        </div>
       </div>
+    );
+  }
 
-      {/* Transaction Table */}
-      <div className="overflow-hidden">
-        <table className="w-full">
-          <tbody>
-            {filteredTransactions.map((transaction) => (
-              <TransactionRow key={transaction.id} transaction={transaction} />
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
-
-const Wallet = () => {
   return (
     <div>
       <Hero
         place="wallet"
         title="Wallet"
         subtitle="Manage your earnings and payments"
-        className="h-[7rem] sm:h-[8rem] md:h-[12rem] lg:h-[12rem]"
+        className="h-28 sm:h-32 md:h-48 lg:h-48"
       />
 
       <section className="w-full">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 mb-10">
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <StatsCard
                 title="Total Balance"
-                amount="TZS 540,000"
-                icon={<WalletIcon size={20} />}
-                iconBg="bg-white/20"
-                hasAlert
+                amount={`TZS ${balance.toLocaleString()}`}
+                icon={<WalletIcon size={24} />}
+                gradient="bg-gradient-to-r from-blue-500 to-purple-600"
+                description="Available for withdrawal"
               />
               <StatsCard
-                title="Pending Payments"
-                amount="TZS 120,000"
-                icon={<Clock size={20} />}
-                iconBg="bg-white/20"
+                title="Total Deposits"
+                amount={`TZS ${totalDeposits.toLocaleString()}`}
+                icon={<ArrowDownLeft size={24} />}
+                gradient="bg-gradient-to-r from-green-500 to-emerald-600"
+                description={`${deposits.length} transactions`}
               />
               <StatsCard
-                title="Available for Withdrawal"
-                amount="TZS 400,000"
-                icon={<ArrowUp size={20} />}
-                iconBg="bg-white/20"
+                title="Total Withdrawals"
+                amount={`TZS ${totalWithdrawals.toLocaleString()}`}
+                icon={<ArrowUpRight size={24} />}
+                gradient="bg-gradient-to-r from-orange-500 to-red-600"
+                description={`${withdrawals.length} transactions`}
               />
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column - Chart and Transactions */}
-              <div className="lg:col-span-2 space-y-6">
-                <EarningsChart />
-                <TransactionHistory />
+            {/* Quick Actions */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setIsDepositModalOpen(true)}
+                  className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors"
+                >
+                  <Plus size={20} />
+                  Deposit Money
+                </button>
+                <button
+                  onClick={() => setIsWithdrawModalOpen(true)}
+                  className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+                >
+                  <ArrowUpRight size={20} />
+                  Withdraw Money
+                </button>
+              </div>
+            </div>
+
+            {/* Transaction History */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900">Transaction History</h2>
+                <div className="text-sm text-gray-500">
+                  {transactions.length} total transactions
+                </div>
               </div>
 
-              {/* Right Column - Quick Stats and Linked Accounts */}
-              <div className="lg:col-span-1">
-                <QuickStats />
+              {/* Filter Tabs */}
+              <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-lg w-fit">
+                {["All", "Deposits", "Withdrawals"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setFilter(tab)}
+                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      filter === tab
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              {/* Transactions List */}
+              <div className="space-y-3">
+                {filteredTransactions.length > 0 ? (
+                  filteredTransactions.map((transaction, index) => (
+                    <TransactionItem key={transaction._id || index} {...transaction} />
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No transactions found
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Modals */}
+      <DepositModal
+        isOpen={isDepositModalOpen}
+        onClose={() => setIsDepositModalOpen(false)}
+        onDeposit={handleDeposit}
+      />
+      
+      <WithdrawModal
+        isOpen={isWithdrawModalOpen}
+        onClose={() => setIsWithdrawModalOpen(false)}
+        onWithdraw={handleWithdraw}
+        availableBalance={balance}
+      />
     </div>
   );
 };

@@ -22,6 +22,7 @@ import CustomerBookings from "../pages/customer/MyBookings.jsx";
 import BookWorker from "../pages/customer/BookWorker.jsx";
 import BookingConfirm from "../pages/customer/BookingConfirm.jsx";
 import CustomerBookingDetail from "../pages/customer/BookingDetail.jsx";
+import CustomerWallet from "../pages/customer/Wallet.jsx";
 import WorkerPublicProfile from "../pages/customer/WorkerProfile.jsx";
 import WorkerHome from "../pages/worker/Home.jsx";
 import ProfileSetupBasic from "../pages/worker/ProfileSetupBasic.jsx";
@@ -130,6 +131,14 @@ const router = createBrowserRouter([
           </RoleGuard>
         ),
       },
+      {
+        path: "customer-wallet",
+        element: (
+          <RoleGuard allow={[ROLES.CUSTOMER, ROLES.WORKER]}>
+            <CustomerWallet />
+          </RoleGuard>
+        ),
+      },
       // { path: "worker-profile/:slug", element: <WorkerPublicProfile /> },
     ],
   },
@@ -163,7 +172,7 @@ const router = createBrowserRouter([
       { path: "jobs", element: <Jobs /> },
       { path: "job/:id", element: <JobDetail /> },
       { path: "worker-bookings", element: <WorkerBookings /> },
-      { path: "worker-booking/:id", element: <WorkerBookingDetail /> },
+      { path: "worker/booking/:id", element: <WorkerBookingDetail /> },
       { path: "wallet", element: <Wallet /> },
       { path: "payment-methods", element: <PaymentMethods /> },
       { path: "worker/profile", element: <Profile /> },

@@ -8,10 +8,17 @@ import {
   FiChevronDown,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import { useGetCategoriesQuery } from "../../services/workerApi";
 
 const Hero = () => {
   const navigate = useNavigate();
-  const categories = [
+
+  // Fetch categories from API
+  const { data: categoriesData, isLoading: categoriesLoading } =
+    useGetCategoriesQuery();
+
+  // Extract categories from API response with fallback
+  const categories = categoriesData?.skills || [
     "House Cleaning",
     "Carpentry",
     "Electrical Work",
@@ -20,12 +27,28 @@ const Hero = () => {
     "Auto Repairing",
     "Pet Care",
   ];
+
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [location, setLocation] = useState("");
 
   const handleSelectCategory = (value) => {
     setSelectedCategory(value);
     setCategoryOpen(false);
+  };
+
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    if (selectedCategory) params.append("category", selectedCategory);
+    if (location.trim()) params.append("location", location.trim());
+
+    navigate(`/services${params.toString() ? `?${params.toString()}` : ""}`);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
   };
   return (
     <section className="relative overflow-visible">
@@ -82,22 +105,29 @@ const Hero = () => {
                     aria-haspopup="listbox"
                     aria-expanded={categoryOpen}
                     onClick={() => setCategoryOpen((v) => !v)}
-                    className="w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted"
+                    className="w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={categoriesLoading}
                   >
                     <span
                       className={
                         selectedCategory ? "text-black" : "text-black/50"
                       }
                     >
-                      {selectedCategory || "Choose category"}
+                      {categoriesLoading
+                        ? "Loading categories..."
+                        : selectedCategory || "Choose category"}
                     </span>
-                    <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none" />
+                    <FiChevronDown
+                      className={`absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none transition-transform duration-200 ${
+                        categoryOpen ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
                   {categoryOpen && (
                     <ul
                       role="listbox"
                       tabIndex={-1}
-                      className="absolute z-50 mt-2 w-full max-h-56 overflow-auto scrollbar-hide rounded-xl border border-border bg-white shadow-xl text-black"
+                      className="absolute z-50 mt-2 w-full max-h-56 overflow-auto scrollbar-hide rounded-xl border border-border bg-white shadow-xl text-black animate-in fade-in slide-in-from-top-2 duration-200"
                     >
                       {categories.map((c) => (
                         <li
@@ -108,11 +138,11 @@ const Hero = () => {
                           onClick={() => handleSelectCategory(c)}
                           className={`px-4 py-2 text-sm cursor-pointer transition-colors ${
                             selectedCategory === c
-                              ? "bg-secondary/10 text-secondary"
-                              : "hover:bg-muted"
+                              ? "bg-secondary/10 text-secondary font-medium"
+                              : "hover:bg-muted hover:text-secondary/80"
                           }`}
                         >
-                          {c}
+                          {c.charAt(0).toUpperCase() + c.slice(1)}
                         </li>
                       ))}
                     </ul>
@@ -126,13 +156,17 @@ const Hero = () => {
                 <div className="relative">
                   <FiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60" />
                   <input
-                    className="w-full h-11 sm:h-12 rounded-xl border border-border pl-9 pr-3 text-sm placeholder:text-black/50 bg-muted/60"
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="w-full h-11 sm:h-12 rounded-xl border border-border pl-9 pr-3 text-sm text-black placeholder:text-black/50 bg-muted/60 hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
                     placeholder="Enter Your Location"
                   />
                 </div>
               </div>
               <div className="md:pl-2">
-                <button className="btn-primary">
+                <button className="btn-primary" onClick={handleSearch}>
                   <FiSearch />
                   Search
                 </button>

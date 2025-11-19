@@ -12,6 +12,8 @@ const SingleCard = ({
   description,
   starting,
   status,
+  gigId,
+  sellerId,
 }) => {
   const navigate = useNavigate();
 
@@ -44,11 +46,21 @@ const SingleCard = ({
               Starting from {starting}
             </p>
           )}
-          <div className="pt-1" onClick={() => navigate("/services/slug")}>
-            <Button
-              title="View Details"
-              className="text-white text-nowrap font-semibold text-xs sm:text-sm h-8 sm:h-9 w-full rounded-xl hover:bg-white hover:text-[#74C7F2] border border-[#74C7F2] bg-[#74C7F2] transition-all duration-300"
-            />
+          
+          {/* Two buttons for customer gigs */}
+          <div className="flex gap-2 pt-1">
+            <button
+              className="flex-1 text-white text-nowrap font-semibold text-xs h-8 rounded-lg bg-[#74C7F2] hover:bg-[#5bb3e8] transition-all duration-300"
+              onClick={() => navigate(`/book-worker/${sellerId}/${gigId}`)}
+            >
+              Book Now
+            </button>
+            <button
+              className="flex-1 text-[#74C7F2] text-nowrap font-semibold text-xs h-8 rounded-lg border border-[#74C7F2] hover:bg-[#74C7F2] hover:text-white transition-all duration-300"
+              onClick={() => navigate(`/worker-profile/${sellerId}`)}
+            >
+              View Profile
+            </button>
           </div>
         </div>
       </div>
@@ -95,6 +107,8 @@ const Card = ({
   description,
   starting,
   status,
+  gigId,
+  sellerId,
 }) => {
   // If services array is provided, render grid
   if (services && services.length > 0) {
@@ -111,6 +125,8 @@ const Card = ({
               description={service.description}
               starting={service.starting}
               status={service.status}
+              gigId={service.gigId}
+              sellerId={service.sellerId}
             />
           ))}
         </div>
@@ -128,6 +144,8 @@ const Card = ({
       description={description}
       starting={starting}
       status={status}
+      gigId={gigId}
+      sellerId={sellerId}
     />
   );
 };

@@ -40,8 +40,10 @@ export const baseApi = createApi({
     "Jobs",
     "Gigs",
     "Wallet",
+    "Providers",
     "Notifications",
-    "Conversations",
+    "Conversation",
+    "Message",
   ],
   endpoints: () => ({}), // Endpoints will be injected in separate files
 });

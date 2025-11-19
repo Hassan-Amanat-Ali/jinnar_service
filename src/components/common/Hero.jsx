@@ -244,7 +244,7 @@ const Hero = ({
               {place === "My Bookings" && (
                 <div>
                   <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 ">
-                    <div className="flex items-center justify-center sm:justify-center gap-2 sm:gap-3 md:gap-4  scrollbar-hide py-3">
+                    {/* <div className="flex items-center justify-center sm:justify-center gap-2 sm:gap-3 md:gap-4  scrollbar-hide py-3">
                       {services.map((service, index) => (
                         <button
                           key={index}
@@ -270,7 +270,7 @@ const Hero = ({
                         placeholder="Search for bookings..."
                         type="text"
                       />
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               )}

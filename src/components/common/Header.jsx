@@ -7,6 +7,7 @@ import {
   Bell,
   Menu,
   X,
+  Wallet,
 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { useState } from "react";
@@ -48,6 +49,11 @@ export default function Navbar() {
                 icon={<Calendar size={14} />}
                 label="My Bookings"
                 to="/customer-bookings"
+              />
+              <NavItem
+                icon={<Wallet size={14} />}
+                label="Wallet"
+                to="/customer-wallet"
               />
               <NavItem
                 icon={<User size={14} />}
@@ -131,6 +137,12 @@ export default function Navbar() {
                     icon={<Calendar size={14} />}
                     label="My Bookings"
                     to="/customer-bookings"
+                    onNavigate={() => setIsMobileMenuOpen(false)}
+                  />
+                  <MobileNavItem
+                    icon={<Wallet size={14} />}
+                    label="Wallet"
+                    to="/customer-wallet"
                     onNavigate={() => setIsMobileMenuOpen(false)}
                   />
                   <MobileNavItem

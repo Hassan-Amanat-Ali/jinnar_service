@@ -11,6 +11,7 @@ const BookingCard = ({
   category,
   status,
   price,
+  onClick,
 }) => {
   const navigate = useNavigate();
   return (
@@ -18,11 +19,19 @@ const BookingCard = ({
       {/* Left Section */}
       <div className="flex items-center gap-4 w-full sm:w-auto">
         {/* Worker Image */}
-        <img
-          src={image}
-          alt={workerName}
-          className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
-        />
+        {image ? (
+          <img
+            src={image}
+            alt={workerName}
+            className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+          />
+        ) : (
+          <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center flex-shrink-0">
+            <span className="text-blue-600 text-lg font-bold">
+              {title?.charAt(0) || 'S'}
+            </span>
+          </div>
+        )}
 
         {/* Job Info */}
         <div className="flex flex-col">
@@ -54,7 +63,7 @@ const BookingCard = ({
         </span>
 
         {/* View Job Button */}
-        <div onClick={() => navigate("/job/id")}>
+        <div onClick={onClick || (() => navigate("/job/id"))}>
           <Button
             title={"View Job"}
             className="text-white h-7 w-fit text-xs sm:text-xs px-4 sm:px-4 py-0.5 hover:bg-white hover:text-[#74C7F2] border border-[#74C7F2] bg-[#74C7F2] transition-all duration-300 rounded-xl"

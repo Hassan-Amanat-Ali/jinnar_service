@@ -10,13 +10,20 @@ const JobCard = ({
   urgency,
   image,
   timeframe,
+  jobId,
 }) => {
   const navigate = useNavigate();
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       {/* Job Image */}
       <div className="h-32 bg-gray-200 overflow-hidden">
-        <img src={image} alt={jobType} className="w-full h-full object-cover" />
+        {image ? (
+          <img src={image} alt={jobType} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
+            <span className="text-gray-400 text-sm font-medium">{jobType}</span>
+          </div>
+        )}
       </div>
 
       {/* Card Content */}
@@ -63,7 +70,7 @@ const JobCard = ({
         <button
           className="w-full bg-gradient-to-r from-[#A8D8F0] to-[#74C7F2] text-white py-2 rounded-lg text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer"
           onClick={() => {
-            navigate("/job/id");
+            navigate(`/job/${jobId}`);
           }}
         >
           View Job

@@ -2,9 +2,15 @@ import Hero from "../../components/common/Hero";
 import Nav from "../../components/services/Nav";
 import WorkerCard from "../../components/services/WorkerCard";
 import { useGetAllGigsQuery } from "../../services/workerApi";
+import { useSearchParams } from "react-router-dom";
+import { useMemo } from "react";
 
 const AllServices = () => {
   const { data, isLoading, error } = useGetAllGigsQuery();
+  const [searchParams] = useSearchParams();
+
+  const category = searchParams.get("category");
+  const location = searchParams.get("location");
 
   // Skeleton Component
   const Skeleton = ({ className = "" }) => (
@@ -14,31 +20,72 @@ const AllServices = () => {
   );
 
   // Transform API data to match WorkerCard component format with gig info
-  const gigsData =
-    data?.gigs?.map((gig) => ({
-      id: gig._id,
-      gigId: gig._id,
-      sellerId: gig.sellerId?._id,
-      name: gig.title, // Using gig title as the main name
-      image: gig.images?.[0]?.url || "https://via.placeholder.com/300x200",
-      rating: gig.sellerId?.rating?.average || 0,
-      reviews: gig.sellerId?.rating?.count || 0,
-      available: true,
-      experience: gig.sellerId?.yearsOfExperience || 0,
-      distance:
-        gig.pricing?.method === "negotiable"
-          ? "Negotiable"
-          : gig.pricing?.method === "hourly"
-          ? `TZS ${gig.pricing?.price}/hr`
-          : `TZS ${gig.pricing?.price}`,
-      bio: gig.description,
-      skills: gig.sellerId?.skills?.slice(0, 4) || [],
-      jobsCompleted: gig.sellerId?.ordersCompleted || 0,
-      rate:
-        gig.pricing?.method === "negotiable"
-          ? "Negotiable"
-          : gig.pricing?.price || 0,
-    })) || [];
+  const allGigsData = useMemo(
+    () =>
+      data?.gigs?.map((gig) => {
+        const mappedGig = {
+          id: gig._id,
+          gigId: gig._id,
+          sellerId: gig.sellerId?._id,
+          name: gig.title, // Using gig title as the main name
+          image: gig.images?.[0]?.url || "https://via.placeholder.com/300x200",
+          rating: gig.sellerId?.rating?.average || 0,
+          reviews: gig.sellerId?.rating?.count || 0,
+          available: true,
+          experience: gig.sellerId?.yearsOfExperience || 0,
+          distance:
+            gig.pricing?.method === "negotiable"
+              ? "Negotiable"
+              : gig.pricing?.method === "hourly"
+              ? `TZS ${gig.pricing?.price}/hr`
+              : `TZS ${gig.pricing?.price}`,
+          bio: gig.description,
+          skills: gig.sellerId?.skills?.slice(0, 4) || [],
+          jobsCompleted: gig.sellerId?.ordersCompleted || 0,
+          rate:
+            gig.pricing?.method === "negotiable"
+              ? "Negotiable"
+              : gig.pricing?.price || 0,
+          sellerSkills: gig.sellerId?.skills || [],
+          sellerAreas: gig.sellerId?.selectedAreas || [],
+        };
+        return mappedGig;
+      }) || [],
+    [data]
+  );
+
+  // Filter gigs based on search params
+  const gigsData = useMemo(() => {
+    let filtered = allGigsData;
+
+    // Filter by category (skill)
+    if (category) {
+      filtered = filtered.filter((gig) => {
+        const categoryLower = category.toLowerCase();
+        return (
+          gig.name.toLowerCase().includes(categoryLower) ||
+          gig.sellerSkills.some((skill) =>
+            skill.toLowerCase().includes(categoryLower)
+          ) ||
+          gig.bio?.toLowerCase().includes(categoryLower)
+        );
+      });
+    }
+
+    // Filter by location (if you have location data in your gigs)
+    if (location) {
+      filtered = filtered.filter((gig) => {
+        const locationLower = location.toLowerCase();
+        return (
+          gig.sellerAreas?.some((area) =>
+            area.name?.toLowerCase().includes(locationLower)
+          ) || gig.bio?.toLowerCase().includes(locationLower)
+        );
+      });
+    }
+
+    return filtered;
+  }, [allGigsData, category, location]);
 
   return (
     <>
@@ -66,7 +113,32 @@ const AllServices = () => {
       <Hero className="h-88 lg:h-140" />
       <Nav />
 
-      <div className="my-6 mt-16 px-4 sm:px-6 md:px-8 lg:px-4 xl:px-0 max-w-7xl mx-auto">
+      <div className="my-6 mt-16 max-w-[1200px] mx-auto">
+        {/* Search Info */}
+        {(category || location) && (
+          <div className="mb-6 flex flex-wrap items-center gap-5">
+            <span className="text-gray-700 font-medium">
+              Showing results for:
+            </span>
+            {category && (
+              <span className="bg-secondary/10 text-secondary px-3 py-1 rounded-full text-sm font-medium">
+                {category.charAt(0).toUpperCase() + category.slice(1)}
+              </span>
+            )}
+            {location && (
+              <span className="bg-secondary/10 text-secondary px-3 py-1 rounded-full text-sm font-medium">
+                {location}
+              </span>
+            )}
+            <button
+              onClick={() => (window.location.href = "/services")}
+              className="text-gray-500 hover:text-gray-700 text-sm underline ml-2"
+            >
+              Clear filters
+            </button>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6 place-items-center md:place-items-stretch">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -164,7 +236,7 @@ const AllServices = () => {
                 distance={gig.distance}
                 bio={gig.bio}
                 skills={gig.skills}
-                jobsCompleted={gig.ordersCompleted}
+                jobsCompleted={gig.jobsCompleted}
                 rate={gig.rate}
               />
             ))}

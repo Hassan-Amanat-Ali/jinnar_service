@@ -17,6 +17,7 @@ import { toast } from "react-toastify";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [role, setRole] = useState(
     localStorage.getItem("userRole") || ROLES.CUSTOMER
@@ -34,6 +35,11 @@ const Signup = () => {
     e?.preventDefault();
 
     // Validation
+    if (!name.trim()) {
+      toast.error("Please enter your name");
+      return;
+    }
+
     if (!mobile.trim()) {
       toast.error("Please enter your mobile number");
       return;
@@ -50,6 +56,7 @@ const Signup = () => {
         role === ROLES.CUSTOMER ? customerSignup : workerSignup;
 
       const result = await signupMutation({
+        name: name.trim(),
         mobileNumber: mobile,
         role: backendRole,
       }).unwrap();
@@ -67,7 +74,7 @@ const Signup = () => {
       } else {
         // No token -> OTP sent, navigate to verify page
         toast.info("Verification code sent to your mobile");
-        navigate("/verify", { state: { mobile, role, action: "signup" } });
+        navigate("/verify", { state: { name: name.trim(), mobile, role, action: "signup" } });
       }
     } catch (err) {
       console.error("Signup error:", err);
@@ -180,8 +187,20 @@ const Signup = () => {
             {/* Errors are displayed via toast notifications */}
 
             <form onSubmit={handleSignup}>
-              {/* Mobile */}
+              {/* Name */}
               <label className="block text-sm font-medium text-[#141414]">
+                Full Name
+              </label>
+              <input
+                type="text"
+                placeholder="Enter your full name"
+                className="mt-2 w-full h-11 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+
+              {/* Mobile */}
+              <label className="block text-sm font-medium text-[#141414] mt-4">
                 Mobile number
               </label>
               <input

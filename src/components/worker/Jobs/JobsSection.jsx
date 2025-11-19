@@ -13,69 +13,12 @@ import {
   DollarSign,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
-const jobs = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    initials: "SJ",
-    service: "Plumbing",
-    rating: 4.8,
-    reviews: 23,
-    tag: "Emergency",
-    location: "Dar es Salaam, Kinondoni",
-    distance: "2.3 km",
-    date: "11/4/2024",
-    time: "09:00 AM",
-    description: "Kitchen sink is completely blocked and water is overflowing",
-    price: "TZS 95,000",
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    initials: "MC",
-    service: "House Cleaning",
-    rating: 4.6,
-    reviews: 18,
-    tag: "New",
-    location: "Dar es Salaam, Mbezi",
-    distance: "4.7 km",
-    date: "11/5/2024",
-    time: "10:30 AM",
-    description: "Deep cleaning for 3-bedroom apartment after renovation",
-    price: "TZS 35,000",
-  },
-  {
-    id: 3,
-    name: "Fatima Hassan",
-    initials: "FH",
-    service: "Electrical",
-    rating: 4.9,
-    reviews: 31,
-    tag: "",
-    location: "Dar es Salaam, Masaki",
-    distance: "6.1 km",
-    date: "11/4/2024",
-    time: "02:00 PM",
-    description: "Power outlet not working in living room and bedroom",
-    price: "TZS 75,000",
-  },
-  {
-    id: 4,
-    name: "James Wilson",
-    initials: "JW",
-    service: "Carpentry",
-    rating: 4.7,
-    reviews: 29,
-    tag: "Normal",
-    location: "Dar es Salaam, Oyster Bay",
-    distance: "8.2 km",
-    date: "11/6/2024",
-    time: "11:30 AM",
-    description: "Custom bookshelf installation in home office",
-    price: "TZS 120,000",
-  },
-];
+import { toast } from "react-hot-toast";
+import {
+  useGetNewJobRequestsQuery,
+  useAcceptJobMutation,
+  useDeclineJobMutation,
+} from "../../../services/workerApi";
 
 const StatItem = ({ rowBg, iconBg, icon, value, label }) => (
   <div className={`flex items-center gap-3 px-3 py-2 rounded-lg ${rowBg}`}>
@@ -99,20 +42,20 @@ const Badge = ({ children, color = "bg-gray-100 text-gray-700" }) => (
   </span>
 );
 
-const ActionButton = ({ variant = "solid", icon, children, onClick }) => {
+const ActionButton = ({ variant = "solid", icon, children, onClick, disabled }) => {
   const base =
-    "w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium px-3 py-1.5 border";
+    "w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium px-3 py-1.5 border disabled:opacity-50 disabled:cursor-not-allowed";
   const styles = {
-    solid: "bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600",
+    solid: "bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600 disabled:hover:bg-emerald-500",
     outlineRed:
-      "bg-white text-rose-600 border-rose-300 hover:bg-rose-50 hover:border-rose-400",
+      "bg-white text-rose-600 border-rose-300 hover:bg-rose-50 hover:border-rose-400 disabled:hover:bg-white disabled:hover:border-rose-300",
     outlineGray:
-      "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400",
+      "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 disabled:hover:bg-white disabled:hover:border-gray-300",
     ghost:
-      "bg-white text-sky-700 border-sky-200 hover:bg-sky-50 hover:border-sky-300",
+      "bg-white text-sky-700 border-sky-200 hover:bg-sky-50 hover:border-sky-300 disabled:hover:bg-white disabled:hover:border-sky-200",
   };
   return (
-    <button className={`${base} ${styles[variant]}`} onClick={onClick}>
+    <button className={`${base} ${styles[variant]}`} onClick={onClick} disabled={disabled}>
       {icon}
       {children}
     </button>
@@ -121,24 +64,54 @@ const ActionButton = ({ variant = "solid", icon, children, onClick }) => {
 
 const JobCard = ({ job }) => {
   const navigate = useNavigate();
+  const [acceptJob, { isLoading: isAccepting }] = useAcceptJobMutation();
+  const [declineJob, { isLoading: isDeclining }] = useDeclineJobMutation();
 
-  const handleAccept = () => {
-    console.log(`Accepting job ${job.id}`);
-    // Add accept job logic here
+  const handleAccept = async () => {
+    try {
+      await acceptJob({ id: job._id }).unwrap();
+      toast.success('Job accepted successfully!');
+    } catch (error) {
+      toast.error('Failed to accept job: ' + (error?.data?.message || 'Unknown error'));
+    }
   };
 
-  const handleDecline = () => {
-    console.log(`Declining job ${job.id}`);
-    // Add decline job logic here
+  const handleDecline = async () => {
+    try {
+      await declineJob({ id: job._id }).unwrap();
+      toast.success('Job declined successfully!');
+    } catch (error) {
+      toast.error('Failed to decline job: ' + (error?.data?.message || 'Unknown error'));
+    }
   };
 
   const handleReschedule = () => {
-    console.log(`Rescheduling job ${job.id}`);
+    console.log(`Rescheduling job ${job._id}`);
     // Add reschedule job logic here
   };
 
   const handleViewDetails = () => {
-    navigate(`/job/${job.id}`);
+    navigate(`/job/${job._id}`);
+  };
+
+  // Helper function to get initials from customer name
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  };
+
+  // Format date from API
+  const formatDate = (dateString) => {
+    if (!dateString) return 'TBD';
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  // Format location
+  const formatLocation = () => {
+    if (job.location?.lat && job.location?.lng) {
+      return `${job.location.lat.toFixed(2)}, ${job.location.lng.toFixed(2)}`;
+    }
+    return 'Location not specified';
   };
 
   return (
@@ -149,50 +122,46 @@ const JobCard = ({ job }) => {
           {/* Header */}
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xs sm:text-sm font-semibold">
-              {job.initials}
+              {getInitials(job.buyerId?.name)}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-1.5">
                 <h3 className="text-sm sm:text-base font-semibold text-gray-900 mr-1">
-                  {job.name}
+                  {job.buyerId?.name || 'Unknown Customer'}
                 </h3>
                 <Badge>
                   <Star size={12} className="text-yellow-300" fill="yellow" />{" "}
-                  {job.rating}
+                  {job.buyerId?.rating?.average || 'N/A'}
                 </Badge>
-                {job.tag === "Emergency" && (
+                {job.emergency && (
                   <Badge color="bg-[#EF4444] text-white">
                     <Zap className="text-white" size={12} fill="white" />{" "}
                     Emergency
                   </Badge>
                 )}
-                {job.tag === "New" && <Badge>New</Badge>}
-                {job.tag === "Normal" && <Badge>Normal</Badge>}
+                {job.status === 'pending' && <Badge>New</Badge>}
               </div>
-              <p className="text-xs text-gray-500 mt-0.5">{job.service}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Service Request</p>
 
               {/* Meta */}
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-gray-600">
                 <span className="inline-flex items-center gap-1">
-                  <MapPin size={14} className="text-sky-500" /> {job.location}
+                  <MapPin size={14} className="text-sky-500" /> {formatLocation()}
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  • {job.distance}
+                  <Calendar size={14} className="text-sky-500" /> {formatDate(job.date)}
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <Calendar size={14} className="text-sky-500" /> {job.date}
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <Clock size={14} className="text-sky-500" /> {job.time}
+                  <Clock size={14} className="text-sky-500" /> {job.timeSlot || 'TBD'}
                 </span>
               </div>
 
               {/* Description and price */}
               <p className="mt-2 text-[13px] text-gray-600 leading-relaxed">
-                {job.description}
+                {job.jobDescription || 'No description provided'}
               </p>
               <div className="mt-2 text-emerald-600 font-semibold text-sm sm:text-base">
-                {job.price}
+                Price to be negotiated
               </div>
             </div>
           </div>
@@ -205,20 +174,23 @@ const JobCard = ({ job }) => {
               variant="solid"
               icon={<Check size={14} />}
               onClick={handleAccept}
+              disabled={isAccepting || isDeclining}
             >
-              Accept
+              {isAccepting ? 'Accepting...' : 'Accept'}
             </ActionButton>
             <ActionButton
               variant="outlineRed"
               icon={<X size={14} />}
               onClick={handleDecline}
+              disabled={isAccepting || isDeclining}
             >
-              Decline
+              {isDeclining ? 'Declining...' : 'Decline'}
             </ActionButton>
             <ActionButton
               variant="outlineGray"
               icon={<RotateCcw size={14} />}
               onClick={handleReschedule}
+              disabled={isAccepting || isDeclining}
             >
               Reschedule
             </ActionButton>
@@ -226,6 +198,7 @@ const JobCard = ({ job }) => {
               variant="ghost"
               icon={<Eye size={14} />}
               onClick={handleViewDetails}
+              disabled={isAccepting || isDeclining}
             >
               View Details
             </ActionButton>
@@ -280,18 +253,50 @@ const QuickStats = () => {
 };
 
 const JobsSection = () => {
+  const { data: jobRequests, isLoading, error } = useGetNewJobRequestsQuery();
+
+  if (isLoading) {
+    return (
+      <section className="w-full">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 mb-10">
+          <div className="flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="w-full">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 mb-10">
+          <div className="text-center py-20">
+            <p className="text-red-500">Error loading job requests: {error.message}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const jobs = jobRequests?.jobs || [];
+
   return (
     <section className="w-full">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 mb-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: Jobs list */}
           <div className="lg:col-span-2 space-y-4">
-            {jobs.map((job) => (
-              <JobCard key={job.id} job={job} />
-            ))}
+            {jobs.length === 0 ? (
+              <div className="text-center py-20">
+                <p className="text-gray-500">No new job requests available.</p>
+              </div>
+            ) : (
+              jobs.map((job) => <JobCard key={job._id} job={job} />)
+            )}
           </div>
           {/* Right: Quick stats */}
-          <div className="order-first lg:order-none">
+          <div className="order-first lg:order-0">
             <QuickStats />
           </div>
         </div>

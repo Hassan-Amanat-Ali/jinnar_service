@@ -77,6 +77,10 @@ export const workerApi = baseApi.injectEndpoints({
       query: () => "/orders/available",
       providesTags: ["Jobs"],
     }),
+    getMyOrders: builder.query({
+      query: () => "/orders/my-orders",
+      providesTags: ["Orders"],
+    }),
     getNewJobRequests: builder.query({
       query: () => "/orders/new",
       providesTags: ["Jobs"],
@@ -90,24 +94,102 @@ export const workerApi = baseApi.injectEndpoints({
       providesTags: ["Jobs"],
     }),
     acceptJob: builder.mutation({
-      query: (data) => ({ url: "/orders/accept", method: "POST", body: data }),
-      invalidatesTags: ["Jobs"],
+      query: (data) => ({
+        url: "/orders/accept",
+        method: "POST",
+        body: { id: data.id },
+      }),
+      invalidatesTags: ["Jobs", "Orders"],
     }),
     declineJob: builder.mutation({
-      query: (data) => ({ url: "/orders/decline", method: "POST", body: data }),
-      invalidatesTags: ["Jobs"],
+      query: (data) => ({
+        url: "/orders/decline",
+        method: "POST",
+        body: { id: data.id },
+      }),
+      invalidatesTags: ["Jobs", "Orders"],
     }),
     uploadDeliverable: builder.mutation({
       query: (data) => ({ url: "/orders/deliver", method: "POST", body: data }),
-      invalidatesTags: ["Jobs"],
+      invalidatesTags: ["Jobs", "Orders"],
+    }),
+    getOrderById: builder.query({
+      query: (id) => {
+        console.log("� API REQUEST START");
+        console.log("🚀 Getting order by ID:", id);
+        console.log("🚀 ID type:", typeof id);
+        console.log("🚀 Full URL will be: /orders/" + id);
+        return `/orders/${id}`;
+      },
+      transformResponse: (response, meta, arg) => {
+        console.log("📦 API RESPONSE START");
+        console.log("📦 Request ID was:", arg);
+        console.log("📦 Response meta:", meta);
+        console.log("📦 Raw response:", response);
+        console.log("📦 Response type:", typeof response);
+        console.log(
+          "📦 Response keys:",
+          response ? Object.keys(response) : "No keys"
+        );
+
+        // Handle different response structures
+        let order;
+        if (response?.order) {
+          order = response.order;
+          console.log("📦 Extracted from response.order");
+        } else if (response?.data) {
+          order = response.data;
+          console.log("📦 Extracted from response.data");
+        } else {
+          order = response;
+          console.log("📦 Using direct response");
+        }
+
+        console.log("📦 Final extracted order:", order);
+        console.log(
+          "📦 Order keys:",
+          order ? Object.keys(order) : "No order keys"
+        );
+        console.log("📦 Order _id:", order?._id);
+        console.log("📦 Order gigId:", order?.gigId);
+        console.log("📦 Order buyerId:", order?.buyerId);
+        console.log("📦 API RESPONSE END");
+
+        return order;
+      },
+      providesTags: (result, error, id) => [{ type: "Orders", id }],
+    }),
+    completeOrder: builder.mutation({
+      query: (data) => ({
+        url: "/orders/complete",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Jobs", "Orders"],
+    }),
+    cancelOrder: builder.mutation({
+      query: (data) => ({ url: "/orders/cancel", method: "PATCH", body: data }),
+      invalidatesTags: ["Jobs", "Orders"],
+    }),
+    reviewOrder: builder.mutation({
+      query: (data) => ({ url: "/orders/review", method: "POST", body: data }),
+      invalidatesTags: ["Jobs", "Orders"],
     }),
     getWallet: builder.query({
-      query: () => "/wallet",
+      query: () => "/wallet/balance",
       providesTags: ["Wallet"],
+    }),
+    depositMoney: builder.mutation({
+      query: (data) => ({
+        url: "/payment/deposit",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Wallet"],
     }),
     withdrawWallet: builder.mutation({
       query: (data) => ({
-        url: "/wallet/withdraw",
+        url: "/payout/withdraw",
         method: "POST",
         body: data,
       }),
@@ -135,6 +217,20 @@ export const workerApi = baseApi.injectEndpoints({
     markOrderMessagesRead: builder.mutation({
       query: (data) => ({ url: "/orders/read", method: "POST", body: data }),
     }),
+    updateFcmToken: builder.mutation({
+      query: (data) => ({ url: "/user/fcm-token", method: "POST", body: data }),
+    }),
+    findWorkers: builder.query({
+      query: (params) => ({
+        url: "/workers/find",
+        params: params || {},
+      }),
+      providesTags: ["Workers"],
+    }),
+    getCategories: builder.query({
+      query: () => "/categories",
+      providesTags: ["Categories"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -154,17 +250,26 @@ export const {
   useUpdateGigMutation,
   useDeleteGigMutation,
   useGetAvailableJobsQuery,
+  useGetMyOrdersQuery,
   useGetNewJobRequestsQuery,
   useGetActiveJobsQuery,
   useGetDeclinedJobsQuery,
   useAcceptJobMutation,
   useDeclineJobMutation,
   useUploadDeliverableMutation,
+  useGetOrderByIdQuery,
+  useCompleteOrderMutation,
+  useCancelOrderMutation,
+  useReviewOrderMutation,
   useGetWalletQuery,
+  useDepositMoneyMutation,
   useWithdrawWalletMutation,
   useGetNotificationsQuery,
   useMarkNotificationsAsReadMutation,
   useGetPublicProfileQuery,
   useSendOrderMessageMutation,
   useMarkOrderMessagesReadMutation,
+  useUpdateFcmTokenMutation,
+  useFindWorkersQuery,
+  useGetCategoriesQuery,
 } = workerApi;

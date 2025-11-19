@@ -58,9 +58,31 @@ export const customerApi = baseApi.injectEndpoints({
       query: (params) => ({ url: "/gigs", params }),
       providesTags: ["Gigs"],
     }),
+    findWorkers: builder.query({
+      query: (params) => ({ url: "/workers/find", params }),
+      providesTags: ["Workers"],
+    }),
     getWallet: builder.query({
-      query: () => "/wallet",
+      query: () => "/wallet/balance",
       providesTags: ["Wallet"],
+    }),
+    getDepositProviders: builder.query({
+      query: () => "/payment/providers",
+      providesTags: ["Providers"],
+    }),
+    getWithdrawalProviders: builder.query({
+      query: () => "/payout/providers", 
+      providesTags: ["Providers"],
+    }),
+    predictCorrespondentBank: builder.mutation({
+      query: (data) => ({ url: "/wallet/predict-correspondent", method: "POST", body: data }),
+    }),
+    depositMoney: builder.mutation({
+      query: (data) => ({ url: "/wallet/deposit", method: "POST", body: data }),
+      invalidatesTags: ["Wallet"],
+    }),
+    checkTransactionStatus: builder.query({
+      query: (transactionId) => `/wallet/status/${transactionId}`,
     }),
     topupWallet: builder.mutation({
       query: (data) => ({ url: "/wallet/topup", method: "POST", body: data }),
@@ -76,7 +98,7 @@ export const customerApi = baseApi.injectEndpoints({
     }),
     withdrawWallet: builder.mutation({
       query: (data) => ({
-        url: "/wallet/withdraw",
+        url: "/wallet/payout",
         method: "POST",
         body: data,
       }),
@@ -104,6 +126,9 @@ export const customerApi = baseApi.injectEndpoints({
     markOrderMessagesRead: builder.mutation({
       query: (data) => ({ url: "/orders/read", method: "POST", body: data }),
     }),
+    updateFcmToken: builder.mutation({
+      query: (data) => ({ url: "/user/fcm-token", method: "POST", body: data }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -122,7 +147,13 @@ export const {
   useCompleteOrderMutation,
   useRateAndReviewOrderMutation,
   useGetGigsQuery,
+  useFindWorkersQuery,
   useGetWalletQuery,
+  useGetDepositProvidersQuery,
+  useGetWithdrawalProvidersQuery,
+  usePredictCorrespondentBankMutation,
+  useDepositMoneyMutation,
+  useCheckTransactionStatusQuery,
   useTopupWalletMutation,
   useValidateChargeOtpMutation,
   useWithdrawWalletMutation,
@@ -131,4 +162,5 @@ export const {
   useStartConversationMutation,
   useSendOrderMessageMutation,
   useMarkOrderMessagesReadMutation,
+  useUpdateFcmTokenMutation,
 } = customerApi;

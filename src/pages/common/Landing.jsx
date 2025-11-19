@@ -15,7 +15,7 @@ const Landing = () => {
       <PopularServices />
       <FeaturedCourses />
       <TopWorkers />
-      <Testimonials />
+      {/* <Testimonials /> */}
       <SiteFooter />
     </div>
   );

@@ -1,18 +1,37 @@
 import React from "react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { Wallet, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-const Charts = () => {
-  // Sample data for the bar chart matching the image
-  const earningsData = [
-    { week: "W1", earnings: 2200 },
-    { week: "W2", earnings: 3800 },
-    { week: "W3", earnings: 1800 },
-    { week: "W4", earnings: 2600 },
-    { week: "W5", earnings: 3200 },
-    { week: "W6", earnings: 4200 },
-    { week: "W7", earnings: 3000 },
-  ];
+const Charts = ({ walletData }) => {
+  const navigate = useNavigate();
+  
+  // Get wallet balance and earnings from API
+  const balance = walletData?.balance || walletData?.data?.balance || 0;
+  const monthlyEarnings = walletData?.monthlyEarnings || walletData?.data?.monthlyEarnings || 0;
+  const weeklyEarnings = walletData?.weeklyEarnings || walletData?.data?.weeklyEarnings || [];
+  
+  // Format earnings data for chart
+  const earningsData = weeklyEarnings.length > 0 
+    ? weeklyEarnings.map((earning, index) => ({
+        week: `W${index + 1}`,
+        earnings: earning.amount || 0
+      }))
+    : [
+        { week: "W1", earnings: 0 },
+        { week: "W2", earnings: 0 },
+        { week: "W3", earnings: 0 },
+        { week: "W4", earnings: 0 },
+      ];
+
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 xl:px-5 my-8">
@@ -23,7 +42,6 @@ const Charts = () => {
             <h3 className="text-lg font-semibold text-gray-900">
               Monthly Earnings Overview
             </h3>
-            {/* <TrendingUp className="w-5 h-5 text-[#74C7F2]" /> */}
           </div>
 
           {/* Bar Chart */}
@@ -68,7 +86,7 @@ const Charts = () => {
           {/* Total this month */}
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">
-              Total this month: $3,640
+              Total this month: {formatCurrency(monthlyEarnings)}
             </span>
             <TrendingUp className="w-4 h-4 text-[#74C7F2]" />
           </div>
@@ -90,7 +108,7 @@ const Charts = () => {
           {/* Balance Amount */}
           <div className="text-center mb-6">
             <div className="text-3xl font-bold text-gray-900 mb-1">
-              $2,450.00
+              {formatCurrency(balance)}
             </div>
             <div className="text-sm text-gray-500">
               Available for withdrawal

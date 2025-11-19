@@ -78,39 +78,82 @@ const ActionButton = ({ variant = "solid", icon, children }) => {
   );
 };
 
-const JobDetailComponent = () => {
-  // Static mock matching the screenshot
+const JobDetailComponent = ({ order }) => {
+  // Transform API data to component format
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        month: 'numeric',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    } catch {
+      return 'N/A';
+    }
+  };
+  
+  const formatTime = (timeSlot) => {
+    if (!timeSlot) return 'N/A';
+    // Convert timeSlot like "morning", "afternoon", "evening" to readable format
+    const timeMap = {
+      morning: '09:00 AM',
+      afternoon: '02:00 PM',
+      evening: '06:00 PM',
+      night: '09:00 PM',
+    };
+    return timeMap[timeSlot.toLowerCase()] || timeSlot;
+  };
+  
+  const getInitials = (name) => {
+    if (!name) return 'NA';
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+  
+  const calculatePostedTime = (createdAt) => {
+    if (!createdAt) return 'Recently';
+    const now = new Date();
+    const posted = new Date(createdAt);
+    const diffMs = now - posted;
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffDays > 0) return `Posted ${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    if (diffHours > 0) return `Posted ${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    return 'Posted recently';
+  };
+  
   const job = {
-    title: "Plumbing",
+    title: order?.gigId?.title || "Service Request",
     subtitle: "Request",
-    date: "1/14/2024",
-    time: "09:00 AM",
-    duration: "2–3 hours",
-    urgency: "Emergency",
-    price: "TZS 50,000",
-    posted: "Posted 2 hours ago",
+    date: formatDate(order?.date),
+    time: formatTime(order?.timeSlot),
+    duration: order?.duration || "2–3 hours",
+    urgency: order?.emergency ? "Emergency" : "Normal",
+    price: `TZS ${order?.price?.toLocaleString() || '0'}`,
+    posted: calculatePostedTime(order?.createdAt),
     customer: {
-      initials: "SJ",
-      name: "Sarah Johnson",
-      rating: 4.7,
-      phone: "+255 678 124 58",
-      email: "sarah.j@examplemail.com",
-      address:
-        "House 29, Vincent Street, Kinondoni, Dar es Salaam • 2.3 km away",
+      initials: getInitials(order?.buyerId?.name),
+      name: order?.buyerId?.name || "Customer",
+      rating: order?.buyerId?.rating?.average || order?.buyerId?.rating || 4.5,
+      phone: order?.buyerId?.phoneNumber || "+255 XXX XXX XXX",
+      email: order?.buyerId?.email || "customer@example.com",
+      address: order?.location?.address || 
+        `${order?.location?.lat?.toFixed(4)}, ${order?.location?.lng?.toFixed(4)}` || 
+        "Location not specified",
     },
-    description:
-      "Kitchen sink is completely blocked and water is overflowing. The blockage seems to be deep in the pipes and I've tried basic remedies but nothing is working. Water is backing up into the dishwasher as well. This needs immediate attention as it's affecting my entire kitchen functionality.",
-    requirements: [
-      "Bring professional drain cleaning equipment",
-      "May need pipe inspection tools",
-      "Potential replacement of pipe sections",
-      "Clean-up after work completion",
+    description: order?.jobDescription || order?.description || "No description provided.",
+    requirements: order?.requirements || [
+      "Follow customer instructions",
+      "Bring necessary tools",
+      "Complete work professionally",
     ],
-    attachments: [
-      "kitchen_sink_blockage.jpg",
-      "water_damage_area.jpg",
-      "home_layout.pdf",
-    ],
+    attachments: order?.attachments || [],
   };
 
   return (

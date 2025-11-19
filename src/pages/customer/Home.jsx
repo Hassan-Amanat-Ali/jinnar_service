@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useContext, useEffect } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
@@ -17,9 +17,6 @@ import shield from "../../assets/icons/shield.png";
 import correct from "../../assets/icons/correct.png";
 
 import service1 from "../../assets/images/All-services-1.jpg";
-import service2 from "../../assets/images/all-services-2.jpg";
-import service3 from "../../assets/images/all-services-3.jpg";
-import service4 from "../../assets/images/all-services-4.jpg";
 
 import PopularServices from "../../components/Landing/PopularServices";
 import TopWorkers from "../../components/Landing/TopWorkers";
@@ -28,41 +25,72 @@ import BookingCard from "../../components/customer/BookinCard";
 import Dropdown from "../../components/common/DropDown";
 import Card from "../common/Card";
 import { useNavigate } from "react-router-dom";
+import { useGetGigsQuery, useGetMyOrdersQuery, useGetMyProfileQuery, useFindWorkersQuery, useUpdateFcmTokenMutation } from "../../services/customerApi";
+import AuthContext from "../../context/AuthContext";
+import { requestNotificationPermission } from "../../utils/fcm";
 
 const CustomerHome = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const [updateFcmToken] = useUpdateFcmTokenMutation();
 
-  // Hero slider data
+  // API Queries
+  const { data: gigs = [], isLoading: gigsLoading, error: gigsError } = useGetGigsQuery({ limit: 8 });
+  const { data: orders = [], isLoading: ordersLoading, error: ordersError } = useGetMyOrdersQuery();
+  const { data: profile } = useGetMyProfileQuery();
+  const { data: workers = [], isLoading: workersLoading, error: workersError } = useFindWorkersQuery({ limit: 4 });
+
+  // Request FCM permission and update token on component mount
+  useEffect(() => {
+    const setupFCM = async () => {
+      try {
+        const token = await requestNotificationPermission();
+        
+        if (token) {
+          // Send token to backend
+          await updateFcmToken({ token }).unwrap();
+          console.log("FCM token updated successfully");
+        }
+      } catch (error) {
+        console.error("Error updating FCM token:", error);
+      }
+    };
+
+    setupFCM();
+  }, [updateFcmToken]);
+
+  // Hero slider data - using dynamic user name
+  const userName = profile?.name || user?.name || "Guest";
   const heroSlides = [
     {
       image: customerHome,
-      title: "Welcome, Sarah!",
+      title: `Welcome, ${userName}!`,
       subtitle: "Find Trusted Workers Anytime, Anywhere",
       description:
         "Book instantly or schedule later safe, simple, and reliable.",
     },
     {
       image: customerHome2,
-      title: "Welcome, Sarah!",
+      title: `Welcome, ${userName}!`,
       subtitle: "Quality Services at Your Doorstep",
       description: "Connect with verified professionals for all your needs.",
     },
     {
       image: customerHome3,
-      title: "Welcome, Sarah!",
+      title: `Welcome, ${userName}!`,
       subtitle: "Reliable Workers in Your Area",
       description: "Get expert help when you need it, where you need it.",
     },
     {
       image: customerHome4,
-      title: "Welcome, Sarah!",
+      title: `Welcome, ${userName}!`,
       subtitle: "Book Trusted Professionals",
       description: "Safe, secure, and satisfaction guaranteed.",
     },
     {
       image: customerHome5,
-      title: "Welcome, Sarah!",
+      title: `Welcome, ${userName}!`,
       subtitle: "Your Home Service Solution",
       description: "From repairs to cleaning, we've got you covered.",
     },
@@ -153,149 +181,19 @@ const CustomerHome = () => {
     "Quote on request",
   ];
 
-  const servicesData = [
-    {
-      id: 1,
-      title: "House Cleaning",
-      img: service1,
-      rating: "4.8",
-      description:
-        "Professional home cleaning services including deep cleaning, regular maintenance, and sanitization for your entire house.",
-    },
-    {
-      id: 2,
-      title: "Plumbing Services",
-      img: service2,
-      rating: "4.6",
-      description:
-        "Expert plumbing repairs, installations, and maintenance. From leaky faucets to complete bathroom renovations.",
-    },
-    {
-      id: 3,
-      title: "Electrical Work",
-      img: service3,
-      rating: "4.7",
-      description:
-        "Licensed electricians for all your electrical needs. Wiring, repairs, installations, and safety inspections.",
-    },
-    {
-      id: 4,
-      title: "Carpentry",
-      img: service4,
-      rating: "4.9",
-      description: "Custom furniture, repairs, and woodworking services.",
-    },
-    {
-      id: 5,
-      title: "House Cleaning",
-      img: service1,
-      rating: "4.8",
-      description:
-        "Professional home cleaning services including deep cleaning, regular maintenance, and sanitization for your entire house.",
-    },
-    {
-      id: 6,
-      title: "Plumbing Services",
-      img: service2,
-      rating: "4.6",
-      description:
-        "Expert plumbing repairs, installations, and maintenance. From leaky faucets to complete bathroom renovations.",
-    },
-    {
-      id: 7,
-      title: "Electrical Work",
-      img: service3,
-      rating: "4.7",
-      description:
-        "Licensed electricians for all your electrical needs. Wiring, repairs, installations, and safety inspections.",
-    },
-    {
-      id: 8,
-      title: "Carpentry",
-      img: service4,
-      rating: "4.9",
-      description: "Custom furniture, repairs, and wood working services.",
-    },
-    // {
-    //   id: 9,
-    //   title: "Carpentry",
-    //   img: service4,
-    //   rating: "4.9",
-    //   description: "Custom furniture, repairs, and wood working services.",
-    // },
-    // {
-    //   id: 5,
-    //   title: "Auto Repair",
-    //   img: autoRepair,
-    //   rating: "4.5",
-    //   description:
-    //     "Complete automotive repair services including engine repair, brake service, and regular maintenance.",
-    // },
-    // {
-    //   id: 6,
-    //   title: "Home Repair",
-    //   img: homeRepair,
-    //   rating: "4.4",
-    //   description:
-    //     "General home repair and maintenance services. Fixing, painting, and maintaining your property.",
-    // },
-    // {
-    //   id: 7,
-    //   title: "Pet Care",
-    //   img: petCare,
-    //   rating: "4.8",
-    //   description:
-    //     "Professional pet care services including grooming, walking, feeding, and pet sitting for your beloved animals.",
-    // },
-    // {
-    //   id: 8,
-    //   title: "Tailoring",
-    //   img: tailoring,
-    //   rating: "4.6",
-    //   description:
-    //     "Custom tailoring and alterations. Professional clothing adjustments and bespoke garment creation.",
-    // },
-    // {
-    //   id: 9,
-    //   title: "Premium Cleaning",
-    //   img: service1,
-    //   rating: "4.7",
-    //   description:
-    //     "High-end cleaning services with premium products and attention to detail for luxury properties.",
-    // },
-    // {
-    //   id: 10,
-    //   title: "Quick Repairs",
-    //   img: service2,
-    //   rating: "4.3",
-    //   description:
-    //     "Fast and efficient repair services for urgent household issues and emergency maintenance needs.",
-    // },
-    // {
-    //   id: 11,
-    //   title: "Garden Care",
-    //   img: service3,
-    //   rating: "4.5",
-    //   description:
-    //     "Professional landscaping and garden maintenance including pruning, planting, and lawn care services.",
-    // },
-    // {
-    //   id: 12,
-    //   title: "Tech Support",
-    //   img: service4,
-    //   rating: "4.8",
-    //   description:
-    //     "Computer and technology support services including setup, troubleshooting, and repair of electronic devices.",
-    // },
-    // {
-    //   id: 13,
-    //   title: "Event Services",
-    //   img: service5,
-    //   rating: "4.6",
-    //   description:
-    //     "Professional event planning and management services for parties, weddings, and corporate events.",
-    // },
-  ];
+  // Transform gigs data for display
+  const displayGigs = (gigs?.gigs || gigs || [])?.slice(0, 8)?.map(gig => ({
+    id: gig._id,
+    title: gig.title,
+    img: gig.images?.[0]?.url || service1, // Use first image or fallback
+    rating: gig.averageRating || "N/A",
+    description: gig.description,
+    starting: `$${gig.price || 0}`,
+    status: "Available",
+    gigId: gig._id,
+    sellerId: gig.sellerId?._id || gig.sellerId,
+    pricingMethod: gig.pricingMethod
+  })) || [];
 
   const handleDropdownToggle = (dropdownName) => {
     setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
@@ -328,7 +226,7 @@ const CustomerHome = () => {
         <div className="bg-black/50 absolute inset-0 z-10"></div>
         <div className="absolute top-0 text-white inset-0 flex flex-col items-center justify-center px-4 md:px-6 lg:px-4 text-center z-20">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold">
-            Welcome, Sarah!
+            Welcome, {userName}!
           </h1>
           <p className="text-sm md:text-base lg:text-base">
             Find Trusted Workers Anytime, Anywhere
@@ -555,9 +453,21 @@ const CustomerHome = () => {
             View All Services
           </button>
         </div>
-        {servicesData.length > 0 ? (
+        {gigsLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5 md:gap-4 lg:gap-6 justify-items-center place-items-center">
-            {servicesData.map((service) => (
+            {/* Loading skeletons */}
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="w-full max-w-[280px] animate-pulse">
+                <div className="bg-gray-200 h-48 rounded-lg mb-3"></div>
+                <div className="bg-gray-200 h-4 rounded mb-2"></div>
+                <div className="bg-gray-200 h-3 rounded mb-1"></div>
+                <div className="bg-gray-200 h-3 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        ) : displayGigs.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5 md:gap-4 lg:gap-6 justify-items-center place-items-center">
+            {displayGigs.map((service) => (
               <div
                 key={service.id}
                 className="w-full max-w-[280px] flex justify-center"
@@ -568,8 +478,10 @@ const CustomerHome = () => {
                   img={service.img}
                   rating={service.rating}
                   description={service.description}
-                  starting={"$25"}
-                  status={"Available"}
+                  starting={service.starting}
+                  status={service.status}
+                  gigId={service.gigId}
+                  sellerId={service.sellerId}
                 />
               </div>
             ))}
@@ -577,7 +489,7 @@ const CustomerHome = () => {
         ) : (
           <div className="text-center mt-12 py-8">
             <p className="text-lg text-gray-500 mb-2">
-              No services available at the moment.
+              {gigsError ? "Failed to load services. Please try again later." : "No services available at the moment."}
             </p>
             <p className="text-sm text-gray-400">
               Please check back later for new services.
@@ -586,7 +498,11 @@ const CustomerHome = () => {
         )}
       </div>
 
-      <TopWorkers />
+      <TopWorkers 
+        workers={workers} 
+        isLoading={workersLoading} 
+        error={workersError} 
+      />
 
       <div className="max-w-7xl mx-auto my-20 px-4 lg:px-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
@@ -606,33 +522,36 @@ const CustomerHome = () => {
           </button>
         </div>
         <div className="flex flex-col gap-6 mt-6">
-          <BookingCard
-            image={service1}
-            title="Web Design"
-            workerName="John Doe"
-            time="2 hours ago"
-            category="Design"
-            status="Confirmed"
-            price="50"
-          />
-          <BookingCard
-            image={service1}
-            title="Web Design"
-            workerName="John Doe"
-            time="2 hours ago"
-            category="Design"
-            status="Confirmed"
-            price="50"
-          />
-          <BookingCard
-            image={service1}
-            title="Web Design"
-            workerName="John Doe"
-            time="2 hours ago"
-            category="Design"
-            status="Confirmed"
-            price="50"
-          />
+          {ordersLoading ? (
+            // Loading skeletons for bookings
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-gray-200 h-32 rounded-lg"></div>
+              </div>
+            ))
+          ) : (orders?.orders || orders || [])?.slice(0, 3)?.length > 0 ? (
+            (orders?.orders || orders || []).slice(0, 3).map((order) => (
+              <BookingCard
+                key={order._id}
+                image={order.gigId?.images?.[0]?.url || service1}
+                title={order.gigId?.title || "Service"}
+                workerName={order.sellerId?.name || "Unknown Worker"}
+                time={new Date(order.createdAt).toLocaleDateString()}
+                category={order.gigId?.category || "General"}
+                status={order.status || "Pending"}
+                price={order.totalAmount || "0"}
+              />
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-2">
+                {ordersError ? "Failed to load bookings. Please try again later." : "No bookings yet."}
+              </p>
+              <p className="text-sm text-gray-400">
+                {ordersError ? "Please check your connection and refresh the page." : "Start booking services to see them here!"}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

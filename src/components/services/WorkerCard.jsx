@@ -81,12 +81,14 @@ const WorkerCard = ({
       {/* Stats */}
       <div className="flex justify-around items-center mt-4 bg-gray-50 rounded-xl p-2 text-xs py-3.5 flex-shrink-0">
         <div className="text-center">
-          <p className="font-semibold">{jobsCompleted}</p>
+          <p className="font-semibold">{jobsCompleted || 0}</p>
           <p className="text-gray-500">Jobs</p>
         </div>
         <div className="w-px bg-gray-200 h-6" />
         <div className="text-center">
-          <p className="font-semibold">${rate}/hr</p>
+          <p className="font-semibold">
+            {typeof rate === "number" ? `TZS ${rate}` : rate}
+          </p>
           <p className="text-gray-500">Rate</p>
         </div>
       </div>

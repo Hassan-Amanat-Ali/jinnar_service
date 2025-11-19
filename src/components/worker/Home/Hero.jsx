@@ -2,12 +2,36 @@ import { Link } from "react-router-dom";
 import { CheckCircle, Briefcase, Check, DollarSign, Star } from "lucide-react";
 import bag from "../../../assets/icons/worker-bag.png";
 import check from "../../../assets/icons/check.png";
-import { useGetMyProfileQuery } from "../../../services/workerApi";
+import { useGetMyProfileQuery, useGetMyOrdersQuery, useGetNewJobRequestsQuery, useGetWalletQuery } from "../../../services/workerApi";
 
 const Hero = () => {
   // Fetch real-time profile data
   const { data } = useGetMyProfileQuery();
   const profile = data?.profile;
+  
+  // Fetch orders to calculate stats
+  const { data: ordersData } = useGetMyOrdersQuery();
+  const { data: newJobsData } = useGetNewJobRequestsQuery();
+  const { data: walletData } = useGetWalletQuery();
+  
+  // Calculate real stats
+  const allOrders = ordersData?.orders || [];
+  const completedOrders = allOrders.filter(order => order.status === 'completed');
+  // Get active job requests from new jobs data (pending jobs waiting for response)
+  const activeJobRequests = newJobsData?.jobs?.length || 0;
+  
+  // Get wallet balance from wallet API
+  const walletBalance = walletData?.balance || 0;
+  
+  // Calculate monthly earnings (orders from current month that are completed)
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const monthlyEarnings = completedOrders
+    .filter(order => {
+      const orderDate = new Date(order.createdAt);
+      return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
+    })
+    .reduce((total, order) => total + (order.price || 0), 0);
 
   // Calculate profile completion percentage
   const calculateProfileCompletion = () => {
@@ -51,9 +75,19 @@ const Hero = () => {
   const hasAvailability =
     profile?.availability && profile?.availability.length > 0;
 
-  // Get stats from profile
-  const jobsCompleted = profile?.orderHistory?.length || 0;
-  const rating = profile?.rating?.average || 0;
+  // Get stats - use calculated values from orders
+  const jobsCompleted = completedOrders.length;
+  const rating = profile?.rating?.average || profile?.rating || 0;
+  
+  // Format currency
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 xl:px-5 my-8 space-y-6">
@@ -210,16 +244,15 @@ const Hero = () => {
           <p className="text-2xl font-bold text-gray-900">{jobsCompleted}</p>
         </div>
 
-        {/* Earnings This Month */}
+        {/* Wallet Balance */}
         <div className="bg-white rounded-xl p-4 border border-gray-100">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
               <DollarSign className="w-5 h-5 text-blue-600" />
             </div>
-            <span className="text-xs font-medium text-green-600">↗ +12%</span>
           </div>
-          <p className="text-xs text-gray-600 mb-1">Earnings This Month</p>
-          <p className="text-2xl font-bold text-gray-900">$3,240</p>
+          <p className="text-xs text-gray-600 mb-1">Wallet Balance</p>
+          <p className="text-2xl font-bold text-gray-900">TZS {walletBalance.toLocaleString()}</p>
         </div>
 
         {/* Active Job Requests */}
@@ -228,10 +261,9 @@ const Hero = () => {
             <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
               <Briefcase className="w-5 h-5 text-orange-600" />
             </div>
-            <span className="text-xs font-medium text-green-600">↗ +12%</span>
           </div>
           <p className="text-xs text-gray-600 mb-1">Active Job Requests</p>
-          <p className="text-2xl font-bold text-gray-900">8</p>
+          <p className="text-2xl font-bold text-gray-900">{activeJobRequests}</p>
         </div>
 
         {/* Rating */}

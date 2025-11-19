@@ -13,10 +13,6 @@ import {
   Star,
   MapPin,
   Clock,
-  CreditCard,
-  Smartphone,
-  Building2,
-  Wallet,
   Calendar,
   ChevronDown,
 } from "lucide-react";
@@ -39,6 +35,7 @@ const BookWorker = () => {
     timeSlot: "",
     emergency: false,
     location: null,
+    image: "",
   });
 
   const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -95,6 +92,7 @@ const BookWorker = () => {
         date: formData.date,
         timeSlot: formData.timeSlot,
         jobDescription: formData.jobDescription,
+        image: formData.image || "",
         lat: formData.location.lat,
         lng: formData.location.lng,
         emergency: formData.emergency,
@@ -455,30 +453,7 @@ const BookWorker = () => {
               </div>
             </section>
 
-            {/* Payment Methods Available */}
-            <section className="bg-white rounded-2xl border border-neutral-200 p-4 sm:p-5 shadow-sm">
-              <label className="block text-sm font-semibold text-gray-900 mb-3">
-                Payment Methods Available
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="rounded-xl p-3 border border-gray-200 bg-white hover:bg-[#DBF0FF] cursor-pointer transition-colors text-center">
-                  <Smartphone className="w-6 h-6 mx-auto mb-1 text-gray-600" />
-                  <p className="text-xs font-medium">M-Pesa</p>
-                </div>
-                <div className="rounded-xl p-3 border border-gray-200 bg-white hover:bg-[#DBF0FF] cursor-pointer transition-colors text-center">
-                  <CreditCard className="w-6 h-6 mx-auto mb-1 text-gray-600" />
-                  <p className="text-xs font-medium">Credit/Debit Card</p>
-                </div>
-                <div className="rounded-xl p-3 border border-gray-200 bg-white hover:bg-[#DBF0FF] cursor-pointer transition-colors text-center">
-                  <Wallet className="w-6 h-6 mx-auto mb-1 text-gray-600" />
-                  <p className="text-xs font-medium">Airtel Money</p>
-                </div>
-                <div className="rounded-xl p-3 border border-gray-200 bg-white hover:bg-[#DBF0FF] cursor-pointer transition-colors text-center">
-                  <Building2 className="w-6 h-6 mx-auto mb-1 text-gray-600" />
-                  <p className="text-xs font-medium">Bank Transfer</p>
-                </div>
-              </div>
-            </section>
+
 
             {/* Footer Actions */}
             <section className="bg-white rounded-2xl border border-neutral-200 p-3 sm:p-4 shadow-sm">

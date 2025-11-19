@@ -1,19 +1,74 @@
+import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
 import Charts from "../../components/worker/Home/Charts";
 import Hero from "../../components/worker/Home/Hero";
-import LatestJobs from "../../components/worker/Home/LatesJobs";
-import service1 from "../../assets/images/All-services-1.jpg";
-import service2 from "../../assets/images/all-services-2.jpg";
-import service3 from "../../assets/images/all-services-3.jpg";
 import BookingCard from "../../components/customer/BookinCard";
-import Testimonials from "../../components/Landing/Testimonials";
 import { useNavigate } from "react-router-dom";
+import { useGetMyOrdersQuery, useGetWalletQuery, useUpdateFcmTokenMutation } from "../../services/workerApi";
+import { format } from "date-fns";
+import { requestNotificationPermission } from "../../utils/fcm";
+
 const Home = () => {
   const navigate = useNavigate();
+  const [updateFcmToken] = useUpdateFcmTokenMutation();
+  
+  // Fetch real bookings data
+  const { data: ordersData, isLoading: ordersLoading } = useGetMyOrdersQuery();
+  const { data: walletData } = useGetWalletQuery();
+
+  // Request FCM permission and update token on component mount
+  useEffect(() => {
+    const setupFCM = async () => {
+      try {
+        const token = await requestNotificationPermission();
+        
+        if (token) {
+          // Send token to backend
+          await updateFcmToken({ token }).unwrap();
+          console.log("FCM token updated successfully");
+        }
+      } catch (error) {
+        console.error("Error updating FCM token:", error);
+      }
+    };
+
+    setupFCM();
+  }, [updateFcmToken]);
+  
+  // Get recent orders (last 3)
+  const recentOrders = ordersData?.orders?.slice(0, 3) || [];
+  
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      return format(new Date(dateString), 'MMM dd, yyyy');
+    } catch (error) {
+      return 'Invalid date';
+    }
+  };
+  
+  // Helper function to get status badge color
+  const getStatusColor = (status) => {
+    const colors = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      accepted: 'bg-blue-100 text-blue-800',
+      'in-progress': 'bg-purple-100 text-purple-800',
+      completed: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800',
+      declined: 'bg-gray-100 text-gray-800',
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
+  
   return (
     <div>
       <Hero />
-      <LatestJobs />
-      <Charts />
+      
+      {/* Charts with wallet data */}
+      <Charts walletData={walletData} />
+      
+      {/* Your Bookings Section */}
       <div className="max-w-7xl mx-auto my-8 sm:my-12 lg:my-16 px-4 sm:px-6 lg:px-6 xl:px-5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
           <div className="flex-1 min-w-0">
@@ -31,38 +86,39 @@ const Home = () => {
             View All
           </button>
         </div>
-        <div className="flex flex-col gap-3 sm:gap-4 mt-4 sm:mt-6">
-          <BookingCard
-            image={service1}
-            title="Web Design"
-            workerName="John Doe"
-            time="2 hours ago"
-            category="Design"
-            status="Confirmed"
-            price="50"
-          />
-          <BookingCard
-            image={service2}
-            title="Web Design"
-            workerName="John Doe"
-            time="2 hours ago"
-            category="Design"
-            status="Confirmed"
-            price="50"
-          />
-          <BookingCard
-            image={service3}
-            title="Web Design"
-            workerName="John Doe"
-            time="2 hours ago"
-            category="Design"
-            status="Confirmed"
-            price="50"
-          />
-        </div>
+        
+        {/* Loading State */}
+        {ordersLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-[#74C7F2]" />
+          </div>
+        ) : recentOrders.length > 0 ? (
+          <div className="flex flex-col gap-3 sm:gap-4 mt-4 sm:mt-6">
+            {recentOrders.map((order) => (
+              <BookingCard
+                key={order._id}
+                image={order.gigId?.images?.[0]?.url || null}
+                title={order.gigId?.title || 'Service'}
+                workerName={order.buyerId?.name || 'Customer'}
+                time={formatDate(order.createdAt)}
+                category={order.gigId?.category || 'Service'}
+                status={order.status}
+                price={order.price || order.gigId?.price || '0'}
+                onClick={() => navigate(`/worker/booking/${order._id}`)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-gray-50 rounded-lg mt-6">
+            <p className="text-gray-500 text-sm">No bookings yet</p>
+            <p className="text-gray-400 text-xs mt-1">
+              Your accepted job requests will appear here
+            </p>
+          </div>
+        )}
       </div>
-      <Testimonials />
     </div>
   );
 };
+
 export default Home;
