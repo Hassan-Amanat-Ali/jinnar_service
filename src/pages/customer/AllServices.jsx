@@ -3,8 +3,8 @@ import Nav from "../../components/services/Nav";
 import WorkerCard from "../../components/services/WorkerCard";
 import { useGetAllGigsQuery } from "../../services/workerApi";
 import { useSearchParams } from "react-router-dom";
+import SiteFooter from "../../components/Landing/SiteFooter.jsx";
 import { useMemo } from "react";
-
 const AllServices = () => {
   const { data, isLoading, error } = useGetAllGigsQuery();
   const [searchParams] = useSearchParams();
@@ -243,6 +243,7 @@ const AllServices = () => {
           </div>
         )}
       </div>
+      <SiteFooter />
     </>
   );
 };
