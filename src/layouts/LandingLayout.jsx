@@ -4,6 +4,7 @@ import { Menu, X } from "lucide-react";
 import ScrollToTop from "../components/common/ScrollToTop.jsx";
 import GoogleTranslate from "../components/common/GoogleTranslate.jsx";
 import logo from "../assets/logo-new.png";
+import Bot from "../components/chat-bot/Bot.jsx";
 
 const LandingHeader = () => {
   const location = useLocation();

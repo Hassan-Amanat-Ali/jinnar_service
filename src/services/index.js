@@ -4,3 +4,5 @@ export * from "./authApi";
 export * from "./customerApi";
 export * from "./workerApi";
 export * from "./chatApi";
+export * from "./chatbotApi";
+export * from "./faqApi";
