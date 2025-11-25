@@ -1,5 +1,7 @@
-const PrivacyPolicy = () => {
-  return <div>Privacy Policy</div>;
+import PrivacyPolicy from "../../components/profile/PrivacyPolicy";
+
+const PrivacyPolicies = () => {
+  return <PrivacyPolicy />;
 };
 
-export default PrivacyPolicy;
+export default PrivacyPolicies;
