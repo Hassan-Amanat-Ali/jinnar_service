@@ -132,7 +132,7 @@ const Footer = () => {
               <li>
                 <a
                   className="hover:text-secondary transition-colors"
-                  href="/profile?tab=help"
+                  href="/help"
                 >
                   Help Center
                 </a>
@@ -140,7 +140,7 @@ const Footer = () => {
               <li>
                 <a
                   className="hover:text-secondary transition-colors"
-                  href="/profile?tab=help"
+                  href="/help"
                 >
                   FAQ
                 </a>
