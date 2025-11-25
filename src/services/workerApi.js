@@ -93,6 +93,10 @@ export const workerApi = baseApi.injectEndpoints({
       query: () => "/orders/declined",
       providesTags: ["Jobs"],
     }),
+    getSellerStats: builder.query({
+      query: () => "/orders/seller-stats",
+      providesTags: ["Stats"],
+    }),
     acceptJob: builder.mutation({
       query: (data) => ({
         url: "/orders/accept",
@@ -189,7 +193,7 @@ export const workerApi = baseApi.injectEndpoints({
     }),
     withdrawWallet: builder.mutation({
       query: (data) => ({
-        url: "/payout/withdraw",
+        url: "/wallet/withdraw",
         method: "POST",
         body: data,
       }),
@@ -254,6 +258,7 @@ export const {
   useGetNewJobRequestsQuery,
   useGetActiveJobsQuery,
   useGetDeclinedJobsQuery,
+  useGetSellerStatsQuery,
   useAcceptJobMutation,
   useDeclineJobMutation,
   useUploadDeliverableMutation,

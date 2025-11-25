@@ -4,13 +4,11 @@ import { ToastContainer } from "react-toastify";
 import { Toaster } from "react-hot-toast";
 import AppRouter from "./routes/AppRouter.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
-import Bot from "./components/chat-bot/Bot.jsx";
 
 function App() {
   return (
     <AuthProvider>
       <AppRouter />
-      <Bot />
       <ToastContainer
         position="top-right"
         autoClose={5000}

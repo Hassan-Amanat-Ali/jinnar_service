@@ -52,7 +52,7 @@ const PopularServices = () => {
           {services.map((service, i) => (
             <a
               key={i}
-              href="/landing-services"
+              href="/services/slug"
               className="aspect-square bg-white border border-border rounded-lg sm:rounded-xl shadow-sm overflow-hidden relative cursor-pointer hover:shadow-md transition-all duration-300 group"
             >
               <img
@@ -83,7 +83,7 @@ const PopularServices = () => {
           ))}
         </div>
         <div className="text-center mt-6 md:mt-8">
-          <a href="/landing-services" className="inline-block">
+          <a href="/services" className="inline-block">
             <Button title="View All Services" />
           </a>
         </div>

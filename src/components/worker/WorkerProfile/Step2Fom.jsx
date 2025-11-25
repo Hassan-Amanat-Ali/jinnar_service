@@ -232,7 +232,7 @@ const Step2Fom = forwardRef(({ profileData, isLoading, error }, ref) => {
     serviceCatalog.find((s) => s.id === detail.serviceId) || serviceCatalog[0];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="align-center gap-6">
       {/* Left column */}
       <div className="lg:col-span-2">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
@@ -354,96 +354,6 @@ const Step2Fom = forwardRef(({ profileData, isLoading, error }, ref) => {
         </div>
       </div>
 
-      {/* Right column */}
-      <div className="lg:col-span-1 space-y-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
-          <div className="flex items-center gap-2">
-            <div className="h-4 w-4 rounded-full bg-gray-900" />
-            <h4 className="text-base font-semibold text-gray-900">
-              {primaryService.title} Details
-            </h4>
-          </div>
-
-          {/* Description */}
-          <div className="mt-4">
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Service Discription
-            </label>
-            <textarea
-              value={detail.description}
-              onChange={(e) =>
-                setDetail({ ...detail, description: e.target.value })
-              }
-              placeholder="Pipe repairs, installation"
-              rows={3}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent bg-gray-50"
-            />
-          </div>
-
-          {/* Experience */}
-          <div className="mt-4">
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Year of Experience
-            </label>
-            <Dropdown
-              placeholder="Select your experience level"
-              options={["0-1 years", "2-5 years", "6-10 years", "10+ years"]}
-              isOpen={isExpOpen}
-              onToggle={() => setIsExpOpen((v) => !v)}
-              onSelect={(opt) => setDetail({ ...detail, experience: opt })}
-              className="w-full text-sm"
-            />
-          </div>
-
-          {/* Certificate */}
-          <div className="mt-4">
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Certificate Optional
-            </label>
-            <div className="rounded-md border border-gray-300 bg-gray-50 p-4 text-center">
-              <p className="text-xs text-gray-600">
-                Upload certification or license (PDF only)
-              </p>
-              <label
-                className="mt-2 inline-flex items-center justify-center h-9 px-4 rounded-md text-sm font-medium text-white cursor-pointer"
-                style={{ background: "var(--gradient-main)" }}
-              >
-                Choose File
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  className="hidden"
-                  onChange={(e) =>
-                    setDetail({
-                      ...detail,
-                      certificate: e.target.files?.[0] || null,
-                    })
-                  }
-                />
-              </label>
-              {detail.certificate && (
-                <p className="mt-2 text-xs text-green-600">
-                  Selected: {detail.certificate.name}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mt-5">
-            <div className="flex items-start gap-3">
-              <Info className="w-5 h-5 text-[#74C7F2] mt-0.5 shrink-0" />
-              <div>
-                <h4 className="text-sm font-medium text-[#74C7F2] mb-1">
-                  💡 Pro Tip
-                </h4>
-                <p className="text-sm text-gray-700">
-                  Adding certifications increases your credibility and can lead
-                  to higher-paying jobs.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 });

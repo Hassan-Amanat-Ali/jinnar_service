@@ -45,10 +45,11 @@ const Signup = () => {
       return;
     }
 
-    if (!/^\+[1-9]\d{1,14}$/.test(mobile)) {
-      toast.error("Please enter a valid mobile number (e.g., +923001234567)");
-      return;
-    }
+   if (!/^\+[1-9]\d{7,14}$/.test(mobile)) {
+  toast.error("Please enter a valid phone number in international format (e.g., +12345678901)");
+  return;
+}
+
 
     try {
       const backendRole = role === ROLES.CUSTOMER ? "buyer" : "seller";

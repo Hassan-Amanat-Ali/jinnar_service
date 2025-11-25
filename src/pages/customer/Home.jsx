@@ -3,7 +3,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
 
-import { Wrench, MapPin, Clock, DollarSign, Sheet } from "lucide-react";
+import { Wrench, Clock, DollarSign } from "lucide-react";
 
 import customerHome from "../../assets/images/customer-home.jpg";
 import customerHome2 from "../../assets/images/customer-home2.jpg";
@@ -21,7 +21,7 @@ import service1 from "../../assets/images/All-services-1.jpg";
 import PopularServices from "../../components/Landing/PopularServices";
 import TopWorkers from "../../components/Landing/TopWorkers";
 import Testimonials from "../../components/Landing/Testimonials";
-import BookingCard from "../../components/customer/BookinCard";
+import JobCard from "../../components/customer/MyBookingsCard";
 import Dropdown from "../../components/common/DropDown";
 import Card from "../common/Card";
 import { useNavigate } from "react-router-dom";
@@ -31,6 +31,8 @@ import { requestNotificationPermission } from "../../utils/fcm";
 
 const CustomerHome = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [selectedBudget, setSelectedBudget] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const [updateFcmToken] = useUpdateFcmTokenMutation();
@@ -97,75 +99,6 @@ const CustomerHome = () => {
   ];
 
   // Dropdown options
-  const serviceOptions = [
-    "Home Cleaning",
-    "Deep Cleaning",
-    "Office Cleaning",
-    "Plumbing",
-    "Emergency Plumbing",
-    "Drain Cleaning",
-    "Electrical Work",
-    "Electrical Repair",
-    "Wiring Installation",
-    "Carpentry",
-    "Furniture Repair",
-    "Custom Furniture",
-    "Pet Care",
-    "Pet Grooming",
-    "Pet Sitting",
-    "Auto Repair",
-    "Car Maintenance",
-    "Tire Service",
-    "Tailoring",
-    "Alterations",
-    "Custom Clothing",
-    "Home Repair",
-    "Roof Repair",
-    "Painting",
-    "Garden Maintenance",
-    "Landscaping",
-  ];
-
-  const locationOptions = [
-    "Dar es Salaam - Kinondoni",
-    "Dar es Salaam - Ilala",
-    "Dar es Salaam - Temeke",
-    "Dar es Salaam - Ubungo",
-    "Arusha - Central",
-    "Arusha - Meru",
-    "Mwanza - Nyamagana",
-    "Mwanza - Ilemela",
-    "Dodoma - Central",
-    "Dodoma - Bahi",
-    "Mbeya - Central",
-    "Mbeya - Rungwe",
-    "Morogoro - Central",
-    "Morogoro - Mvomero",
-    "Tanga - Central",
-    "Tanga - Muheza",
-    "Moshi - Central",
-    "Moshi - Hai",
-    "Zanzibar - Stone Town",
-    "Zanzibar - Unguja",
-  ];
-
-  const scheduleOptions = [
-    "Now (ASAP)",
-    "Within 30 minutes",
-    "Within 1 hour",
-    "Within 2 hours",
-    "Within 3 hours",
-    "Later today",
-    "Tomorrow morning (8-12 PM)",
-    "Tomorrow afternoon (12-5 PM)",
-    "Tomorrow evening (5-8 PM)",
-    "This week",
-    "Next week",
-    "Weekends only",
-    "Weekdays only",
-    "Custom date & time",
-  ];
-
   const budgetOptions = [
     "Under 20,000 TSH",
     "20,000 - 50,000 TSH",
@@ -197,6 +130,32 @@ const CustomerHome = () => {
 
   const handleDropdownToggle = (dropdownName) => {
     setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
+  };
+
+  // Handle search functionality
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    
+    if (searchQuery.trim()) {
+      params.set('search', searchQuery.trim());
+    }
+    if (selectedBudget) {
+      params.set('budget', selectedBudget);
+    }
+
+    // Navigate to AllServices with query parameters
+    navigate(`/services?${params.toString()}`);
+  };
+
+  // Handle dropdown selection
+  const handleBudgetSelect = (budget) => {
+    setSelectedBudget(budget);
+    setOpenDropdown(null);
+  };
+
+  // Handle viewing booking details
+  const handleViewDetails = (bookingId) => {
+    navigate(`/customer-booking/${bookingId}`);
   };
   return (
     <>
@@ -235,131 +194,41 @@ const CustomerHome = () => {
             Book instantly or schedule later safe, simple, and reliable.
           </span>
           <div className="w-full mt-4 md:mt-5 lg:mt-6 max-w-7xl px-3 md:px-6 lg:px-0">
-            <div className="bg-white w-full md:w-[90%] lg:w-[60%] mx-auto h-auto lg:h-22 rounded-t-2xl shadow-lg">
-              <div className="text-black p-3 md:p-4 lg:p-4 whitespace-nowrap">
-                {/* Mobile Grid Layout */}
-                <div className="grid grid-cols-2 gap-2 sm:hidden">
-                  <div className="flex text-xs flex-col items-start gap-1">
-                    <p className="flex items-center gap-1 text-gray-600">
-                      <Wrench size={12} style={{ color: "#74C7F2" }} />
-                      Service
-                    </p>
-                    <Dropdown
-                      placeholder="Choose Service"
-                      options={serviceOptions}
-                      isOpen={openDropdown === "mobile-service"}
-                      onToggle={() => handleDropdownToggle("mobile-service")}
-                      className="w-full  font-light text-xs text-start h-8 max-sm:w-[100px] max-sm:px-1"
-                    />
-                  </div>
-                  <div className="flex text-xs flex-col items-start gap-1">
-                    <p className="flex items-center gap-1 text-gray-600">
-                      <MapPin size={12} style={{ color: "#74C7F2" }} />
-                      Location
-                    </p>
-                    <Dropdown
-                      placeholder="Your Area"
-                      options={locationOptions}
-                      isOpen={openDropdown === "mobile-location"}
-                      onToggle={() => handleDropdownToggle("mobile-location")}
-                      className="w-full font-light text-xs text-start h-8  max-sm:w-[100px] max-sm:px-1"
-                    />
-                  </div>
-                  <div className="flex text-xs flex-col items-start gap-1">
-                    <p className="flex items-center gap-1 text-gray-600">
-                      <Clock size={12} style={{ color: "#74C7F2" }} />
-                      When
-                    </p>
-                    <Dropdown
-                      placeholder="Schedule"
-                      options={scheduleOptions}
-                      isOpen={openDropdown === "mobile-schedule"}
-                      onToggle={() => handleDropdownToggle("mobile-schedule")}
-                      className="w-full font-light text-xs text-start h-8  max-sm:w-[100px] max-sm:px-1"
-                    />
-                  </div>
-                  <div className="flex text-xs flex-col items-start gap-1">
-                    <p className="flex items-center gap-1 text-gray-600">
-                      <DollarSign size={12} style={{ color: "#74C7F2" }} />
-                      Budget
-                    </p>
-                    <Dropdown
-                      placeholder="Price Range"
-                      options={budgetOptions}
-                      isOpen={openDropdown === "mobile-budget"}
-                      onToggle={() => handleDropdownToggle("mobile-budget")}
-                      className="w-full font-light text-xs text-start h-8  max-sm:w-[100px] max-sm:px-1"
-                    />
-                  </div>
+            <div className="bg-white w-full md:w-[90%] lg:w-[80%] mx-auto h-auto rounded-2xl shadow-lg p-4 md:p-6">
+              <div className="flex flex-col sm:flex-row gap-4 items-center">
+                {/* Search Input */}
+                <div className="flex-1 w-full">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-12 outline-none px-4 bg-[#f9fafb] rounded-lg border border-gray-300 text-black text-sm placeholder-gray-500 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
+                    placeholder="Search for any service..."
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  />
                 </div>
-
-                {/* Medium+ Screens: Improved Layout */}
-                <div className="hidden sm:grid sm:grid-cols-2 sm:gap-3 md:flex md:flex-row md:justify-between md:items-start md:gap-3 lg:gap-4">
-                  <div className="flex text-xs flex-col items-start gap-1 flex-1">
-                    <p className="flex items-center gap-1 text-gray-600">
-                      <Wrench size={14} style={{ color: "#74C7F2" }} />
-                      Select Service
-                    </p>
-                    <Dropdown
-                      placeholder="Choose Service"
-                      options={serviceOptions}
-                      isOpen={openDropdown === "service"}
-                      onToggle={() => handleDropdownToggle("service")}
-                      className="w-full font-light text-xs text-start md:w-[166px]"
-                    />
-                  </div>
-                  <div className="flex text-xs flex-col items-start gap-1 flex-1">
-                    <p className="flex items-center gap-1 text-gray-600">
-                      <MapPin size={14} style={{ color: "#74C7F2" }} />
-                      Location
-                    </p>
-                    <Dropdown
-                      placeholder="Your Area"
-                      options={locationOptions}
-                      isOpen={openDropdown === "location"}
-                      onToggle={() => handleDropdownToggle("location")}
-                      className="w-full font-light text-xs text-start md:w-[166px]"
-                    />
-                  </div>
-                  <div className="flex text-xs flex-col items-start gap-1 flex-1">
-                    <p className="flex items-center gap-1 text-gray-600">
-                      <Clock size={14} style={{ color: "#74C7F2" }} />
-                      When
-                    </p>
-                    <Dropdown
-                      placeholder="Schedule"
-                      options={scheduleOptions}
-                      isOpen={openDropdown === "schedule"}
-                      onToggle={() => handleDropdownToggle("schedule")}
-                      className="w-full font-light text-xs text-start md:w-[166px]"
-                    />
-                  </div>
-                  <div className="flex text-xs flex-col items-start gap-1 flex-1">
-                    <p className="flex items-center gap-1 text-gray-600">
-                      <DollarSign size={14} style={{ color: "#74C7F2" }} />
-                      Price
-                    </p>
-                    <Dropdown
-                      placeholder="Budget"
-                      options={budgetOptions}
-                      isOpen={openDropdown === "budget"}
-                      onToggle={() => handleDropdownToggle("budget")}
-                      className="w-full font-light text-xs text-start md:w-[166px]"
-                    />
-                  </div>
+                
+                {/* Price/Budget Dropdown */}
+                <div className="w-full sm:w-auto sm:min-w-[220px]">
+                  <Dropdown
+                    placeholder="Select Price Range"
+                    options={budgetOptions}
+                    isOpen={openDropdown === "budget"}
+                    onToggle={() => handleDropdownToggle("budget")}
+                    onSelect={handleBudgetSelect}
+                    className="w-full font-light text-black text-sm h-12 px-4 border border-gray-300 rounded-lg bg-[#f9fafb] focus:ring-2 focus:ring-blue-200"
+                  />
                 </div>
-              </div>
-            </div>
-            <div className="bg-white w-full md:w-[90%] lg:w-[60%] mx-auto h-auto lg:h-14 rounded-b-2xl shadow-lg mt-1">
-              <div className="w-full h-full p-3 flex flex-col sm:flex-row items-center justify-center gap-2 md:gap-3">
-                <input
-                  type="text"
-                  className="w-full sm:w-[70%] md:w-[74%] h-10 sm:h-10 md:h-8 outline-none px-3 md:px-4 bg-[#f9fafb] rounded-lg border border-gray-300 text-black text-xs placeholder-gray-500 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
-                  placeholder="Search for any service..."
-                />
-                <button className="w-full sm:w-[28%] md:w-[30%] h-10 sm:h-10 md:h-8 bg-gradient-to-r from-[#A7E3F2] to-[#74C7F2] text-white rounded-lg text-xs md:text-xs font-medium hover:from-[#96D9F0] hover:to-[#63B8E8] transition-all duration-200 shadow-sm">
-                  Search
-                </button>
+                
+                {/* Search Button */}
+                <div className="w-full sm:w-auto">
+                  <button 
+                    onClick={handleSearch}
+                    className="w-full sm:w-auto px-8 py-3 h-12 bg-gradient-to-r from-[#A7E3F2] to-[#74C7F2] text-white rounded-lg text-sm font-medium hover:from-[#96D9F0] hover:to-[#63B8E8] transition-all duration-200 shadow-sm whitespace-nowrap"
+                  >
+                    Search Services
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -521,38 +390,70 @@ const CustomerHome = () => {
             View All Bookings
           </button>
         </div>
-        <div className="flex flex-col gap-6 mt-6">
-          {ordersLoading ? (
-            // Loading skeletons for bookings
-            [...Array(3)].map((_, i) => (
+
+        {/* Bookings Grid */}
+        {ordersLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+            {/* Loading skeletons for bookings */}
+            {[...Array(6)].map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="bg-gray-200 h-32 rounded-lg"></div>
+                <div className="bg-gray-200 h-64 rounded-lg"></div>
               </div>
-            ))
-          ) : (orders?.orders || orders || [])?.slice(0, 3)?.length > 0 ? (
-            (orders?.orders || orders || []).slice(0, 3).map((order) => (
-              <BookingCard
-                key={order._id}
-                image={order.gigId?.images?.[0]?.url || service1}
-                title={order.gigId?.title || "Service"}
-                workerName={order.sellerId?.name || "Unknown Worker"}
-                time={new Date(order.createdAt).toLocaleDateString()}
-                category={order.gigId?.category || "General"}
-                status={order.status || "Pending"}
-                price={order.totalAmount || "0"}
-              />
-            ))
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500 mb-2">
-                {ordersError ? "Failed to load bookings. Please try again later." : "No bookings yet."}
-              </p>
-              <p className="text-sm text-gray-400">
-                {ordersError ? "Please check your connection and refresh the page." : "Start booking services to see them here!"}
-              </p>
+            ))}
+          </div>
+        ) : (orders?.orders || orders || [])?.slice(0, 6)?.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+            {(orders?.orders || orders || []).slice(0, 6).map((order) => {
+              // Transform API data to match JobCard component expectations
+              const transformedBooking = {
+                id: order._id,
+                serviceImage: order.gigId?.images?.[0]?.url || null,
+                serviceTitle: order.gigId?.title || "Service",
+                serviceDescription: order.jobDescription || "No description available",
+                emergencyTag: order.emergency ? "Emergency" : null,
+                statusTag: order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || "Unknown",
+                workerImage: order.sellerId?.profilePicture || null,
+                workerName: order.sellerId?.name || "Worker",
+                workerRating: order.sellerId?.rating || "N/A",
+                date: order.date ? new Date(order.date).toLocaleDateString() : "TBD",
+                time: order.timeSlot?.charAt(0).toUpperCase() + order.timeSlot?.slice(1) || "TBD",
+                location: order.location ? `${order.location.lat.toFixed(4)}, ${order.location.lng.toFixed(4)}` : "Location TBD",
+                price: order.price || "Price TBD",
+                workerId: order.sellerId?._id, // Add workerId for messaging
+              };
+
+              return (
+                <JobCard
+                  key={transformedBooking.id}
+                  serviceImage={transformedBooking.serviceImage}
+                  serviceTitle={transformedBooking.serviceTitle}
+                  serviceDescription={transformedBooking.serviceDescription}
+                  emergencyTag={transformedBooking.emergencyTag}
+                  statusTag={transformedBooking.statusTag}
+                  workerImage={transformedBooking.workerImage}
+                  workerName={transformedBooking.workerName}
+                  workerRating={transformedBooking.workerRating}
+                  date={transformedBooking.date}
+                  time={transformedBooking.time}
+                  location={transformedBooking.location}
+                  price={transformedBooking.price}
+                  bookingId={transformedBooking.id}
+                  workerId={transformedBooking.workerId}
+                  onViewDetails={() => handleViewDetails(transformedBooking.id)}
+                />
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="text-gray-500 text-lg mb-2">
+              {ordersError ? "Failed to load bookings. Please try again later." : "No bookings yet."}
             </div>
-          )}
-        </div>
+            <div className="text-gray-400 text-sm">
+              {ordersError ? "Please check your connection and refresh the page." : "Start booking services to see them here!"}
+            </div>
+          </div>
+        )}
       </div>
 
       <Testimonials />

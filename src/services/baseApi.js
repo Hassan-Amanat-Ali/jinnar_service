@@ -44,8 +44,6 @@ export const baseApi = createApi({
     "Notifications",
     "Conversation",
     "Message",
-    "Chatbot",
-    "FAQ",
   ],
   endpoints: () => ({}), // Endpoints will be injected in separate files
 });

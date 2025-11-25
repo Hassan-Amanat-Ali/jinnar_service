@@ -11,7 +11,9 @@ import Signup from "../pages/common/Signup.jsx";
 import Verify from "../pages/common/Verify.jsx";
 import Help from "../pages/common/Help.jsx";
 import Contact from "../pages/common/Contact.jsx";
-import Notifications from "../pages/common/Notifications.jsx";
+import PrivacyPolicy from "../pages/common/PrivacyPolicy.jsx";
+import NotificationSettings from "../pages/common/NotificationSettings.jsx";
+import AllNotifications from "../pages/common/AllNotifications.jsx";
 import Chat from "../pages/common/Chat.jsx";
 import Profile from "../pages/common/Profile.jsx";
 import Complaint from "../pages/common/Complaint.jsx";
@@ -43,23 +45,17 @@ import JinnarDetailed from "../components/common/JinnarDetailed.jsx";
 import HowTrainingWorks from "../components/common/HowTrainingWorks.jsx";
 import { ROLES } from "../constants/roles.js";
 import RoleGuard from "../components/common/RoleGuard.jsx";
-import PrivacyPolicies from "../pages/common/PrivacyPolicy.jsx";
-import AllServicesLanding from "../pages/landing/Landing.jsx";
 
 const router = createBrowserRouter([
-  // Public landing pages - accessible to everyone
   {
     element: <LandingLayout />,
     children: [
       { index: true, element: <Landing /> },
-      { path: "landing-services", element: <AllServicesLanding /> },
       { path: "what-is-jinnar", element: <Jinnar /> },
       { path: "what-is-jinnar/detailed", element: <JinnarDetailed /> },
       { path: "how-training-works", element: <HowTrainingWorks /> },
-      { path: "help", element: <Help /> },
     ],
   },
-  // Public auth pages - no layout
   { path: "role", element: <RoleSelection /> },
   { path: "login", element: <Login /> },
   { path: "signup", element: <Signup /> },
@@ -71,8 +67,10 @@ const router = createBrowserRouter([
       { path: "about-us", element: <AboutUs /> },
       { path: "contact", element: <Contact /> },
 
-      { path: "privacy", element: <PrivacyPolicies /> },
-      { path: "notifications", element: <Notifications /> },
+      { path: "help", element: <Help /> },
+      { path: "privacy", element: <PrivacyPolicy /> },
+      { path: "notifications", element: <AllNotifications /> },
+      { path: "notification-settings", element: <NotificationSettings /> },
       { path: "chat", element: <Chat /> },
       { path: "profile", element: <Profile /> },
       { path: "complaint", element: <Complaint /> },

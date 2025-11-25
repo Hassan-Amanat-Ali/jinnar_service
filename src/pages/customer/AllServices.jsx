@@ -3,14 +3,46 @@ import Nav from "../../components/services/Nav";
 import WorkerCard from "../../components/services/WorkerCard";
 import { useGetAllGigsQuery } from "../../services/workerApi";
 import { useSearchParams } from "react-router-dom";
-import SiteFooter from "../../components/Landing/SiteFooter.jsx";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+
 const AllServices = () => {
   const { data, isLoading, error } = useGetAllGigsQuery();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
   const category = searchParams.get("category");
-  const location = searchParams.get("location");
+  const searchParam = searchParams.get("search");
+  const budget = searchParams.get("budget");
+
+  // Initialize search term from URL parameter
+  useEffect(() => {
+    if (searchParam) {
+      setSearchTerm(searchParam);
+      setDebouncedSearchTerm(searchParam);
+    }
+  }, [searchParam]);
+
+  // Debounce search term to improve performance
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Handle search input change - will be passed to Hero
+  const handleSearchChange = useCallback((value) => {
+    setSearchTerm(value);
+  }, []);
+
+  // Clear all filters
+  const clearAllFilters = useCallback(() => {
+    setSearchTerm("");
+    setDebouncedSearchTerm("");
+    setSearchParams({});
+  }, [setSearchParams]);
 
   // Skeleton Component
   const Skeleton = ({ className = "" }) => (
@@ -54,9 +86,23 @@ const AllServices = () => {
     [data]
   );
 
-  // Filter gigs based on search params
+  // Filter gigs based on search params and search term
   const gigsData = useMemo(() => {
     let filtered = allGigsData;
+
+    // Filter by search term (debounced)
+    if (debouncedSearchTerm.trim()) {
+      const searchLower = debouncedSearchTerm.toLowerCase().trim();
+      filtered = filtered.filter((gig) => {
+        return (
+          gig.name.toLowerCase().includes(searchLower) ||
+          gig.bio?.toLowerCase().includes(searchLower) ||
+          gig.sellerSkills.some((skill) =>
+            skill.toLowerCase().includes(searchLower)
+          )
+        );
+      });
+    }
 
     // Filter by category (skill)
     if (category) {
@@ -72,20 +118,8 @@ const AllServices = () => {
       });
     }
 
-    // Filter by location (if you have location data in your gigs)
-    if (location) {
-      filtered = filtered.filter((gig) => {
-        const locationLower = location.toLowerCase();
-        return (
-          gig.sellerAreas?.some((area) =>
-            area.name?.toLowerCase().includes(locationLower)
-          ) || gig.bio?.toLowerCase().includes(locationLower)
-        );
-      });
-    }
-
     return filtered;
-  }, [allGigsData, category, location]);
+  }, [allGigsData, debouncedSearchTerm, category]);
 
   return (
     <>
@@ -110,31 +144,49 @@ const AllServices = () => {
         }
       `}</style>
 
-      <Hero className="h-88 lg:h-140" />
+      <Hero 
+        className="h-88 lg:h-140" 
+        onSearchChange={handleSearchChange}
+        searchValue={searchTerm}
+      />
       <Nav />
 
       <div className="my-6 mt-16 max-w-[1200px] mx-auto">
+        {/* Search results count */}
+        {debouncedSearchTerm.trim() && (
+          <div className="text-center mb-4">
+            <p className="text-sm text-gray-600">
+              {gigsData.length} results found for "{debouncedSearchTerm}"
+            </p>
+          </div>
+        )}
+        
         {/* Search Info */}
-        {(category || location) && (
+        {(category || budget || debouncedSearchTerm.trim()) && (
           <div className="mb-6 flex flex-wrap items-center gap-5">
             <span className="text-gray-700 font-medium">
               Showing results for:
             </span>
+            {debouncedSearchTerm.trim() && (
+              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                "{debouncedSearchTerm}"
+              </span>
+            )}
             {category && (
               <span className="bg-secondary/10 text-secondary px-3 py-1 rounded-full text-sm font-medium">
                 {category.charAt(0).toUpperCase() + category.slice(1)}
               </span>
             )}
-            {location && (
-              <span className="bg-secondary/10 text-secondary px-3 py-1 rounded-full text-sm font-medium">
-                {location}
+            {budget && (
+              <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                {budget}
               </span>
             )}
             <button
-              onClick={() => (window.location.href = "/services")}
+              onClick={clearAllFilters}
               className="text-gray-500 hover:text-gray-700 text-sm underline ml-2"
             >
-              Clear filters
+              Clear all filters
             </button>
           </div>
         )}
@@ -243,7 +295,6 @@ const AllServices = () => {
           </div>
         )}
       </div>
-      <SiteFooter />
     </>
   );
 };

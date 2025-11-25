@@ -18,6 +18,8 @@ const Hero = ({
   title = "Explore All Services",
   subtitle = "Find the right service for your needs from trusted local workers",
   className = "",
+  onSearchChange,
+  searchValue = "",
 }) => {
   const [price, setPrice] = React.useState(50);
   const [openDropdown, setOpenDropdown] = React.useState(null);
@@ -82,6 +84,8 @@ const Hero = ({
                         className="bg-white/70 backdrop-blur-2xl w-full h-9 sm:h-11 rounded-xl text-xs sm:text-sm px-3 pl-9 focus:outline-none border-2 border-white"
                         placeholder="Search for services..."
                         type="text"
+                        value={searchValue}
+                        onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
                       />
                     </div>
                   </div>

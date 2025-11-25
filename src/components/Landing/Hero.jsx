@@ -42,9 +42,7 @@ const Hero = () => {
     if (selectedCategory) params.append("category", selectedCategory);
     if (location.trim()) params.append("location", location.trim());
 
-    navigate(
-      `/landing-services${params.toString() ? `?${params.toString()}` : ""}`
-    );
+    navigate(`/services${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
   const handleKeyPress = (e) => {
@@ -78,7 +76,7 @@ const Hero = () => {
           <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             <button
               className="btn-primary"
-              onClick={() => navigate("/landing-services")}
+              onClick={() => navigate("/customer-home")}
             >
               Browse Services
             </button>

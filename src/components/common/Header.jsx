@@ -63,14 +63,20 @@ export default function Navbar() {
             </div>
 
             {/* Right Icons - Desktop */}
-            <div className="hidden md:flex items-center space-x-3 cursop">
-              <div onClick={() => navigate("/chat")}>
+            <div className="hidden md:flex items-center space-x-3 cursor-pointer">
+              <div 
+                onClick={() => navigate("/chat")}
+                className="cursor-pointer"
+              >
                 <IconButton
                   icon={<MessageSquare size={14} color="#74C7F2" />}
                   className={"border-0 cursor-pointer"}
                 />
               </div>
-              <div onClick={() => navigate("/profile?tab=notifications")}>
+              <div 
+                onClick={() => navigate("/notifications")}
+                className="cursor-pointer"
+              >
                 <IconButton
                   icon={<Bell size={14} color="white" />}
                   className={
@@ -160,7 +166,7 @@ export default function Navbar() {
                   <MobileNavItem
                     icon={<Bell size={14} />}
                     label="Notifications"
-                    to="/profile?tab=notifications"
+                    to="/notifications"
                     onNavigate={() => setIsMobileMenuOpen(false)}
                   />
                 </div>
