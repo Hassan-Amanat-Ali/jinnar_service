@@ -2,13 +2,14 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 // Base query with automatic token injection
 const baseQuery = fetchBaseQuery({
-  baseUrl: "https://jinnar-marketplace.onrender.com/api",
+  // baseUrl: "https://jinnar-marketplace.onrender.com/api",
+  baseUrl: "http://localhost:3000/api",
   prepareHeaders: (headers, { endpoint }) => {
     const token = localStorage.getItem("token");
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }
-    // Don't set Content-Type for file uploads (FormData will set it automatically with boundary)
+
     if (!headers.has("Content-Type") && !endpoint?.includes("upload")) {
       headers.set("Content-Type", "application/json");
     }

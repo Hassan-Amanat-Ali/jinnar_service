@@ -20,6 +20,7 @@ import {
   Heart,
   User,
   Edit,
+  Shield,
 } from "lucide-react";
 import { useGetMyProfileQuery } from "../../services/workerApi";
 
@@ -93,6 +94,11 @@ const WorkerProfileOverview = () => {
   const handleEditProfile = () => {
     // Navigate to profile setup/edit page
     navigate("/worker-setup-basic");
+  };
+
+  // Handler for verification button
+  const handleVerification = () => {
+    navigate("/worker/profile/verification");
   };
 
   // Skeleton Shimmer Component
@@ -513,7 +519,7 @@ const WorkerProfileOverview = () => {
             </div>
           </div>
 
-          {/* Right: Action Button */}
+          {/* Right: Action Buttons */}
           <div className="shrink-0 flex md:flex-col gap-2">
             <button
               onClick={handleEditProfile}
@@ -521,6 +527,23 @@ const WorkerProfileOverview = () => {
             >
               <Edit size={16} />
               Edit Profile
+            </button>
+            <button
+              onClick={handleVerification}
+              className={`flex items-center justify-center gap-2 ${
+                profile.verificationStatus === "approved"
+                  ? "bg-green-100 text-green-700"
+                  : profile.verificationStatus === "pending"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              } font-medium px-4 py-2 rounded-lg transition-all text-sm`}
+            >
+              <Shield size={16} />
+              {profile.verificationStatus === "approved"
+                ? "Verified"
+                : profile.verificationStatus === "pending"
+                ? "Pending"
+                : "Get Verified"}
             </button>
           </div>
         </div>

@@ -254,7 +254,7 @@ const CustomerHome = () => {
         </div>
       </div>
 
-      <PopularServices />
+      {/* <PopularServices /> */}
 
       <div className="my-8 px-4">
         <h1 className="text-2xl sm:text-3xl font-semibold text-center">

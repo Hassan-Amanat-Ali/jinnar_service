@@ -12,7 +12,7 @@ const Landing = () => {
     <div className="bg-white">
       <Hero />
       <HowItWorks />
-      <PopularServices />
+      {/* <PopularServices /> */}
       <FeaturedCourses />
       <TopWorkers />
       {/* <Testimonials /> */}

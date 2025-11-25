@@ -156,7 +156,7 @@ const Footer = () => {
               <li>
                 <a
                   className="hover:text-secondary transition-colors"
-                  href="/profile?tab=privacy"
+                  href="/privacy-policy"
                 >
                   Privacy Policy
                 </a>
@@ -164,7 +164,7 @@ const Footer = () => {
               <li>
                 <a
                   className="hover:text-secondary transition-colors"
-                  href="/profile?tab=terms"
+                  href="/terms-condition"
                 >
                   Terms of Service
                 </a>

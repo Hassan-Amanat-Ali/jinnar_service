@@ -47,6 +47,8 @@ import { ROLES } from "../constants/roles.js";
 import RoleGuard from "../components/common/RoleGuard.jsx";
 import PrivacyPolicies from "../pages/common/PrivacyPolicy.jsx";
 import AllServicesLanding from "../pages/landing/Landing.jsx";
+import AccountVerification from "../components/profile/AccountVerification.jsx";
+import Terms from "../pages/common/Terms.jsx";
 
 const router = createBrowserRouter([
   // Public landing pages - accessible to everyone
@@ -59,6 +61,9 @@ const router = createBrowserRouter([
       { path: "what-is-jinnar/detailed", element: <JinnarDetailed /> },
       { path: "how-training-works", element: <HowTrainingWorks /> },
       { path: "help", element: <Help /> },
+      { path: "privacy-policy", element: <PrivacyPolicies /> },
+      { path: "terms-condition", element: <Terms /> },
+      { path: "about-us", element: <AboutUs /> },
     ],
   },
   // Public auth pages - no layout
@@ -72,7 +77,6 @@ const router = createBrowserRouter([
     element: <MainLayout />,
     children: [
       // Common pages
-      { path: "about-us", element: <AboutUs /> },
       { path: "contact", element: <Contact /> },
 
       { path: "privacy", element: <PrivacyPolicies /> },
@@ -184,6 +188,7 @@ const router = createBrowserRouter([
       { path: "wallet", element: <Wallet /> },
       { path: "payment-methods", element: <PaymentMethods /> },
       { path: "worker/profile", element: <Profile /> },
+      { path: "worker/profile/verification", element: <AccountVerification /> },
     ],
   },
   {
