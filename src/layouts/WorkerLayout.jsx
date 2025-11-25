@@ -87,15 +87,15 @@ const WorkerNavbar = () => {
                   icon={<FiMessageSquare size={14} color="#74C7F2" />}
                 />
               </div>
-              <div onClick={() => navigate("/notifications")}>
-                 <IconButton
-              
-                icon={<FiBell size={14} color="white" />}
-                className="bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] border-0 cursor-pointer"
-                hasNotification={true}
-              />
+              <div
+                onClick={() => navigate("/worker/profile?tab=notifications")}
+              >
+                <IconButton
+                  icon={<FiBell size={14} color="white" />}
+                  className="bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] border-0 cursor-pointer"
+                  hasNotification={true}
+                />
               </div>
-            
             </div>
             <div className="ml-6">
               <GoogleTranslate containerId="gt-worker-shared" />

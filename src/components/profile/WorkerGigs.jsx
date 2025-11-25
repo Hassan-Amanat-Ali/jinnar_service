@@ -126,8 +126,8 @@ const WorkerGigs = () => {
       toast.error("Description is required");
       return;
     }
-    if (formData.pricingMethod !== "negotiable" && !formData.price) {
-      toast.error("Price is required for fixed/hourly pricing");
+    if (!formData.price) {
+      toast.error("Price is required");
       return;
     }
     if (!formData.skills || formData.skills.length === 0) {
@@ -171,11 +171,8 @@ const WorkerGigs = () => {
       const gigData = {
         title: formData.title,
         description: formData.description,
-        pricingMethod: formData.pricingMethod,
-        price:
-          formData.pricingMethod !== "negotiable"
-            ? Number(formData.price)
-            : undefined,
+        pricingMethod: "fixed",
+        price: Number(formData.price),
         images: finalImages,
         skills: formData.skills,
       };
@@ -350,9 +347,7 @@ const WorkerGigs = () => {
                 <div className="flex items-center gap-1">
                   <DollarSign size={14} className="text-green-600" />
                   <span className="text-sm font-bold text-gray-900">
-                    {gig.pricing.method === "negotiable"
-                      ? "Negotiable"
-                      : `TZS ${gig.pricing.price?.toLocaleString()}`}
+                    TZS {gig.pricing.price?.toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -370,19 +365,15 @@ const WorkerGigs = () => {
                 {gig.description}
               </p>
 
-              {/* Pricing Method Badge */}
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs font-medium">
-                  <Clock size={12} />
-                  <span className="capitalize">{gig.pricing.method}</span>
-                </div>
-                {gig.images && gig.images.length > 1 && (
+              {/* Image Count Badge */}
+              {gig.images && gig.images.length > 1 && (
+                <div className="flex items-center gap-2 mb-4">
                   <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">
                     <ImageIcon size={12} />
                     <span>{gig.images.length} images</span>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Actions */}
               <div className="flex gap-2">
@@ -592,65 +583,31 @@ const WorkerGigs = () => {
                 </div>
               </div>
 
-              {/* Pricing Method */}
+              {/* Price */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Pricing Method <span className="text-red-500">*</span>
+                  Price (TZS) <span className="text-red-500">*</span>
                 </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {["fixed", "hourly", "negotiable"].map((method) => (
-                    <button
-                      key={method}
-                      type="button"
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          pricingMethod: method,
-                        }))
-                      }
-                      className={`px-4 py-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                        formData.pricingMethod === method
-                          ? "border-blue-600 bg-blue-50 text-blue-700"
-                          : "border-gray-200 text-gray-700 hover:border-gray-300"
-                      }`}
-                    >
-                      {method === "fixed" && "Fixed Price"}
-                      {method === "hourly" && "Hourly Rate"}
-                      {method === "negotiable" && "Negotiable"}
-                    </button>
-                  ))}
+                <div className="relative">
+                  <DollarSign
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    placeholder="Enter amount"
+                    min={0}
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    required
+                  />
                 </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Total price for the service
+                </p>
               </div>
-
-              {/* Price */}
-              {formData.pricingMethod !== "negotiable" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price (TZS) <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <DollarSign
-                      size={18}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    />
-                    <input
-                      type="number"
-                      name="price"
-                      value={formData.price}
-                      onChange={handleInputChange}
-                      placeholder="Enter amount"
-                      min={0}
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                      required={formData.pricingMethod !== "negotiable"}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {formData.pricingMethod === "hourly"
-                      ? "Price per hour"
-                      : "Total price for the service"}
-                  </p>
-                </div>
-              )}
 
               {/* Images */}
               <div>

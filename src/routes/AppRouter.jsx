@@ -9,6 +9,8 @@ import RoleSelection from "../pages/common/RoleSelection.jsx";
 import Login from "../pages/common/Login.jsx";
 import Signup from "../pages/common/Signup.jsx";
 import Verify from "../pages/common/Verify.jsx";
+import ForgotPassword from "../pages/common/ForgotPassword.jsx";
+import ResetPassword from "../pages/common/ResetPassword.jsx";
 import Help from "../pages/common/Help.jsx";
 import Contact from "../pages/common/Contact.jsx";
 import Notifications from "../pages/common/Notifications.jsx";
@@ -64,6 +66,8 @@ const router = createBrowserRouter([
   { path: "login", element: <Login /> },
   { path: "signup", element: <Signup /> },
   { path: "verify", element: <Verify /> },
+  { path: "forgot-password", element: <ForgotPassword /> },
+  { path: "reset-password", element: <ResetPassword /> },
   {
     element: <MainLayout />,
     children: [

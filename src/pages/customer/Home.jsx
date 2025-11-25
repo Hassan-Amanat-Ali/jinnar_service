@@ -25,7 +25,13 @@ import JobCard from "../../components/customer/MyBookingsCard";
 import Dropdown from "../../components/common/DropDown";
 import Card from "../common/Card";
 import { useNavigate } from "react-router-dom";
-import { useGetGigsQuery, useGetMyOrdersQuery, useGetMyProfileQuery, useFindWorkersQuery, useUpdateFcmTokenMutation } from "../../services/customerApi";
+import {
+  useGetGigsQuery,
+  useGetMyOrdersQuery,
+  useGetMyProfileQuery,
+  useFindWorkersQuery,
+  useUpdateFcmTokenMutation,
+} from "../../services/customerApi";
 import AuthContext from "../../context/AuthContext";
 import { requestNotificationPermission } from "../../utils/fcm";
 
@@ -38,17 +44,29 @@ const CustomerHome = () => {
   const [updateFcmToken] = useUpdateFcmTokenMutation();
 
   // API Queries
-  const { data: gigs = [], isLoading: gigsLoading, error: gigsError } = useGetGigsQuery({ limit: 8 });
-  const { data: orders = [], isLoading: ordersLoading, error: ordersError } = useGetMyOrdersQuery();
+  const {
+    data: gigs = [],
+    isLoading: gigsLoading,
+    error: gigsError,
+  } = useGetGigsQuery({ limit: 8 });
+  const {
+    data: orders = [],
+    isLoading: ordersLoading,
+    error: ordersError,
+  } = useGetMyOrdersQuery();
   const { data: profile } = useGetMyProfileQuery();
-  const { data: workers = [], isLoading: workersLoading, error: workersError } = useFindWorkersQuery({ limit: 4 });
+  const {
+    data: workers = [],
+    isLoading: workersLoading,
+    error: workersError,
+  } = useFindWorkersQuery({ limit: 4 });
 
   // Request FCM permission and update token on component mount
   useEffect(() => {
     const setupFCM = async () => {
       try {
         const token = await requestNotificationPermission();
-        
+
         if (token) {
           // Send token to backend
           await updateFcmToken({ token }).unwrap();
@@ -115,18 +133,19 @@ const CustomerHome = () => {
   ];
 
   // Transform gigs data for display
-  const displayGigs = (gigs?.gigs || gigs || [])?.slice(0, 8)?.map(gig => ({
-    id: gig._id,
-    title: gig.title,
-    img: gig.images?.[0]?.url || service1, // Use first image or fallback
-    rating: gig.averageRating || "N/A",
-    description: gig.description,
-    starting: `$${gig.price || 0}`,
-    status: "Available",
-    gigId: gig._id,
-    sellerId: gig.sellerId?._id || gig.sellerId,
-    pricingMethod: gig.pricingMethod
-  })) || [];
+  const displayGigs =
+    (gigs?.gigs || gigs || [])?.slice(0, 8)?.map((gig) => ({
+      id: gig._id,
+      title: gig.title,
+      img: gig.images?.[0]?.url || service1, // Use first image or fallback
+      rating: gig.averageRating || "N/A",
+      description: gig.description,
+      starting: `$${gig.price || 0}`,
+      status: "Available",
+      gigId: gig._id,
+      sellerId: gig.sellerId?._id || gig.sellerId,
+      pricingMethod: gig.pricingMethod,
+    })) || [];
 
   const handleDropdownToggle = (dropdownName) => {
     setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
@@ -135,12 +154,12 @@ const CustomerHome = () => {
   // Handle search functionality
   const handleSearch = () => {
     const params = new URLSearchParams();
-    
+
     if (searchQuery.trim()) {
-      params.set('search', searchQuery.trim());
+      params.set("search", searchQuery.trim());
     }
     if (selectedBudget) {
-      params.set('budget', selectedBudget);
+      params.set("budget", selectedBudget);
     }
 
     // Navigate to AllServices with query parameters
@@ -204,10 +223,10 @@ const CustomerHome = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full h-12 outline-none px-4 bg-[#f9fafb] rounded-lg border border-gray-300 text-black text-sm placeholder-gray-500 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
                     placeholder="Search for any service..."
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                   />
                 </div>
-                
+
                 {/* Price/Budget Dropdown */}
                 <div className="w-full sm:w-auto sm:min-w-[220px]">
                   <Dropdown
@@ -219,10 +238,10 @@ const CustomerHome = () => {
                     className="w-full font-light text-black text-sm h-12 px-4 border border-gray-300 rounded-lg bg-[#f9fafb] focus:ring-2 focus:ring-blue-200"
                   />
                 </div>
-                
+
                 {/* Search Button */}
                 <div className="w-full sm:w-auto">
-                  <button 
+                  <button
                     onClick={handleSearch}
                     className="w-full sm:w-auto px-8 py-3 h-12 bg-gradient-to-r from-[#A7E3F2] to-[#74C7F2] text-white rounded-lg text-sm font-medium hover:from-[#96D9F0] hover:to-[#63B8E8] transition-all duration-200 shadow-sm whitespace-nowrap"
                   >
@@ -358,7 +377,9 @@ const CustomerHome = () => {
         ) : (
           <div className="text-center mt-12 py-8">
             <p className="text-lg text-gray-500 mb-2">
-              {gigsError ? "Failed to load services. Please try again later." : "No services available at the moment."}
+              {gigsError
+                ? "Failed to load services. Please try again later."
+                : "No services available at the moment."}
             </p>
             <p className="text-sm text-gray-400">
               Please check back later for new services.
@@ -367,10 +388,10 @@ const CustomerHome = () => {
         )}
       </div>
 
-      <TopWorkers 
-        workers={workers} 
-        isLoading={workersLoading} 
-        error={workersError} 
+      <TopWorkers
+        workers={workers}
+        isLoading={workersLoading}
+        error={workersError}
       />
 
       <div className="max-w-7xl mx-auto my-20 px-4 lg:px-6">
@@ -409,15 +430,29 @@ const CustomerHome = () => {
                 id: order._id,
                 serviceImage: order.gigId?.images?.[0]?.url || null,
                 serviceTitle: order.gigId?.title || "Service",
-                serviceDescription: order.jobDescription || "No description available",
+                serviceDescription:
+                  order.jobDescription || "No description available",
                 emergencyTag: order.emergency ? "Emergency" : null,
-                statusTag: order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || "Unknown",
+                statusTag:
+                  order.status?.charAt(0).toUpperCase() +
+                    order.status?.slice(1) || "Unknown",
                 workerImage: order.sellerId?.profilePicture || null,
                 workerName: order.sellerId?.name || "Worker",
-                workerRating: order.sellerId?.rating || "N/A",
-                date: order.date ? new Date(order.date).toLocaleDateString() : "TBD",
-                time: order.timeSlot?.charAt(0).toUpperCase() + order.timeSlot?.slice(1) || "TBD",
-                location: order.location ? `${order.location.lat.toFixed(4)}, ${order.location.lng.toFixed(4)}` : "Location TBD",
+                workerRating:
+                  order.sellerId?.rating?.average ||
+                  order.sellerId?.rating ||
+                  0,
+                date: order.date
+                  ? new Date(order.date).toLocaleDateString()
+                  : "TBD",
+                time:
+                  order.timeSlot?.charAt(0).toUpperCase() +
+                    order.timeSlot?.slice(1) || "TBD",
+                location: order.location
+                  ? `${order.location.lat.toFixed(
+                      4
+                    )}, ${order.location.lng.toFixed(4)}`
+                  : "Location TBD",
                 price: order.price || "Price TBD",
                 workerId: order.sellerId?._id, // Add workerId for messaging
               };
@@ -447,10 +482,14 @@ const CustomerHome = () => {
         ) : (
           <div className="text-center py-12">
             <div className="text-gray-500 text-lg mb-2">
-              {ordersError ? "Failed to load bookings. Please try again later." : "No bookings yet."}
+              {ordersError
+                ? "Failed to load bookings. Please try again later."
+                : "No bookings yet."}
             </div>
             <div className="text-gray-400 text-sm">
-              {ordersError ? "Please check your connection and refresh the page." : "Start booking services to see them here!"}
+              {ordersError
+                ? "Please check your connection and refresh the page."
+                : "Start booking services to see them here!"}
             </div>
           </div>
         )}

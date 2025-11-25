@@ -17,8 +17,14 @@ import {
 } from "lucide-react";
 import Hero from "../../components/common/Hero";
 import { useAuth } from "../../context/AuthContext";
-import { useGetNotificationsQuery, useMarkNotificationsAsReadMutation } from "../../services/customerApi";
-import { useGetNotificationsQuery as useGetWorkerNotificationsQuery, useMarkNotificationsAsReadMutation as useMarkWorkerNotificationsAsReadMutation } from "../../services/workerApi";
+import {
+  useGetNotificationsQuery,
+  useMarkNotificationsAsReadMutation,
+} from "../../services/customerApi";
+import {
+  useGetNotificationsQuery as useGetWorkerNotificationsQuery,
+  useMarkNotificationsAsReadMutation as useMarkWorkerNotificationsAsReadMutation,
+} from "../../services/workerApi";
 import { ROLES } from "../../constants/roles";
 
 const Notifications = () => {
@@ -29,20 +35,20 @@ const Notifications = () => {
 
   // Use appropriate API based on user role
   const isWorker = user?.role === ROLES.WORKER;
-  
+
   // Call both hooks but skip the unused one
-  const { 
-    data: customerNotifications = [], 
-    isLoading: customerLoading, 
+  const {
+    data: customerNotifications = [],
+    isLoading: customerLoading,
     error: customerError,
-    refetch: customerRefetch 
+    refetch: customerRefetch,
   } = useGetNotificationsQuery(undefined, { skip: isWorker });
 
-  const { 
-    data: workerNotifications = [], 
-    isLoading: workerLoading, 
+  const {
+    data: workerNotifications = [],
+    isLoading: workerLoading,
     error: workerError,
-    refetch: workerRefetch 
+    refetch: workerRefetch,
   } = useGetWorkerNotificationsQuery(undefined, { skip: !isWorker });
 
   const [markCustomerAsRead] = useMarkNotificationsAsReadMutation();
@@ -93,31 +99,37 @@ const Notifications = () => {
 
   // Filter and search notifications
   const filteredNotifications = useMemo(() => {
-    let filtered = notifications;
+    // Create a copy of the array to avoid mutating the original
+    let filtered = [...notifications];
 
     // Apply date filter
     if (selectedFilter !== "all") {
-      filtered = filtered.filter(notification => 
+      filtered = filtered.filter((notification) =>
         isDateInRange(notification.createdAt, selectedFilter)
       );
     }
 
     // Apply search filter
     if (searchTerm) {
-      filtered = filtered.filter(notification =>
+      filtered = filtered.filter((notification) =>
         notification.content.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    return filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return filtered.sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
   }, [notifications, selectedFilter, searchTerm]);
 
   // Update filter counts
-  const updatedFilters = filters.map(filter => ({
+  const updatedFilters = filters.map((filter) => ({
     ...filter,
-    count: filter.value === "all" 
-      ? notifications.length 
-      : notifications.filter(notification => isDateInRange(notification.createdAt, filter.value)).length
+    count:
+      filter.value === "all"
+        ? notifications.length
+        : notifications.filter((notification) =>
+            isDateInRange(notification.createdAt, filter.value)
+          ).length,
   }));
 
   // Get notification icon based on type
@@ -193,7 +205,7 @@ const Notifications = () => {
         <div className="text-center">
           <Bell className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-600 mb-4">Failed to load notifications</p>
-          <button 
+          <button
             onClick={() => refetch()}
             className="px-4 py-2 bg-[#74C7F2] text-white rounded-lg hover:opacity-90"
           >
@@ -219,7 +231,10 @@ const Notifications = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* Search */}
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={20}
+              />
               <input
                 type="text"
                 placeholder="Search notifications..."
@@ -237,7 +252,10 @@ const Notifications = () => {
               >
                 <Filter size={20} className="text-gray-500" />
                 <span className="font-medium">
-                  {updatedFilters.find(f => f.value === selectedFilter)?.label}
+                  {
+                    updatedFilters.find((f) => f.value === selectedFilter)
+                      ?.label
+                  }
                 </span>
                 <ChevronDown size={16} className="text-gray-500" />
               </button>
@@ -252,11 +270,19 @@ const Notifications = () => {
                         setShowFilterDropdown(false);
                       }}
                       className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 ${
-                        selectedFilter === filter.value ? "bg-[#EAF6FF] text-[#74C7F2]" : ""
-                      } ${filter === updatedFilters[0] ? "rounded-t-xl" : ""} ${filter === updatedFilters[updatedFilters.length - 1] ? "rounded-b-xl" : ""}`}
+                        selectedFilter === filter.value
+                          ? "bg-[#EAF6FF] text-[#74C7F2]"
+                          : ""
+                      } ${filter === updatedFilters[0] ? "rounded-t-xl" : ""} ${
+                        filter === updatedFilters[updatedFilters.length - 1]
+                          ? "rounded-b-xl"
+                          : ""
+                      }`}
                     >
                       <span>{filter.label}</span>
-                      <span className="text-sm text-gray-500">{filter.count}</span>
+                      <span className="text-sm text-gray-500">
+                        {filter.count}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -264,7 +290,7 @@ const Notifications = () => {
             </div>
 
             {/* Mark All as Read */}
-            {filteredNotifications.some(n => !n.isRead) && (
+            {filteredNotifications.some((n) => !n.isRead) && (
               <button
                 onClick={handleMarkAllAsRead}
                 className="flex items-center gap-2 px-4 py-3 bg-[#74C7F2] text-white rounded-xl hover:opacity-90 transition-opacity"
@@ -283,15 +309,19 @@ const Notifications = () => {
               <div
                 key={notification._id}
                 className={`bg-white rounded-2xl border transition-all hover:shadow-md ${
-                  notification.isRead ? "border-gray-100" : "border-[#74C7F2] bg-[#EAF6FF]/30"
+                  notification.isRead
+                    ? "border-gray-100"
+                    : "border-[#74C7F2] bg-[#EAF6FF]/30"
                 }`}
               >
                 <div className="p-6">
                   <div className="flex items-start gap-4">
                     {/* Icon */}
-                    <div className={`p-3 rounded-xl ${
-                      notification.isRead ? "bg-gray-100" : "bg-white"
-                    }`}>
+                    <div
+                      className={`p-3 rounded-xl ${
+                        notification.isRead ? "bg-gray-100" : "bg-white"
+                      }`}
+                    >
                       {getNotificationIcon(notification.type)}
                     </div>
 
@@ -299,24 +329,33 @@ const Notifications = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <p className={`text-sm leading-relaxed ${
-                            notification.isRead ? "text-gray-600" : "text-gray-900 font-medium"
-                          }`}>
+                          <p
+                            className={`text-sm leading-relaxed ${
+                              notification.isRead
+                                ? "text-gray-600"
+                                : "text-gray-900 font-medium"
+                            }`}
+                          >
                             {notification.content}
                           </p>
-                          
+
                           <div className="flex items-center gap-4 mt-3">
                             <div className="flex items-center gap-1 text-xs text-gray-500">
                               <Clock size={12} />
                               <span>{formatTime(notification.createdAt)}</span>
                             </div>
-                            
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              notification.type === "booking" ? "bg-blue-100 text-blue-700" :
-                              notification.type === "message" ? "bg-green-100 text-green-700" :
-                              notification.type === "payment" ? "bg-purple-100 text-purple-700" :
-                              "bg-gray-100 text-gray-700"
-                            }`}>
+
+                            <span
+                              className={`px-2 py-1 text-xs rounded-full ${
+                                notification.type === "booking"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : notification.type === "message"
+                                  ? "bg-green-100 text-green-700"
+                                  : notification.type === "payment"
+                                  ? "bg-purple-100 text-purple-700"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
                               {notification.type}
                             </span>
                           </div>
@@ -333,7 +372,7 @@ const Notifications = () => {
                               <Check size={16} />
                             </button>
                           )}
-                          
+
                           <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
                             <MoreVertical size={16} />
                           </button>
@@ -347,14 +386,17 @@ const Notifications = () => {
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
               <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Notifications Found</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No Notifications Found
+              </h3>
               <p className="text-gray-500">
-                {searchTerm 
+                {searchTerm
                   ? `No notifications match "${searchTerm}"`
-                  : selectedFilter === "all" 
-                    ? "You don't have any notifications yet"
-                    : `No notifications for ${updatedFilters.find(f => f.value === selectedFilter)?.label?.toLowerCase()}`
-                }
+                  : selectedFilter === "all"
+                  ? "You don't have any notifications yet"
+                  : `No notifications for ${updatedFilters
+                      .find((f) => f.value === selectedFilter)
+                      ?.label?.toLowerCase()}`}
               </p>
             </div>
           )}
@@ -363,7 +405,8 @@ const Notifications = () => {
         {/* Summary */}
         {filteredNotifications.length > 0 && (
           <div className="mt-8 text-center text-sm text-gray-500">
-            Showing {filteredNotifications.length} of {notifications.length} notifications
+            Showing {filteredNotifications.length} of {notifications.length}{" "}
+            notifications
             {searchTerm && ` for "${searchTerm}"`}
           </div>
         )}

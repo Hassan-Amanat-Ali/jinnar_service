@@ -2,15 +2,69 @@ import Hero from "../../components/common/Hero";
 import Nav from "../../components/services/LandingNav.jsx";
 import WorkerCard from "../../components/services/WorkerCard";
 import { useGetAllGigsQuery } from "../../services/workerApi";
+import { useGetRecommendedWorkersMutation } from "../../services/recommendationApi";
 import { useSearchParams } from "react-router-dom";
 import SiteFooter from "../../components/Landing/SiteFooter.jsx";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { Sparkles } from "lucide-react";
+
 const AllServicesLanding = () => {
   const { data, isLoading, error } = useGetAllGigsQuery();
-  const [searchParams] = useSearchParams();
+  const [
+    getRecommendations,
+    { data: recommendedData, isLoading: isRecommending },
+  ] = useGetRecommendedWorkersMutation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [showRecommendations, setShowRecommendations] = useState(false);
 
   const category = searchParams.get("category");
   const location = searchParams.get("location");
+  const searchParam = searchParams.get("search");
+
+  // Initialize search term from URL parameter
+  useEffect(() => {
+    if (searchParam) {
+      setSearchTerm(searchParam);
+      setDebouncedSearchTerm(searchParam);
+    }
+  }, [searchParam]);
+
+  // Debounce search term to improve performance
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Trigger recommendations when search term changes
+  useEffect(() => {
+    if (debouncedSearchTerm.trim()) {
+      const jobRequest = {
+        title: debouncedSearchTerm,
+        description: debouncedSearchTerm,
+      };
+      getRecommendations(jobRequest);
+      setShowRecommendations(true);
+    } else {
+      setShowRecommendations(false);
+    }
+  }, [debouncedSearchTerm, getRecommendations]);
+
+  // Handle search input change - will be passed to Hero
+  const handleSearchChange = useCallback((value) => {
+    setSearchTerm(value);
+  }, []);
+
+  // Clear all filters
+  const clearAllFilters = useCallback(() => {
+    setSearchTerm("");
+    setDebouncedSearchTerm("");
+    setSearchParams({});
+  }, [setSearchParams]);
 
   // Skeleton Component
   const Skeleton = ({ className = "" }) => (
@@ -54,9 +108,51 @@ const AllServicesLanding = () => {
     [data]
   );
 
-  // Filter gigs based on search params
+  // Transform recommended workers data
+  const recommendedWorkersData = useMemo(() => {
+    if (!recommendedData || recommendedData.length === 0) return [];
+
+    return recommendedData.map((worker) => ({
+      id: worker._id,
+      gigId: null, // Recommendations are worker-based, not gig-based
+      sellerId: worker._id,
+      name: worker.name || "Worker",
+      image: worker.profilePicture || "https://via.placeholder.com/300x200",
+      rating: worker.rating?.average || 0,
+      reviews: worker.rating?.count || 0,
+      available: true,
+      experience: worker.yearsOfExperience || 0,
+      distance: "Contact for pricing",
+      bio: `Specializes in ${
+        worker.skills?.slice(0, 2).join(", ") || "various services"
+      }`,
+      skills: worker.skills?.slice(0, 4) || [],
+      jobsCompleted: 0,
+      rate: "Contact for pricing",
+      sellerSkills: worker.skills || [],
+      sellerAreas: worker.selectedAreas || [],
+      matchScore: worker.matchScore || 0,
+      isRecommended: true,
+    }));
+  }, [recommendedData]);
+
+  // Filter gigs based on search params and search term
   const gigsData = useMemo(() => {
     let filtered = allGigsData;
+
+    // Filter by search term (debounced)
+    if (debouncedSearchTerm.trim()) {
+      const searchLower = debouncedSearchTerm.toLowerCase().trim();
+      filtered = filtered.filter((gig) => {
+        return (
+          gig.name.toLowerCase().includes(searchLower) ||
+          gig.bio?.toLowerCase().includes(searchLower) ||
+          gig.sellerSkills.some((skill) =>
+            skill.toLowerCase().includes(searchLower)
+          )
+        );
+      });
+    }
 
     // Filter by category (skill)
     if (category) {
@@ -85,7 +181,7 @@ const AllServicesLanding = () => {
     }
 
     return filtered;
-  }, [allGigsData, category, location]);
+  }, [allGigsData, debouncedSearchTerm, category, location]);
 
   return (
     <>
@@ -110,31 +206,116 @@ const AllServicesLanding = () => {
         }
       `}</style>
 
-      <Hero className="h-88 lg:h-140 " />
+      <Hero
+        className="h-88 lg:h-140"
+        onSearchChange={handleSearchChange}
+        searchValue={searchTerm}
+      />
       <Nav />
 
       <div className="my-6 mt-16 max-w-[1200px] mx-auto">
+        {/* Recommended Workers Section */}
+        {showRecommendations && recommendedWorkersData.length > 0 && (
+          <div className="mb-8">
+            {/* Simple Header */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="text-[#74C7F2]" size={20} />
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Recommended for You
+                </h2>
+              </div>
+              <p className="text-sm text-gray-600">
+                Based on your search: "{debouncedSearchTerm}"
+              </p>
+            </div>
+
+            {isRecommending ? (
+              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col w-full max-w-sm rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+                  >
+                    <Skeleton className="h-64 w-full" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6 place-items-center md:place-items-stretch">
+                {recommendedWorkersData.slice(0, 6).map((worker) => (
+                  <div key={worker.id} className="relative">
+                    {/* Simple Match Score Badge */}
+                    <div className="absolute -top-2 -right-2 z-10 bg-[#74C7F2] text-white px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
+                      {worker.matchScore}% Match
+                    </div>
+
+                    <WorkerCard
+                      gigId={worker.gigId}
+                      sellerId={worker.sellerId}
+                      name={worker.name}
+                      image={worker.image}
+                      rating={worker.rating}
+                      reviews={worker.reviews}
+                      available={worker.available}
+                      experience={worker.experience}
+                      distance={worker.distance}
+                      bio={worker.bio}
+                      skills={worker.skills}
+                      jobsCompleted={worker.jobsCompleted}
+                      rate={worker.rate}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Simple Divider */}
+            <div className="mt-8 mb-6 border-t border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mt-6">
+                All Services
+              </h3>
+            </div>
+          </div>
+        )}
+
+        {/* Search results count */}
+        {debouncedSearchTerm.trim() && !showRecommendations && (
+          <div className="text-center mb-4">
+            <p className="text-sm text-gray-600">
+              {gigsData.length} results found for "{debouncedSearchTerm}"
+            </p>
+          </div>
+        )}
+
         {/* Search Info */}
-        {(category || location) && (
-          <div className="mb-6 flex flex-wrap items-center gap-5">
-            <span className="text-gray-700 font-medium">
+        {(category ||
+          location ||
+          (debouncedSearchTerm.trim() && !showRecommendations)) && (
+          <div className="mb-6 flex flex-wrap items-center gap-3">
+            <span className="text-gray-700 text-sm font-medium">
               Showing results for:
             </span>
+            {debouncedSearchTerm.trim() && (
+              <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+                "{debouncedSearchTerm}"
+              </span>
+            )}
             {category && (
-              <span className="bg-secondary/10 text-secondary px-3 py-1 rounded-full text-sm font-medium">
+              <span className="bg-[#B6E0FE] text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
                 {category.charAt(0).toUpperCase() + category.slice(1)}
               </span>
             )}
             {location && (
-              <span className="bg-secondary/10 text-secondary px-3 py-1 rounded-full text-sm font-medium">
+              <span className="bg-[#B6E0FE] text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
                 {location}
               </span>
             )}
             <button
-              onClick={() => (window.location.href = "/landing-services")}
+              onClick={clearAllFilters}
               className="text-gray-500 hover:text-gray-700 text-sm underline ml-2"
             >
-              Clear filters
+              Clear all filters
             </button>
           </div>
         )}

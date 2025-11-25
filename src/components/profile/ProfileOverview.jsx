@@ -83,10 +83,11 @@ const ProfileOverview = () => {
 
   const handleLocationSelect = (locationData) => {
     const fieldName = isCustomer ? "preferredAreas" : "selectedAreas";
+    // Store both formats: GeoJSON for backend, and display data for UI
     const newLocation = {
-      lat: locationData.lat,
-      lng: locationData.lng,
-      address: locationData.address,
+      type: "Point",
+      coordinates: [locationData.lng, locationData.lat], // GeoJSON format: [longitude, latitude]
+      address: locationData.address, // For display purposes
     };
 
     setFormData((prev) => {
@@ -119,11 +120,19 @@ const ProfileOverview = () => {
 
       if (isCustomer) {
         if (formData.preferredAreas.length > 0) {
-          updateData.preferredAreas = formData.preferredAreas;
+          // Send only GeoJSON format to backend (remove address field)
+          updateData.preferredAreas = formData.preferredAreas.map((area) => ({
+            type: area.type,
+            coordinates: area.coordinates,
+          }));
         }
       } else {
         if (formData.selectedAreas.length > 0) {
-          updateData.selectedAreas = formData.selectedAreas;
+          // Send only GeoJSON format to backend (remove address field)
+          updateData.selectedAreas = formData.selectedAreas.map((area) => ({
+            type: area.type,
+            coordinates: area.coordinates,
+          }));
         }
       }
 
@@ -332,8 +341,8 @@ const ProfileOverview = () => {
                                       {area.address || "Location on map"}
                                     </p>
                                     <p className="text-xs text-gray-500 mt-1">
-                                      Lat: {area.lat?.toFixed(6)}, Lng:{" "}
-                                      {area.lng?.toFixed(6)}
+                                      Lat: {area.coordinates?.[1]?.toFixed(6)},
+                                      Lng: {area.coordinates?.[0]?.toFixed(6)}
                                     </p>
                                   </div>
                                   <div className="flex gap-2">
@@ -391,8 +400,9 @@ const ProfileOverview = () => {
                                         {area.address || "Location on map"}
                                       </p>
                                       <p className="text-xs text-gray-500 mt-1">
-                                        Lat: {area.lat?.toFixed(6)}, Lng:{" "}
-                                        {area.lng?.toFixed(6)}
+                                        Lat: {area.coordinates?.[1]?.toFixed(6)}
+                                        , Lng:{" "}
+                                        {area.coordinates?.[0]?.toFixed(6)}
                                       </p>
                                     </div>
                                   </div>

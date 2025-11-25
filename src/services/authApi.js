@@ -9,17 +9,24 @@ export const authApi = baseApi.injectEndpoints({
       query: (data) => ({ url: "/auth/register", method: "POST", body: data }),
     }),
     customerLogin: builder.mutation({
-      query: (data) => ({ url: "/auth/signin", method: "POST", body: data }),
+      query: (data) => ({ url: "/auth/login", method: "POST", body: data }),
     }),
     workerLogin: builder.mutation({
-      query: (data) => ({ url: "/auth/signin", method: "POST", body: data }),
+      query: (data) => ({ url: "/auth/login", method: "POST", body: data }),
     }),
-    verifySignup: builder.mutation({
+    verifyCode: builder.mutation({
       query: (data) => ({ url: "/auth/verify", method: "POST", body: data }),
     }),
-    verifySignin: builder.mutation({
+    forgotPassword: builder.mutation({
       query: (data) => ({
-        url: "/auth/verify-signin",
+        url: "/auth/forgot-password",
+        method: "POST",
+        body: data,
+      }),
+    }),
+    resetPassword: builder.mutation({
+      query: (data) => ({
+        url: "/auth/reset-password",
         method: "POST",
         body: data,
       }),
@@ -33,6 +40,7 @@ export const {
   useCustomerSignupMutation,
   useWorkerLoginMutation,
   useWorkerSignupMutation,
-  useVerifySignupMutation,
-  useVerifySigninMutation,
+  useVerifyCodeMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
 } = authApi;

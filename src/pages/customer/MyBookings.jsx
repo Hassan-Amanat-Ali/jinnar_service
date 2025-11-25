@@ -11,8 +11,13 @@ const CustomerBookings = () => {
   const [statusFilter, setStatusFilter] = useState("all");
 
   // Fetch orders from API
-  const { data: ordersResponse, isLoading, error, refetch } = useGetMyOrdersQuery();
-  
+  const {
+    data: ordersResponse,
+    isLoading,
+    error,
+    refetch,
+  } = useGetMyOrdersQuery();
+
   // Extract orders array from API response
   const bookingsData = ordersResponse?.orders || [];
 
@@ -22,13 +27,16 @@ const CustomerBookings = () => {
 
   // Filter bookings based on search and status
   const filteredBookings = bookingsData.filter((booking) => {
-    const matchesSearch = 
+    const matchesSearch =
       booking.gigId?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.jobDescription?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.jobDescription
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       booking.sellerId?.name?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
-    
+
+    const matchesStatus =
+      statusFilter === "all" || booking.status === statusFilter;
+
     return matchesSearch && matchesStatus;
   });
 
@@ -51,7 +59,9 @@ const CustomerBookings = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center max-w-md mx-auto p-6">
-          <div className="text-xl text-red-600 mb-2">Error loading bookings</div>
+          <div className="text-xl text-red-600 mb-2">
+            Error loading bookings
+          </div>
           <div className="text-sm text-gray-500 mb-4">
             {error?.data?.message || error?.message || "Please try again later"}
           </div>
@@ -73,13 +83,19 @@ const CustomerBookings = () => {
     serviceTitle: booking.gigId?.title || "Service",
     serviceDescription: booking.jobDescription || "No description available",
     emergencyTag: booking.emergency ? "Emergency" : null,
-    statusTag: booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) || "Unknown",
+    statusTag:
+      booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) ||
+      "Unknown",
     workerImage: booking.sellerId?.profilePicture || null,
     workerName: booking.sellerId?.name || "Worker",
     workerRating: booking.sellerId?.rating || "N/A",
     date: booking.date ? new Date(booking.date).toLocaleDateString() : "TBD",
-    time: booking.timeSlot?.charAt(0).toUpperCase() + booking.timeSlot?.slice(1) || "TBD",
-    location: booking.location ? `${booking.location.lat.toFixed(4)}, ${booking.location.lng.toFixed(4)}` : "Location TBD",
+    time:
+      booking.timeSlot?.charAt(0).toUpperCase() + booking.timeSlot?.slice(1) ||
+      "TBD",
+    location: booking.location
+      ? `${booking.location.lat.toFixed(4)}, ${booking.location.lng.toFixed(4)}`
+      : "Location TBD",
     price: booking.price || "Price TBD",
     workerId: booking.sellerId?._id, // Add workerId for messaging
   }));
@@ -153,16 +169,14 @@ const CustomerBookings = () => {
         ) : (
           <div className="text-center py-12">
             <div className="text-gray-500 text-lg mb-2">
-              {searchTerm || statusFilter !== "all" 
-                ? "No bookings match your filters" 
-                : "No bookings found"
-              }
+              {searchTerm || statusFilter !== "all"
+                ? "No bookings match your filters"
+                : "No bookings found"}
             </div>
             <div className="text-gray-400 text-sm">
               {searchTerm || statusFilter !== "all"
                 ? "Try adjusting your search or filter criteria"
-                : "Book a service to see your bookings here"
-              }
+                : "Book a service to see your bookings here"}
             </div>
           </div>
         )}

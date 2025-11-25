@@ -1,56 +1,20 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
-import {
-  useVerifySignupMutation,
-  useVerifySigninMutation,
-} from "../../services/authApi";
-import { useGetMyProfileQuery } from "../../services/customerApi";
-import { ROLES, mapApiRoleToAppRole } from "../../constants/roles";
+import { useVerifyCodeMutation } from "../../services/authApi";
 import { toast } from "react-toastify";
-import { useAuth } from "../../context/AuthContext.jsx";
 
 const Verify = () => {
   const loc = useLocation();
   const state = loc.state || {};
   const mobile = state.mobile || "";
-  const role = state.role || ROLES.CUSTOMER;
   const action = state.action || "signup";
 
-  const { setRole, setUser } = useAuth();
   const [code, setCode] = useState("");
-  const [shouldFetchProfile, setShouldFetchProfile] = useState(false);
 
   // RTK Query hooks
-  const [verifySignup, { isLoading: isSignupLoading }] =
-    useVerifySignupMutation();
-  const [verifySignin, { isLoading: isSigninLoading }] =
-    useVerifySigninMutation();
+  const [verifyCode, { isLoading }] = useVerifyCodeMutation();
 
-  // Fetch user profile after successful verification
-  const { data: profileData, isLoading: isProfileLoading } =
-    useGetMyProfileQuery(undefined, {
-      skip: !shouldFetchProfile,
-    });
-
-  const loading = isSignupLoading || isSigninLoading || isProfileLoading;
-
-  // When profile data is fetched, set role and user in AuthContext
-  if (profileData?.profile && shouldFetchProfile) {
-    const apiRole = profileData.profile.role;
-    const appRole = mapApiRoleToAppRole(apiRole);
-
-    if (appRole) {
-      setRole(appRole);
-      setUser(profileData.profile);
-      setShouldFetchProfile(false);
-
-      // Navigate to the appropriate home page based on the role from API
-      const redirectPath =
-        appRole === ROLES.CUSTOMER ? "/customer-home" : "/worker-home";
-      toast.success("Verification successful! Welcome aboard");
-      window.location.href = redirectPath;
-    }
-  }
+  const loading = isLoading;
 
   const handleVerify = async (e) => {
     e?.preventDefault();
@@ -67,32 +31,14 @@ const Verify = () => {
     }
 
     try {
-      let result;
-      if (action === "signup") {
-        result = await verifySignup({
-          mobileNumber: mobile,
-          code,
-          role: role === ROLES.CUSTOMER ? "buyer" : "seller",
-        }).unwrap();
-      } else {
-        result = await verifySignin({
-          mobileNumber: mobile,
-          code,
-        }).unwrap();
-      }
+      const result = await verifyCode({
+        mobileNumber: mobile,
+        code,
+      }).unwrap();
 
-      // Expect token in response on successful verification
-      if (result && result.token) {
-        // Store token and trigger profile fetch
-        localStorage.setItem("token", result.token);
-
-        // Trigger profile fetch which will set the role from API response
-        setShouldFetchProfile(true);
-      } else {
-        // If no token, still provide feedback and fallback
-        toast.success("Verification successful!");
-        window.location.href = "/";
-      }
+      // Verification successful, navigate to login
+      toast.success("Mobile number verified successfully! You can now log in.");
+      window.location.href = "/login";
     } catch (err) {
       console.error("Verification error:", err);
       const payload = err?.data || err;

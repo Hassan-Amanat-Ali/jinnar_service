@@ -1,65 +1,22 @@
-import { FcGoogle } from "react-icons/fc";
-import { FaFacebook } from "react-icons/fa";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useForgotPasswordMutation } from "../../services/authApi";
+import { toast } from "react-toastify";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
 import sideImg from "../../assets/images/auth.jpg";
 import auth2 from "../../assets/images/auth2.jpg";
 import auth3 from "../../assets/images/auth3.jpg";
-import { ROLES, mapApiRoleToAppRole } from "../../constants/roles.js";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  useCustomerLoginMutation,
-  useWorkerLoginMutation,
-} from "../../services/authApi";
-import { useGetMyProfileQuery } from "../../services/customerApi";
-import { toast } from "react-toastify";
-import { useAuth } from "../../context/AuthContext.jsx";
 
-const Login = () => {
+const ForgotPassword = () => {
   const navigate = useNavigate();
-  const { setRole, setUser } = useAuth();
   const [mobile, setMobile] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setLocalRole] = useState(
-    localStorage.getItem("userRole") || ROLES.CUSTOMER
-  );
-  const [shouldFetchProfile, setShouldFetchProfile] = useState(false);
 
   // RTK Query hooks
-  const [customerLogin, { isLoading: isCustomerLoading }] =
-    useCustomerLoginMutation();
-  const [workerLogin, { isLoading: isWorkerLoading }] =
-    useWorkerLoginMutation();
+  const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
 
-  // Fetch user profile after successful login
-  const { data: profileData, isLoading: isProfileLoading } =
-    useGetMyProfileQuery(undefined, {
-      skip: !shouldFetchProfile,
-    });
-
-  const loading = isCustomerLoading || isWorkerLoading || isProfileLoading;
-
-  // When profile data is fetched, set role and user in AuthContext
-  if (profileData?.profile && shouldFetchProfile) {
-    const apiRole = profileData.profile.role;
-    const appRole = mapApiRoleToAppRole(apiRole);
-
-    if (appRole) {
-      setRole(appRole);
-      setUser(profileData.profile);
-      setShouldFetchProfile(false);
-
-      // Navigate to the appropriate home page based on the role from API
-      const redirectPath =
-        appRole === ROLES.CUSTOMER ? "/customer-home" : "/worker-home";
-      toast.success("Welcome back! Login successful");
-      window.location.href = redirectPath;
-    }
-  }
-
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e?.preventDefault();
 
     // Validation
@@ -75,31 +32,13 @@ const Login = () => {
       return;
     }
 
-    if (!password.trim()) {
-      toast.error("Please enter your password");
-      return;
-    }
-
     try {
-      // Call RTK Query mutation based on role
-      const loginMutation =
-        role === ROLES.CUSTOMER ? customerLogin : workerLogin;
-      const result = await loginMutation({
-        mobileNumber: mobile,
-        password: password,
-      }).unwrap();
+      await forgotPassword({ mobileNumber: mobile }).unwrap();
 
-      if (result && result.token) {
-        // Store token and trigger profile fetch
-        localStorage.setItem("token", result.token);
-
-        // Trigger profile fetch which will set the role from API response
-        setShouldFetchProfile(true);
-      } else {
-        toast.error("Login failed. Please try again");
-      }
+      toast.success("Password reset code sent to your mobile");
+      navigate("/reset-password", { state: { mobile } });
     } catch (err) {
-      console.error("Login error:", err);
+      console.error("Forgot password error:", err);
       const payload = err?.data || err;
 
       // Handle different error formats
@@ -117,11 +56,9 @@ const Login = () => {
       } else if (err?.status === "FETCH_ERROR") {
         toast.error("Network error. Please check your connection");
       } else if (err?.status === 404) {
-        toast.error("User not found. Please sign up first");
-      } else if (err?.status === 401) {
-        toast.error("Invalid credentials");
+        toast.error("User with this mobile number does not exist");
       } else {
-        toast.error("Login failed. Please try again");
+        toast.error("Failed to send reset code. Please try again");
       }
     }
   };
@@ -129,21 +66,21 @@ const Login = () => {
   const sliderData = [
     {
       image: sideImg,
-      title: "Book Trusted Workers Anytime",
+      title: "Reset Your Password",
       description:
-        "Quickly connect with skilled professionals in your area to tackle any task—from home repairs to personal services—right at your fingertips.",
+        "Enter your mobile number and we'll send you a verification code to reset your password securely.",
     },
     {
       image: auth2,
-      title: "Quality Service Guaranteed",
+      title: "Secure & Fast",
       description:
-        "All our workers are verified and rated by the community. Get peace of mind knowing you're hiring trusted professionals.",
+        "Your account security is our priority. Reset your password quickly and safely with our verification system.",
     },
     {
       image: auth3,
-      title: "Fast & Reliable Solutions",
+      title: "Back to Work",
       description:
-        "Get your tasks done quickly and efficiently. Our platform ensures prompt service delivery every time.",
+        "Once your password is reset, you'll be able to access your account and continue booking trusted services.",
     },
   ];
 
@@ -177,7 +114,6 @@ const Login = () => {
                   {slide.description}
                 </p>
 
-                {/* Slider dots in original position */}
                 <div className="mt-6 flex items-center gap-2">
                   {sliderData.map((_, dotIndex) => (
                     <span
@@ -198,14 +134,15 @@ const Login = () => {
       <div className="flex items-center justify-center px-4 sm:px-6 lg:px-10 py-10 lg:py-0">
         <div className="w-full max-w-md">
           <h1 className="text-2xl sm:text-3xl font-semibold text-[#141414]">
-            Welcome Back!
+            Forgot Password?
           </h1>
           <p className="text-sm text-[#141414]/70 mt-2">
-            Login to continue booking trusted workers around you.
+            Enter your mobile number and we'll send you a verification code to
+            reset your password.
           </p>
 
           <div className="mt-6 rounded-2xl border border-gray-200 shadow-sm p-6">
-            <form onSubmit={handleLogin}>
+            <form onSubmit={handleSubmit}>
               {/* Mobile number */}
               <label className="block text-sm font-medium text-[#141414]">
                 Mobile number
@@ -218,47 +155,25 @@ const Login = () => {
                 onChange={(e) => setMobile(e.target.value)}
               />
 
-              {/* Password */}
-              <label className="block text-sm font-medium text-[#141414] mt-4">
-                Password
-              </label>
-              <input
-                type="password"
-                placeholder="Enter your password"
-                className="mt-2 w-full h-11 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-
-              {/* Forgot password link */}
-              <div className="mt-2 text-right">
-                <a
-                  href="/forgot-password"
-                  className="text-sm text-[#74C7F2] hover:text-[#5ba8e0] font-medium cursor-pointer transition-colors"
-                >
-                  Forgot Password?
-                </a>
-              </div>
-
-              {/* Login button */}
+              {/* Submit button */}
               <button
                 type="submit"
-                disabled={loading}
+                disabled={isLoading}
                 className="mt-5 h-11 w-full rounded-full text-white text-sm font-medium shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
                 style={{ background: "var(--gradient-main)" }}
               >
-                {loading ? "Logging in..." : "Login"}
+                {isLoading ? "Sending..." : "Send Reset Code"}
               </button>
             </form>
 
-            {/* Signup prompt */}
+            {/* Back to login */}
             <p className="mt-6 text-center text-sm text-[#141414]/80">
-              Don't have an account?{" "}
+              Remember your password?{" "}
               <a
-                href="/signup"
+                href="/login"
                 className="text-[#74C7F2] hover:text-[#5ba8e0] font-medium cursor-pointer transition-colors"
               >
-                Sign Up
+                Back to Login
               </a>
             </p>
           </div>
@@ -268,4 +183,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default ForgotPassword;

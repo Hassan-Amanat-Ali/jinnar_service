@@ -8,11 +8,20 @@ import {
   ChevronUp,
   CircleQuestionMark,
   Loader2,
+  X,
+  Send,
 } from "lucide-react";
 import { useGetHelpFaqsQuery } from "../../services/faqApi";
+import { useCreateSupportTicketMutation } from "../../services/supportApi";
+import toast from "react-hot-toast";
 
 const HelpAndSupport = () => {
   const [openFaqs, setOpenFaqs] = useState({});
+  const [showTicketDialog, setShowTicketDialog] = useState(false);
+  const [ticketForm, setTicketForm] = useState({
+    subject: "",
+    message: "",
+  });
 
   // Fetch FAQs from API
   const {
@@ -20,6 +29,10 @@ const HelpAndSupport = () => {
     isLoading,
     isError,
   } = useGetHelpFaqsQuery();
+
+  // Create support ticket mutation
+  const [createTicket, { isLoading: isSubmitting }] =
+    useCreateSupportTicketMutation();
 
   const contactOptions = [
     {
@@ -41,9 +54,46 @@ const HelpAndSupport = () => {
       description: "Send us a message",
       icon: MessageSquare,
       color: "text-[#0EA5E9]",
-      action: () => (window.location.href = "/support/ticket"),
+      action: () => setShowTicketDialog(true),
     },
   ];
+
+  const handleTicketSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!ticketForm.subject.trim()) {
+      toast.error("Subject is required");
+      return;
+    }
+    if (!ticketForm.message.trim()) {
+      toast.error("Message is required");
+      return;
+    }
+
+    const loadingToast = toast.loading("Submitting your request...");
+
+    try {
+      await createTicket({
+        subject: ticketForm.subject,
+        message: ticketForm.message,
+      }).unwrap();
+
+      toast.success("Support ticket submitted successfully!", {
+        id: loadingToast,
+      });
+      setShowTicketDialog(false);
+      setTicketForm({ subject: "", message: "" });
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to submit ticket", {
+        id: loadingToast,
+      });
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setTicketForm((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleToggleFaq = (categoryIndex, questionIndex) => {
     setOpenFaqs((prev) => {
@@ -293,6 +343,128 @@ const HelpAndSupport = () => {
           Back to Settings
         </button>
       </div>
+
+      {/* Support Ticket Dialog */}
+      {showTicketDialog && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-hide">
+            <style>{`
+              .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+              }
+              .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+              }
+            `}</style>
+            {/* Dialog Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <MessageSquare size={20} className="text-[#0EA5E9]" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    Submit Support Request
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Our team will respond within 24 hours
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowTicketDialog(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Dialog Body */}
+            <form onSubmit={handleTicketSubmit} className="p-6 space-y-6">
+              {/* Subject */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Subject <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="subject"
+                  value={ticketForm.subject}
+                  onChange={handleInputChange}
+                  placeholder="Brief description of your issue"
+                  maxLength={200}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {ticketForm.subject.length}/200 characters
+                </p>
+              </div>
+
+              {/* Message */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Message <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  name="message"
+                  value={ticketForm.message}
+                  onChange={handleInputChange}
+                  placeholder="Please describe your issue in detail..."
+                  maxLength={2000}
+                  rows={8}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  {ticketForm.message.length}/2000 characters
+                </p>
+              </div>
+
+              {/* Info Box */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-700 font-medium mb-1">
+                  💡 Response Time
+                </p>
+                <p className="text-xs text-blue-600">
+                  Our support team typically responds within 24 hours. For
+                  urgent matters, please call our phone support line.
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4 border-t border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setShowTicketDialog(false)}
+                  disabled={isSubmitting}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={16} />
+                      Submit Request
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
