@@ -27,40 +27,69 @@ const Step4Location = forwardRef(({ profileData, isLoading, error }, ref) => {
   useEffect(() => {
     if (profileData) {
       if (profileData.selectedAreas && profileData.selectedAreas.length > 0) {
-        // Backend returns only lat/lng, we need to reverse geocode to get addresses
+        // Backend returns GeoJSON Point format: {type: "Point", coordinates: [lng, lat]} or legacy format: {lat, lng}
         const areasWithAddresses = profileData.selectedAreas.map(
           async (area) => {
             try {
+              // Handle multiple formats: GeoJSON Point, plain coordinates, or legacy format
+              let lat, lng;
+              if (area.type === "Point" && area.coordinates && Array.isArray(area.coordinates)) {
+                // GeoJSON Point format: {type: "Point", coordinates: [lng, lat]}
+                lng = area.coordinates[0];
+                lat = area.coordinates[1];
+              } else if (area.coordinates && Array.isArray(area.coordinates)) {
+                // Plain coordinates format: {coordinates: [lng, lat]}
+                lng = area.coordinates[0];
+                lat = area.coordinates[1];
+              } else {
+                // Legacy format: {lat, lng}
+                lat = area.lat;
+                lng = area.lng;
+              }
+
               // Use reverse geocoding to get address
               const geocoder = new window.google.maps.Geocoder();
-              const location = { lat: area.lat, lng: area.lng };
+              const location = { lat, lng };
 
               return new Promise((resolve) => {
                 geocoder.geocode({ location }, (results, status) => {
                   if (status === "OK" && results[0]) {
                     resolve({
-                      lat: area.lat,
-                      lng: area.lng,
+                      lat,
+                      lng,
                       address: results[0].formatted_address,
                     });
                   } else {
                     // Fallback if geocoding fails
                     resolve({
-                      lat: area.lat,
-                      lng: area.lng,
-                      address: `Location: ${area.lat.toFixed(
+                      lat,
+                      lng,
+                      address: `Location: ${lat.toFixed(
                         4
-                      )}, ${area.lng.toFixed(4)}`,
+                      )}, ${lng.toFixed(4)}`,
                     });
                   }
                 });
               });
             } catch (error) {
               console.error("Reverse geocoding error:", error);
+              // Handle multiple formats for error case too
+              let lat, lng;
+              if (area.type === "Point" && area.coordinates && Array.isArray(area.coordinates)) {
+                lng = area.coordinates[0];
+                lat = area.coordinates[1];
+              } else if (area.coordinates && Array.isArray(area.coordinates)) {
+                lng = area.coordinates[0];
+                lat = area.coordinates[1];
+              } else {
+                lat = area.lat;
+                lng = area.lng;
+              }
+              
               return {
-                lat: area.lat,
-                lng: area.lng,
-                address: `Location: ${area.lat.toFixed(4)}, ${area.lng.toFixed(
+                lat,
+                lng,
+                address: `Location: ${lat.toFixed(4)}, ${lng.toFixed(
                   4
                 )}`,
               };
@@ -90,11 +119,11 @@ const Step4Location = forwardRef(({ profileData, isLoading, error }, ref) => {
 
       loadingToast = toast.loading("Saving service locations...");
 
-      // Backend expects only lat and lng (no address field)
+      // Backend expects GeoJSON Point format with type and coordinates
       const updateData = {
         selectedAreas: selectedAreas.map((area) => ({
-          lat: area.lat,
-          lng: area.lng,
+          type: "Point",
+          coordinates: [area.lng, area.lat], // GeoJSON format: [longitude, latitude]
         })),
       };
 

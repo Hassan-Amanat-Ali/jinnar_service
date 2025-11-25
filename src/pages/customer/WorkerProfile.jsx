@@ -323,7 +323,7 @@ const WorkerProfile = () => {
                 id="services-title"
                 className="text-lg font-bold text-gray-900"
               >
-                Services Offer
+                Skills
               </h2>
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {profile.skills.map((skill, idx) => (

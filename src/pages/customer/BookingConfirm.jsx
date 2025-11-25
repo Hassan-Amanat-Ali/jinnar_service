@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import ali from "../../assets/images/ali-hassan.jpg";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useGetOrderByIdQuery } from "../../services/customerApi";
+import { useGetOrderByIdQuery } from "../../services/workerApi";
 import { useStartConversationMutation } from "../../services/customerApi";
 
 const BookingConfirm = () => {
@@ -27,8 +27,13 @@ const BookingConfirm = () => {
   });
   const [startConversation] = useStartConversationMutation();
 
-  const order = data?.order;
+  const order = data;
   const seller = order?.sellerId;
+
+  // Debug logging
+  console.log("BookingConfirm - Raw data:", data);
+  console.log("BookingConfirm - Extracted order:", order);
+  console.log("BookingConfirm - Seller info:", seller);
 
   // Format date
   const formatDate = (dateString) => {

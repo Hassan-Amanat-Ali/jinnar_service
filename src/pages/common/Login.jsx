@@ -67,10 +67,10 @@ const Login = () => {
       return;
     }
 
-    if (!/^\+[1-9]\d{1,14}$/.test(mobile)) {
-      toast.error("Please enter a valid mobile number (e.g., +923001234567)");
-      return;
-    }
+      if (!/^\+[1-9]\d{7,14}$/.test(mobile)) {
+  toast.error("Please enter a valid phone number in international format (e.g., +12345678901)");
+  return;
+}
 
     try {
       // Call RTK Query mutation based on role
@@ -224,25 +224,6 @@ const Login = () => {
                 {loading ? "Logging in..." : "Login"}
               </button>
             </form>
-
-            {/* Divider */}
-            <div className="mt-6 flex items-center gap-3">
-              <div className="h-px bg-gray-200 flex-1" />
-              <span className="text-xs text-gray-500">or continue with</span>
-              <div className="h-px bg-gray-200 flex-1" />
-            </div>
-
-            {/* Social buttons */}
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <button className="h-10 rounded-lg border border-gray-300 flex items-center justify-center gap-2 text-sm font-medium hover:bg-gray-50 cursor-pointer transition-colors">
-                <FcGoogle className="text-lg" />
-                Google
-              </button>
-              <button className="h-10 rounded-lg border border-gray-300 flex items-center justify-center gap-2 text-sm font-medium hover:bg-gray-50 cursor-pointer transition-colors">
-                <FaFacebook className="text-[#1877F2] text-lg" />
-                Facebook
-              </button>
-            </div>
 
             {/* Signup prompt */}
             <p className="mt-6 text-center text-sm text-[#141414]/80">

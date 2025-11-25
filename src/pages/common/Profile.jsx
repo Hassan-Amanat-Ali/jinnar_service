@@ -21,7 +21,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 // Import customer profile components
 import ProfileOverview from "../../components/profile/ProfileOverview";
 import ComplaintSubmission from "../../components/profile/ComplaintSubmission";
-import Notifications from "../../components/profile/Notifications";
+import Notifications from "../common/NotificationSettings.jsx";
 import HelpAndSupport from "../../components/profile/HelpAndSupport";
 import PrivacyPolicy from "../../components/profile/PrivacyPolicy";
 import TermsAndConditions from "../../components/profile/TermsAndConditions";

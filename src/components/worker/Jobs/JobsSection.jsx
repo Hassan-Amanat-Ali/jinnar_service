@@ -18,6 +18,7 @@ import {
   useGetNewJobRequestsQuery,
   useAcceptJobMutation,
   useDeclineJobMutation,
+  useGetSellerStatsQuery,
 } from "../../../services/workerApi";
 
 const StatItem = ({ rowBg, iconBg, icon, value, label }) => (
@@ -211,10 +212,62 @@ const JobCard = ({ job }) => {
 
 const QuickStats = () => {
   const navigate = useNavigate();
+  const { data: stats, isLoading: statsLoading, error: statsError } = useGetSellerStatsQuery();
 
   const handleViewDashboard = () => {
     navigate("/worker-home");
   };
+
+  // Format currency in TZS
+  const formatCurrency = (amount) => {
+    if (!amount) return "TZS 0";
+    return `TZS ${amount.toLocaleString()}`;
+  };
+
+  if (statsLoading) {
+    return (
+      <aside className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 sticky top-4">
+        <h3 className="text-lg font-semibold text-gray-900">Quick Stats</h3>
+        <div className="mt-3 space-y-2">
+          {/* Loading skeleton */}
+          {[1, 2, 3].map(i => (
+            <div key={i} className="animate-pulse">
+              <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-50">
+                <div className="h-9 w-9 rounded-md bg-gray-200"></div>
+                <div className="leading-tight">
+                  <div className="h-4 bg-gray-200 rounded w-8 mb-1"></div>
+                  <div className="h-3 bg-gray-200 rounded w-16"></div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button
+          className="mt-4 w-full inline-flex justify-center items-center gap-2 rounded-md bg-white text-sky-600 border border-sky-300 text-sm font-medium px-4 py-2 hover:bg-sky-50"
+          onClick={handleViewDashboard}
+        >
+          View Dashboard
+        </button>
+      </aside>
+    );
+  }
+
+  if (statsError) {
+    return (
+      <aside className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 sticky top-4">
+        <h3 className="text-lg font-semibold text-gray-900">Quick Stats</h3>
+        <div className="mt-3 text-center text-red-500 text-sm py-4">
+          Failed to load stats
+        </div>
+        <button
+          className="mt-4 w-full inline-flex justify-center items-center gap-2 rounded-md bg-white text-sky-600 border border-sky-300 text-sm font-medium px-4 py-2 hover:bg-sky-50"
+          onClick={handleViewDashboard}
+        >
+          View Dashboard
+        </button>
+      </aside>
+    );
+  }
 
   return (
     <aside className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 sticky top-4">
@@ -224,21 +277,21 @@ const QuickStats = () => {
           rowBg="bg-sky-50"
           iconBg="bg-sky-500 text-white"
           icon={<Calendar1 size={16} />}
-          value="3"
-          label="Jobs Today"
+          value={stats?.activeJobs || 0}
+          label="Active Jobs"
         />
         <StatItem
           rowBg="bg-emerald-50"
           iconBg="bg-emerald-600 text-white"
           icon={<div className="h-3.5 w-3.5 bg-white/0 rounded-sm" />}
-          value="147"
+          value={stats?.completedJobs || 0}
           label="Total Completed"
         />
         <StatItem
           rowBg="bg-amber-50"
           iconBg="bg-amber-500 text-white"
           icon={<DollarSign size={16} />}
-          value="TZS 285,000"
+          value={formatCurrency(stats?.pendingEarning)}
           label="Pending Earnings"
         />
       </div>

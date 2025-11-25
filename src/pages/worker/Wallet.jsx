@@ -159,7 +159,7 @@ const DepositModal = ({ isOpen, onClose, onDeposit }) => {
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Enter amount"
               className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              min="1000"
+              min="100"
               required
             />
           </div>
@@ -316,7 +316,7 @@ const WithdrawModal = ({ isOpen, onClose, onWithdraw, availableBalance }) => {
               placeholder="Enter amount"
               className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               max={availableBalance}
-              min="1000"
+              min="100"
               required
             />
           </div>

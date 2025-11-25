@@ -197,12 +197,30 @@ const Chat = () => {
     (p) => p._id !== currentUserId
   )?._id;
   
+  console.log('🎯 Chat IDs Debug:', {
+    userId,
+    conversationId,
+    otherParticipantId,
+    currentUserId,
+    selectedConversationId: selectedConversation?._id,
+    hasSelectedConversation: !!selectedConversation
+  });
+  
   // API Hooks
   const { data: conversationsData, isLoading: conversationsLoading, refetch: refetchConversations } = useGetConversationsQuery();
   const { data: messagesData, isLoading: messagesLoading, refetch: refetchMessages } = useGetMessagesQuery(
     { userId: otherParticipantId },
     { skip: !otherParticipantId }
   );
+
+  console.log('📡 API Status:', {
+    otherParticipantId,
+    hasOtherParticipant: !!otherParticipantId,
+    messagesLoading,
+    conversationsLoading,
+    messagesDataLength: messagesData?.length || 0,
+    conversationsDataLength: conversationsData?.length || 0
+  });
 
   // Safely handle API responses with useMemo to prevent re-renders
   const conversations = useMemo(() => {
@@ -237,6 +255,16 @@ const Chat = () => {
         ? firstMessage.receiver 
         : firstMessage.sender;
       
+      console.log('👥 Updating conversation with user data:', {
+        firstMessage: {
+          senderId: firstMessage.sender?._id,
+          receiverId: firstMessage.receiver?._id,
+          currentUserId
+        },
+        otherUser,
+        selectedConversationId: selectedConversation._id
+      });
+      
       if (otherUser && selectedConversation._id.startsWith('temp-')) {
         // Update temp conversation with real user data
         setSelectedConversation(prev => ({
@@ -252,6 +280,9 @@ const Chat = () => {
           ]
         }));
       }
+    } else if (userId && selectedConversation && selectedConversation._id.startsWith('temp-') && !messages.length) {
+      // If we have a userId but no messages yet, keep the temporary conversation ready
+      console.log('📝 Keeping temporary conversation ready for user:', userId);
     }
   }, [messages, selectedConversation, userId, currentUserId, currentUser]);
 
@@ -262,17 +293,18 @@ const Chat = () => {
       if (conversation) {
         setSelectedConversation(conversation);
       }
-    } else if (userId && conversations.length > 0) {
+    } else if (userId) {
       // Find conversation with the specified user
-      const conversation = conversations.find(c => 
+      const existingConversation = conversations.find(c => 
         c.participants?.some(p => p._id === userId)
       );
-      if (conversation) {
-        setSelectedConversation(conversation);
+      if (existingConversation) {
+        setSelectedConversation(existingConversation);
         // Update URL to use conversation ID instead of user ID for consistency
-        setSearchParams({ conversation: conversation._id });
+        setSearchParams({ conversation: existingConversation._id });
       } else {
         // Create a temporary conversation object for the UI when starting new chat
+        console.log('🆕 Creating temporary conversation for user:', userId);
         setSelectedConversation({
           _id: `temp-${userId}`,
           participants: [
