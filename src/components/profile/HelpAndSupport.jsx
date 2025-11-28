@@ -14,8 +14,10 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGetHelpFaqsQuery } from "../../services/faqApi";
-import { useCreateSupportTicketMutation } from "../../services/supportApi";
-import { useCreateSupportTicketMutation, useGetMyTicketsQuery } from "../../services/supportApi";
+import {
+  useCreateSupportTicketMutation,
+  useGetMyTicketsQuery,
+} from "../../services/supportApi";
 import toast from "react-hot-toast";
 
 const HelpAndSupport = () => {
@@ -30,8 +32,6 @@ const HelpAndSupport = () => {
   // Fetch FAQs from API
   const {
     data: faqCategories = [],
-    isLoading,
-    isError,
     isLoading: isLoadingFaqs,
     isError: isErrorFaqs,
   } = useGetHelpFaqsQuery();
@@ -247,9 +247,9 @@ const HelpAndSupport = () => {
           <div className="text-center py-8 text-red-500">
             Failed to load support tickets.
           </div>
-        ) : ticketsData?.tickets?.length > 0 ? (
+        ) : ticketsData?.length > 0 ? (
           <div className="space-y-3">
-            {ticketsData.tickets.map((ticket) => (
+            {ticketsData.map((ticket) => (
               <div
                 key={ticket._id}
                 onClick={() => navigate(`/profile/support-ticket/${ticket._id}`)}
@@ -303,7 +303,6 @@ const HelpAndSupport = () => {
           Find quick answers to common questions about our platform.
         </p>
 
-        {isLoading ? (
         {isLoadingFaqs ? (
           <div className="space-y-6">
             {/* Category Pills Skeleton */}
@@ -343,7 +342,6 @@ const HelpAndSupport = () => {
               </div>
             ))}
           </div>
-        ) : isError ? (
         ) : isErrorFaqs ? (
           <div className="text-center py-12">
             <p className="text-red-500 mb-4">

@@ -48,6 +48,7 @@ import { ROLES } from "../constants/roles.js";
 import RoleGuard from "../components/common/RoleGuard.jsx";
 import PrivacyPolicies from "../pages/common/PrivacyPolicy.jsx";
 import AllServicesLanding from "../pages/landing/Landing.jsx";
+import SupportTicketDetail from "../components/profile/SupportTicketDetail.jsx";
 import AccountVerification from "../components/profile/AccountVerification.jsx";
 import Terms from "../pages/common/Terms.jsx";
 
@@ -84,6 +85,7 @@ const router = createBrowserRouter([
       { path: "notifications", element: <Notifications /> },
       { path: "profile", element: <Profile /> },
       { path: "complaint", element: <Complaint /> },
+      { path: "profile/support-ticket/:id", element: <SupportTicketDetail /> },
 
       // Customer pages - simple flat routing (accessible to customers AND workers)
       {
