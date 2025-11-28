@@ -7,15 +7,19 @@ import {
   ChevronDown,
   ChevronUp,
   CircleQuestionMark,
+  Ticket,
   Loader2,
   X,
   Send,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useGetHelpFaqsQuery } from "../../services/faqApi";
 import { useCreateSupportTicketMutation } from "../../services/supportApi";
+import { useCreateSupportTicketMutation, useGetMyTicketsQuery } from "../../services/supportApi";
 import toast from "react-hot-toast";
 
 const HelpAndSupport = () => {
+  const navigate = useNavigate();
   const [openFaqs, setOpenFaqs] = useState({});
   const [showTicketDialog, setShowTicketDialog] = useState(false);
   const [ticketForm, setTicketForm] = useState({
@@ -28,7 +32,17 @@ const HelpAndSupport = () => {
     data: faqCategories = [],
     isLoading,
     isError,
+    isLoading: isLoadingFaqs,
+    isError: isErrorFaqs,
   } = useGetHelpFaqsQuery();
+
+  // Fetch user's support tickets
+  const {
+    data: ticketsData,
+    isLoading: isLoadingTickets,
+    isError: isErrorTickets,
+    refetch: refetchTickets,
+  } = useGetMyTicketsQuery();
 
   // Create support ticket mutation
   const [createTicket, { isLoading: isSubmitting }] =
@@ -83,6 +97,7 @@ const HelpAndSupport = () => {
       });
       setShowTicketDialog(false);
       setTicketForm({ subject: "", message: "" });
+      refetchTickets();
     } catch (err) {
       toast.error(err?.data?.message || "Failed to submit ticket", {
         id: loadingToast,
@@ -132,6 +147,14 @@ const HelpAndSupport = () => {
     },
   ];
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:p-8">
       {/* Header */}
@@ -194,6 +217,83 @@ const HelpAndSupport = () => {
         </div>
       </div>
 
+      {/* My Support Tickets */}
+      <div className="mb-8 border border-gray-200 rounded-xl p-5 shadow-md">
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">
+          My Support Tickets
+        </h2>
+        <p className="text-sm text-gray-500 mb-6">
+          Track the status of your support requests.
+        </p>
+
+        {isLoadingTickets ? (
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <div
+                key={i}
+                className="p-4 border border-gray-200 rounded-lg animate-pulse"
+              >
+                <div className="flex justify-between items-center">
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-200 rounded w-48" />
+                    <div className="h-3 bg-gray-200 rounded w-32" />
+                  </div>
+                  <div className="h-6 bg-gray-200 rounded-full w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : isErrorTickets ? (
+          <div className="text-center py-8 text-red-500">
+            Failed to load support tickets.
+          </div>
+        ) : ticketsData?.tickets?.length > 0 ? (
+          <div className="space-y-3">
+            {ticketsData.tickets.map((ticket) => (
+              <div
+                key={ticket._id}
+                onClick={() => navigate(`/profile/support-ticket/${ticket._id}`)}
+                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900 truncate">
+                      {ticket.subject}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Ticket #{ticket.ticketId} • Last updated:{" "}
+                      {formatDate(ticket.updatedAt)}
+                    </p>
+                  </div>
+                  <div
+                    className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                      ticket.status === "open"
+                        ? "bg-blue-100 text-blue-800"
+                        : ticket.status === "in_progress"
+                        ? "bg-yellow-100 text-yellow-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {ticket.status.replace("_", " ")}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+            <Ticket
+              size={32}
+              className="mx-auto text-gray-400 mb-3"
+            />
+            <h3 className="font-medium text-gray-900">No Tickets Found</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              You haven't submitted any support tickets yet.
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Frequently Asked Questions */}
       <div className="mb-8 border border-gray-200 rounded-xl p-5 shadow-md">
         <h2 className="text-lg font-semibold text-gray-900 mb-2">
@@ -204,6 +304,7 @@ const HelpAndSupport = () => {
         </p>
 
         {isLoading ? (
+        {isLoadingFaqs ? (
           <div className="space-y-6">
             {/* Category Pills Skeleton */}
             <div className="flex flex-wrap gap-2">
@@ -243,6 +344,7 @@ const HelpAndSupport = () => {
             ))}
           </div>
         ) : isError ? (
+        ) : isErrorFaqs ? (
           <div className="text-center py-12">
             <p className="text-red-500 mb-4">
               Failed to load FAQs. Please try again later.

@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Base query with automatic token injection
 const baseQuery = fetchBaseQuery({
   // baseUrl: "https://jinnar-marketplace.onrender.com/api",
-  baseUrl: "srv1144519.hstgr.cloud/api/api",
+  baseUrl: "http://srv1144519.hstgr.cloud/api/api",
   prepareHeaders: (headers, { endpoint }) => {
     const token = localStorage.getItem("token");
     if (token) {
