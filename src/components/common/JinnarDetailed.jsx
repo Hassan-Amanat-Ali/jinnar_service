@@ -194,7 +194,7 @@ const JinnarDetailed = () => {
             <a href="#step-1" className="btn-outline">
               Back to Top
             </a>
-            <Link to="/services" className="btn-primary">
+            <Link to="/landing-services" className="btn-primary">
               Hire a Worker <ArrowRight size={16} />
             </Link>
           </div>

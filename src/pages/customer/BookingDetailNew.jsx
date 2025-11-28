@@ -226,7 +226,7 @@ const BookingDetail = () => {
               </button>
               <button 
                 className="w-full py-3 rounded-xl border border-[#74C7F2] text-[#74C7F2] font-medium hover:bg-[#DBF0FF]"
-                onClick={() => navigate("/chat")}
+                onClick={() => navigate(`/customer-chat?conversation=${worker._id}`)}
               >
                 <div className="flex items-center justify-center gap-2">
                   <MessageSquare className="w-5 h-5" />

@@ -2,7 +2,7 @@ import growing from "../../assets/images/growing.jpg";
 import arrow from "../../assets/icons/arrow.png";
 import bubble1 from "../../assets/icons/bubble1.png";
 import followUs from "../../assets/icons/follow-us.png";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -42,7 +42,7 @@ const Footer = () => {
               service, guaranteed satisfaction.
             </p>
             <a
-              href="/services"
+              href="/landing-services"
               className="bg-white hover:bg-gray-100 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-sm md:text-base font-semibold text-gray-900 flex items-center gap-1.5 sm:gap-2 transition-all duration-300 hover:scale-105 hover:shadow-lg"
             >
               Start Booking Now
@@ -60,20 +60,16 @@ const Footer = () => {
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 px-8">
           {/* Brand Info */}
           <div className="flex flex-col">
-            <h1 className="font-semibold text-base">Tanzania Marketplace</h1>
+            <h1 className="font-semibold text-base">Pan-African Marketplace</h1>
             <p className="text-xs sm:text-sm mt-2 text-gray-400 leading-relaxed">
-              Connecting skilled informal workers with customers in communities
-              worldwide. Building trust, creating opportunities.
+              Connecting skilled informal workers with customers from East to West, North to South. Jinnar is building trust, opening opportunities, and uniting Africa's informal sector on one powerful platform.
             </p>
             <div className="text-xs sm:text-sm mt-6 space-y-1 font-light text-gray-400">
               <p className="flex items-center gap-2">
-                <Mail size={16} /> hello@workconnect.com
+                <Mail size={16} /> support@jinnar.com
               </p>
               <p className="flex items-center gap-2">
-                <Phone size={16} /> +1 (555) 123-4567
-              </p>
-              <p className="flex items-center gap-2">
-                <MapPin size={16} /> San Francisco, CA
+                <MapPin size={16} /> 9550 Spring Green BLVD, STE 408-336, Katy, TX 77494
               </p>
             </div>
           </div>
@@ -85,7 +81,7 @@ const Footer = () => {
               <li>
                 <a
                   className="hover:text-secondary transition-colors"
-                  href="/customer-home"
+                  href="/"
                 >
                   Home
                 </a>
@@ -101,17 +97,9 @@ const Footer = () => {
               <li>
                 <a
                   className="hover:text-secondary transition-colors"
-                  href="/services"
+                  href="/landing-services"
                 >
-                  Services
-                </a>
-              </li>
-              <li>
-                <a
-                  className="hover:text-secondary transition-colors"
-                  href="/services/slug"
-                >
-                  Workers
+                  Services & Workers
                 </a>
               </li>
               <li>

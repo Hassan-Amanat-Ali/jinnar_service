@@ -11,7 +11,7 @@ import auth3 from "../../assets/images/auth3.jpg";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
-  const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
 
   // RTK Query hooks
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
@@ -20,23 +20,26 @@ const ForgotPassword = () => {
     e?.preventDefault();
 
     // Validation
-    if (!mobile.trim()) {
-      toast.error("Please enter your mobile number");
+    if (!email.trim()) {
+      toast.error("Please enter your email address");
       return;
     }
 
-    if (!/^\+[1-9]\d{7,14}$/.test(mobile)) {
-      toast.error(
-        "Please enter a valid phone number in international format (e.g., +12345678901)"
-      );
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address");
       return;
     }
 
     try {
-      await forgotPassword({ mobileNumber: mobile }).unwrap();
+      const result = await forgotPassword({ email: email.trim() }).unwrap();
 
-      toast.success("Password reset code sent to your mobile");
-      navigate("/reset-password", { state: { mobile } });
+      toast.success("Password reset code sent to your email");
+      
+      navigate("/reset-password", { 
+        state: { 
+          email: email.trim()
+        } 
+      });
     } catch (err) {
       console.error("Forgot password error:", err);
       const payload = err?.data || err;
@@ -56,7 +59,7 @@ const ForgotPassword = () => {
       } else if (err?.status === "FETCH_ERROR") {
         toast.error("Network error. Please check your connection");
       } else if (err?.status === 404) {
-        toast.error("User with this mobile number does not exist");
+        toast.error("User with this email address does not exist");
       } else {
         toast.error("Failed to send reset code. Please try again");
       }
@@ -143,16 +146,16 @@ const ForgotPassword = () => {
 
           <div className="mt-6 rounded-2xl border border-gray-200 shadow-sm p-6">
             <form onSubmit={handleSubmit}>
-              {/* Mobile number */}
+              {/* Email address */}
               <label className="block text-sm font-medium text-[#141414]">
-                Mobile number
+                Email address
               </label>
               <input
-                type="text"
-                placeholder="Enter mobile number (e.g. +9230...)"
+                type="email"
+                placeholder="Enter your email address"
                 className="mt-2 w-full h-11 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
 
               {/* Submit button */}

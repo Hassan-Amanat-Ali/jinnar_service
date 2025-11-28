@@ -44,7 +44,7 @@ const FeaturedCourses = () => {
             enrolled: 1250,
             image:
               "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=240&fit=crop",
-            url: "https://jinnar.vercel.app/courses/communication-basics",
+            url: "https://training.jinnar.com/courses/communication-basics",
           },
           {
             id: "sample-2",
@@ -55,7 +55,7 @@ const FeaturedCourses = () => {
             enrolled: 890,
             image:
               "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=240&fit=crop",
-            url: "https://jinnar.vercel.app/courses/time-management",
+            url: "https://training.jinnar.coms/time-management",
           },
           {
             id: "sample-3",
@@ -66,7 +66,7 @@ const FeaturedCourses = () => {
             enrolled: 2150,
             image:
               "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=240&fit=crop",
-            url: "https://jinnar.vercel.app/courses/tool-safety",
+            url: "https://training.jinnar.coms/tool-safety",
           },
           {
             id: "sample-4",
@@ -77,7 +77,7 @@ const FeaturedCourses = () => {
             enrolled: 1680,
             image:
               "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&h=240&fit=crop",
-            url: "https://jinnar.vercel.app/courses/digital-literacy",
+            url: "https://training.jinnar.com/courses/digital-literacy",
           },
           {
             id: "sample-5",
@@ -88,7 +88,7 @@ const FeaturedCourses = () => {
             enrolled: 950,
             image:
               "https://images.unsplash.com/photo-1556745757-8d76bdb6984b?w=400&h=240&fit=crop",
-            url: "https://jinnar.vercel.app/courses/customer-service",
+            url: "https://training.jinnar.com/courses/customer-service",
           },
           {
             id: "sample-6",
@@ -99,7 +99,7 @@ const FeaturedCourses = () => {
             enrolled: 1420,
             image:
               "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=240&fit=crop",
-            url: "https://jinnar.vercel.app/courses/financial-literacy",
+            url: "https://training.jinnar.com/courses/financial-literacy",
           },
         ]);
       } finally {
@@ -202,7 +202,7 @@ const FeaturedCourses = () => {
 
                   <div className="flex items-center gap-3 mt-auto">
                     <a
-                      href={course.url || "https://jinnar.vercel.app/courses"}
+                      href={course.url || "https://training.jinnar.com/courses"}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full text-center btn-primary text-sm py-2 px-4"
@@ -219,7 +219,7 @@ const FeaturedCourses = () => {
         {/* View All */}
         <div className="text-center mt-12">
           <a
-            href="https://jinnar.vercel.app/courses"
+            href="https://training.jinnar.com/courses"
             target="_blank"
             rel="noopener noreferrer"
             className="btn-primary"

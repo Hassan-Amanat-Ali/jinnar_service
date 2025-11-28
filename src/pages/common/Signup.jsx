@@ -1,6 +1,4 @@
 import { Link, useNavigate } from "react-router-dom";
-import { FcGoogle } from "react-icons/fc";
-import { FaFacebook } from "react-icons/fa";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
@@ -18,10 +16,10 @@ import { toast } from "react-toastify";
 const Signup = () => {
   const navigate = useNavigate();
   const [name, setName] = useState("");
-  const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState(
+  const [role] = useState(
     localStorage.getItem("userRole") || ROLES.CUSTOMER
   );
 
@@ -42,15 +40,13 @@ const Signup = () => {
       return;
     }
 
-    if (!mobile.trim()) {
-      toast.error("Please enter your mobile number");
+    if (!email.trim()) {
+      toast.error("Please enter your email address");
       return;
     }
 
-    if (!/^\+[1-9]\d{7,14}$/.test(mobile)) {
-      toast.error(
-        "Please enter a valid phone number in international format (e.g., +12345678901)"
-      );
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address");
       return;
     }
 
@@ -76,15 +72,20 @@ const Signup = () => {
 
       const result = await signupMutation({
         name: name.trim(),
-        mobileNumber: mobile,
+        email: email.trim(),
         password: password,
         role: backendRole,
       }).unwrap();
 
-      // Backend sends verification code, navigate to verify page
-      toast.info("Verification code sent to your mobile");
+      // Backend sends verification code via email, navigate to verify page
+      toast.info("Verification code sent to your email");
       navigate("/verify", {
-        state: { name: name.trim(), mobile, role, action: "signup" },
+        state: { 
+          name: name.trim(), 
+          email: email.trim(), 
+          role, 
+          action: "signup"
+        },
       });
     } catch (err) {
       console.error("Signup error:", err);
@@ -105,7 +106,7 @@ const Signup = () => {
       } else if (err?.status === "FETCH_ERROR") {
         toast.error("Network error. Please check your connection");
       } else if (err?.status === 409) {
-        toast.error("Mobile number already registered. Please login");
+        toast.error("Email already registered. Please login");
       } else if (err?.status === 400) {
         toast.error("Invalid input. Please check your details");
       } else {
@@ -209,16 +210,16 @@ const Signup = () => {
                 onChange={(e) => setName(e.target.value)}
               />
 
-              {/* Mobile */}
+              {/* Email */}
               <label className="block text-sm font-medium text-[#141414] mt-4">
-                Mobile number
+                Email address
               </label>
               <input
-                type="text"
-                placeholder="Enter your mobile (e.g. +9230...)"
+                type="email"
+                placeholder="Enter your email address"
                 className="mt-2 w-full h-11 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
 
               {/* Password */}

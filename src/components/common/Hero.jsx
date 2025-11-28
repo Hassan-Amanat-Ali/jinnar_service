@@ -23,8 +23,6 @@ const Hero = ({
 }) => {
   const [price, setPrice] = React.useState(50);
   const [openDropdown, setOpenDropdown] = React.useState(null);
-  const services = ["All", "Active", "Completed", "Cancelled"];
-  const [selectedService, setSelectedService] = React.useState("All");
 
   // Images for the infinite slider
   const serviceImages = [
@@ -62,7 +60,7 @@ const Hero = ({
       >
         <div className="absolute bottom-0 left-0 right-0 top-0 bg-[linear-gradient(to_right,#c4e9fb_1px,transparent_1px),linear-gradient(to_bottom,#c4e9fb_1px,transparent_1px)] bg-[size:84px_74px] ]">
           <div className=" top-0 h-auto">
-            <div className="text-center mt-6 sm:mt-8 md:mt-20 px-4 z-100">
+            <div className="text-center pt-16 sm:pt-20 md:pt-24 lg:pt-28 px-4 z-100">
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
                 {title}
               </h1>

@@ -17,6 +17,7 @@ const ResetPassword = () => {
   const loc = useLocation();
   const state = loc.state || {};
   const mobile = state.mobile || "";
+  const verificationCodeFromAPI = state.verificationCode || null;
 
   const { setRole, setUser } = useAuth();
   const [code, setCode] = useState("");
@@ -203,12 +204,43 @@ const ResetPassword = () => {
             create a new password.
           </p>
 
+          {/* Testing Purpose - Display Verification Code */}
+          {verificationCodeFromAPI && (
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full bg-yellow-400 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">!</span>
+                </div>
+                <p className="text-sm font-medium text-yellow-800">
+                  Testing Mode
+                </p>
+              </div>
+              <p className="text-sm text-yellow-700 mt-1">
+                Your verification code: <span className="font-mono font-bold text-lg">{verificationCodeFromAPI}</span>
+              </p>
+              <p className="text-xs text-yellow-600 mt-1">
+                This code is shown for testing purposes only
+              </p>
+            </div>
+          )}
+
           <div className="mt-6 rounded-2xl border border-gray-200 shadow-sm p-6">
             <form onSubmit={handleSubmit}>
               {/* Verification Code */}
-              <label className="block text-sm font-medium text-[#141414]">
-                Verification Code
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-[#141414]">
+                  Verification Code
+                </label>
+                {verificationCodeFromAPI && (
+                  <button
+                    type="button"
+                    onClick={() => setCode(verificationCodeFromAPI)}
+                    className="text-xs px-2 py-1 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition-colors"
+                  >
+                    Auto-fill
+                  </button>
+                )}
+              </div>
               <input
                 type="text"
                 placeholder="Enter the code you received"

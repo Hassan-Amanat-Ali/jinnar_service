@@ -109,7 +109,7 @@ const Jinnar = () => {
               services.
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-              <Link to="/services" className="btn-primary">
+              <Link to="/landing-services" className="btn-primary">
                 Hire a Worker <ArrowRight size={16} />
               </Link>
               <Link to="/worker-home" className="btn-outline">

@@ -208,7 +208,7 @@ const BookWorker = () => {
               </button>
               <button
                 className="text-sm border border-[#74C7F2] text-[#74C7F2] w-full py-3 rounded-lg font-medium hover:bg-[#DBF0FF] transition-colors"
-                onClick={() => navigate("/chat")}
+                onClick={() => navigate(`/customer-chat?conversation=${sellerId}`)}
               >
                 Message Worker
               </button>

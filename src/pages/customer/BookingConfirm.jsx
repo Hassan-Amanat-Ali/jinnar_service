@@ -63,10 +63,10 @@ const BookingConfirm = () => {
       const result = await startConversation({
         participantId: seller._id,
       }).unwrap();
-      navigate("/chat", { state: { conversationId: result.conversation._id } });
+      navigate(`/customer-chat?conversation=${result.conversation._id}`, { state: { conversationId: result.conversation._id } });
     } catch (err) {
       console.error("Failed to start conversation:", err);
-      navigate("/chat");
+      navigate(`/customer-chat?conversation=${seller._id}`);
     }
   };
 

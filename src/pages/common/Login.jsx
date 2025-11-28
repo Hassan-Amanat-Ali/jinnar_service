@@ -7,7 +7,7 @@ import sideImg from "../../assets/images/auth.jpg";
 import auth2 from "../../assets/images/auth2.jpg";
 import auth3 from "../../assets/images/auth3.jpg";
 import { ROLES, mapApiRoleToAppRole } from "../../constants/roles.js";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   useCustomerLoginMutation,
@@ -20,7 +20,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 const Login = () => {
   const navigate = useNavigate();
   const { setRole, setUser } = useAuth();
-  const [mobile, setMobile] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setLocalRole] = useState(
     localStorage.getItem("userRole") || ROLES.CUSTOMER
@@ -34,44 +34,50 @@ const Login = () => {
     useWorkerLoginMutation();
 
   // Fetch user profile after successful login
-  const { data: profileData, isLoading: isProfileLoading } =
+  const { data: profileData, isLoading: isProfileLoading, error: profileError } =
     useGetMyProfileQuery(undefined, {
       skip: !shouldFetchProfile,
     });
 
   const loading = isCustomerLoading || isWorkerLoading || isProfileLoading;
 
-  // When profile data is fetched, set role and user in AuthContext
-  if (profileData?.profile && shouldFetchProfile) {
-    const apiRole = profileData.profile.role;
-    const appRole = mapApiRoleToAppRole(apiRole);
+  // Handle profile data and errors using useEffect
+  useEffect(() => {
+    if (!shouldFetchProfile) return;
 
-    if (appRole) {
-      setRole(appRole);
-      setUser(profileData.profile);
-      setShouldFetchProfile(false);
+    if (profileData?.profile) {
+      const apiRole = profileData.profile.role;
+      const appRole = mapApiRoleToAppRole(apiRole);
 
-      // Navigate to the appropriate home page based on the role from API
-      const redirectPath =
-        appRole === ROLES.CUSTOMER ? "/customer-home" : "/worker-home";
-      toast.success("Welcome back! Login successful");
-      window.location.href = redirectPath;
+      if (appRole) {
+        setRole(appRole);
+        setUser(profileData.profile);
+        toast.success("Welcome back! Login successful");
+        setShouldFetchProfile(false);
+        navigate(appRole === ROLES.CUSTOMER ? "/customer-home" : "/worker-home");
+      } else {
+        setShouldFetchProfile(false);
+        toast.error("Unable to determine user role. Please try again");
+      }
     }
-  }
+
+    if (profileError) {
+      setShouldFetchProfile(false);
+      toast.error("Failed to load user profile. Please try again");
+    }
+  }, [profileData, profileError, shouldFetchProfile, setRole, setUser, navigate]);
 
   const handleLogin = async (e) => {
     e?.preventDefault();
 
     // Validation
-    if (!mobile.trim()) {
-      toast.error("Please enter your mobile number");
+    if (!email.trim()) {
+      toast.error("Please enter your email address");
       return;
     }
 
-    if (!/^\+[1-9]\d{7,14}$/.test(mobile)) {
-      toast.error(
-        "Please enter a valid phone number in international format (e.g., +12345678901)"
-      );
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Please enter a valid email address");
       return;
     }
 
@@ -85,21 +91,23 @@ const Login = () => {
       const loginMutation =
         role === ROLES.CUSTOMER ? customerLogin : workerLogin;
       const result = await loginMutation({
-        mobileNumber: mobile,
+        email: email,
         password: password,
       }).unwrap();
 
       if (result && result.token) {
         // Store token and trigger profile fetch
         localStorage.setItem("token", result.token);
-
         // Trigger profile fetch which will set the role from API response
         setShouldFetchProfile(true);
       } else {
         toast.error("Login failed. Please try again");
+        setShouldFetchProfile(false);
       }
     } catch (err) {
       console.error("Login error:", err);
+      setShouldFetchProfile(false);
+      
       const payload = err?.data || err;
 
       // Handle different error formats
@@ -117,9 +125,9 @@ const Login = () => {
       } else if (err?.status === "FETCH_ERROR") {
         toast.error("Network error. Please check your connection");
       } else if (err?.status === 404) {
-        toast.error("User not found. Please sign up first");
+        toast.error("Email not found. Please sign up first");
       } else if (err?.status === 401) {
-        toast.error("Invalid credentials");
+        toast.error("Invalid email or password");
       } else {
         toast.error("Login failed. Please try again");
       }
@@ -206,16 +214,16 @@ const Login = () => {
 
           <div className="mt-6 rounded-2xl border border-gray-200 shadow-sm p-6">
             <form onSubmit={handleLogin}>
-              {/* Mobile number */}
+              {/* Email address */}
               <label className="block text-sm font-medium text-[#141414]">
-                Mobile number
+                Email address
               </label>
               <input
-                type="text"
-                placeholder="Enter mobile number (e.g. +9230...)"
+                type="email"
+                placeholder="Enter your email address"
                 className="mt-2 w-full h-11 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
 
               {/* Password */}

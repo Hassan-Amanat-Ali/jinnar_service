@@ -32,12 +32,12 @@ const Bot = ({
   const [createTicket, { isLoading: isCreatingTicket }] =
     useCreateGuestTicketMutation();
 
-  // Position classes
+  // Position classes - responsive positioning
   const positionClasses = {
-    "bottom-right": "bottom-6 right-6",
-    "bottom-left": "bottom-6 left-6",
-    "top-right": "top-6 right-6",
-    "top-left": "top-6 left-6",
+    "bottom-right": "bottom-3 right-3 sm:bottom-6 sm:right-6",
+    "bottom-left": "bottom-3 left-3 sm:bottom-6 sm:left-6", 
+    "top-right": "top-3 right-3 sm:top-6 sm:right-6",
+    "top-left": "top-3 left-3 sm:top-6 sm:left-6",
   };
 
   // Initialize chat on first open
@@ -190,7 +190,7 @@ const Bot = ({
       {!isOpen && (
         <button
           onClick={toggleChat}
-          className={`fixed ${positionClasses[position]} z-50 group w-16 h-16 rounded-full shadow-2xl hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center`}
+          className={`fixed ${positionClasses[position]} z-50 group w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-2xl hover:shadow-xl transition-all duration-300 hover:scale-110 flex items-center justify-center`}
           aria-label="Open chat"
           style={{
             background: `linear-gradient(135deg, ${brandColor}, ${brandColorDark})`,
@@ -206,7 +206,7 @@ const Bot = ({
           {/* Chat icon */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-8 w-8 text-white"
+            className="h-6 w-6 sm:h-8 sm:w-8 text-white"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -229,12 +229,18 @@ const Bot = ({
       {/* Chat Window */}
       {isOpen && (
         <div
-          className={`fixed ${positionClasses[position]} z-50 ${className}`}
+          className={`fixed inset-0 sm:inset-auto sm:${positionClasses[position]} z-50 ${className} flex items-center justify-center sm:block`}
           role="dialog"
           aria-label="Chat window"
         >
+          {/* Mobile backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/20 sm:hidden" 
+            onClick={toggleChat}
+          />
+          
           <div
-            className="w-[380px] h-[600px] rounded-2xl overflow-hidden bg-white shadow-2xl flex flex-col"
+            className="relative w-[calc(100vw-24px)] max-w-[380px] h-[calc(100vh-100px)] max-h-[600px] sm:w-[380px] sm:h-[600px] rounded-2xl overflow-hidden bg-white shadow-2xl flex flex-col m-3 sm:m-0"
             style={{
               animation: "slideUp 0.3s ease-out",
             }}

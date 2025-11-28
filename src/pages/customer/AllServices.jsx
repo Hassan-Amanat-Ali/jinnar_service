@@ -5,7 +5,7 @@ import { useGetAllGigsQuery } from "../../services/workerApi";
 import { useGetRecommendedWorkersMutation } from "../../services/recommendationApi";
 import { useSearchParams } from "react-router-dom";
 import { useMemo, useState, useEffect, useCallback } from "react";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 const AllServices = () => {
   const { data, isLoading, error } = useGetAllGigsQuery();
@@ -107,32 +107,44 @@ const AllServices = () => {
     [data]
   );
 
-  // Transform recommended workers data
-  const recommendedWorkersData = useMemo(() => {
-    if (!recommendedData || recommendedData.length === 0) return [];
+  // Transform recommended gigs data from the new API response structure
+  const recommendedGigsData = useMemo(() => {
+    if (!recommendedData) return { topRecommended: [], otherGigs: [] };
 
-    return recommendedData.map((worker) => ({
-      id: worker._id,
-      gigId: null, // Recommendations are worker-based, not gig-based
-      sellerId: worker._id,
-      name: worker.name || "Worker",
-      image: worker.profilePicture || "https://via.placeholder.com/300x200",
-      rating: worker.rating?.average || 0,
-      reviews: worker.rating?.count || 0,
+    const transformGig = (gig) => ({
+      id: gig._id,
+      gigId: gig._id,
+      sellerId: gig.sellerId?._id,
+      name: gig.title,
+      image: gig.images?.[0]?.url || "https://via.placeholder.com/300x200",
+      rating: gig.sellerId?.rating?.average || 0,
+      reviews: gig.sellerId?.rating?.count || 0,
       available: true,
-      experience: worker.yearsOfExperience || 0,
-      distance: "Contact for pricing",
-      bio: `Specializes in ${
-        worker.skills?.slice(0, 2).join(", ") || "various services"
-      }`,
-      skills: worker.skills?.slice(0, 4) || [],
-      jobsCompleted: 0,
-      rate: "Contact for pricing",
-      sellerSkills: worker.skills || [],
-      sellerAreas: worker.selectedAreas || [],
-      matchScore: worker.matchScore || 0,
+      experience: gig.sellerId?.yearsOfExperience || 0,
+      distance: gig.pricing?.method === "negotiable" 
+        ? "Negotiable" 
+        : gig.pricing?.method === "hourly"
+        ? `TZS ${gig.pricing?.price}/hr`
+        : `TZS ${gig.pricing?.price}`,
+      bio: gig.description,
+      skills: gig.skills?.slice(0, 4) || [],
+      jobsCompleted: gig.sellerId?.ordersCompleted || 0,
+      rate: gig.pricing?.method === "negotiable" 
+        ? "Negotiable" 
+        : gig.pricing?.price || 0,
+      sellerSkills: gig.sellerId?.skills || [],
+      sellerAreas: gig.sellerId?.selectedAreas || [],
+      matchScore: gig.matchScore || 0,
       isRecommended: true,
-    }));
+      isTopRecommended: gig.isTopRecommended || false,
+      sellerName: gig.sellerId?.name || "Unknown Seller",
+      sellerVerified: gig.sellerId?.isVerified || false,
+    });
+
+    return {
+      topRecommended: recommendedData.topRecommended?.map(transformGig) || [],
+      otherGigs: recommendedData.otherGigs?.map(transformGig) || [],
+    };
   }, [recommendedData]);
 
   // Filter gigs based on search params and search term
@@ -201,8 +213,8 @@ const AllServices = () => {
       <Nav />
 
       <div className="my-6 mt-16 max-w-[1200px] mx-auto">
-        {/* Recommended Workers Section */}
-        {showRecommendations && recommendedWorkersData.length > 0 && (
+        {/* Recommended Gigs Section */}
+        {showRecommendations && (recommendedGigsData.topRecommended.length > 0 || recommendedGigsData.otherGigs.length > 0) && (
           <div className="mb-8">
             {/* Simple Header */}
             <div className="mb-6">
@@ -230,27 +242,54 @@ const AllServices = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6 place-items-center md:place-items-stretch">
-                {recommendedWorkersData.slice(0, 6).map((worker) => (
-                  <div key={worker.id} className="relative">
+                {/* Render Top Recommended first */}
+                {recommendedGigsData.topRecommended.map((gig) => (
+                  <div key={gig.id} className="relative">
                     {/* Simple Match Score Badge */}
                     <div className="absolute -top-2 -right-2 z-10 bg-[#74C7F2] text-white px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
-                      {worker.matchScore}% Match
+                      {gig.matchScore}% Match
                     </div>
 
                     <WorkerCard
-                      gigId={worker.gigId}
-                      sellerId={worker.sellerId}
-                      name={worker.name}
-                      image={worker.image}
-                      rating={worker.rating}
-                      reviews={worker.reviews}
-                      available={worker.available}
-                      experience={worker.experience}
-                      distance={worker.distance}
-                      bio={worker.bio}
-                      skills={worker.skills}
-                      jobsCompleted={worker.jobsCompleted}
-                      rate={worker.rate}
+                      gigId={gig.gigId}
+                      sellerId={gig.sellerId}
+                      name={gig.name}
+                      image={gig.image}
+                      rating={gig.rating}
+                      reviews={gig.reviews}
+                      available={gig.available}
+                      experience={gig.experience}
+                      distance={gig.distance}
+                      bio={gig.bio}
+                      skills={gig.skills}
+                      jobsCompleted={gig.jobsCompleted}
+                      rate={gig.rate}
+                    />
+                  </div>
+                ))}
+                
+                {/* Render Other Gigs */}
+                {recommendedGigsData.otherGigs.slice(0, 6).map((gig) => (
+                  <div key={gig.id} className="relative">
+                    {/* Simple Match Score Badge */}
+                    <div className="absolute -top-2 -right-2 z-10 bg-[#74C7F2] text-white px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
+                      {gig.matchScore}% Match
+                    </div>
+
+                    <WorkerCard
+                      gigId={gig.gigId}
+                      sellerId={gig.sellerId}
+                      name={gig.name}
+                      image={gig.image}
+                      rating={gig.rating}
+                      reviews={gig.reviews}
+                      available={gig.available}
+                      experience={gig.experience}
+                      distance={gig.distance}
+                      bio={gig.bio}
+                      skills={gig.skills}
+                      jobsCompleted={gig.jobsCompleted}
+                      rate={gig.rate}
                     />
                   </div>
                 ))}
@@ -274,6 +313,8 @@ const AllServices = () => {
             </p>
           </div>
         )}
+
+
 
         {/* Search Info */}
         {(category ||

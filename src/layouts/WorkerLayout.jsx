@@ -82,7 +82,7 @@ const WorkerNavbar = () => {
 
             {/* Right Icons - Far Right */}
             <div className="hidden md:flex items-center space-x-2 shrink-0">
-              <div onClick={() => navigate("/chat")}>
+              <div onClick={() => navigate("/worker-chat")}>
                 <IconButton
                   icon={<FiMessageSquare size={14} color="#74C7F2" />}
                 />
@@ -168,7 +168,7 @@ const WorkerNavbar = () => {
                   <MobileNavItem
                     icon={<FiMessageSquare size={14} />}
                     label="Messages"
-                    to="/chat"
+                    to="/worker-chat"
                     onNavigate={() => setIsMobileMenuOpen(false)}
                   />
                   <MobileNavItem

@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MessageSquare } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { ROLES } from '../../constants/roles';
 
 const MessageButton = ({ 
   participantId, 
@@ -10,14 +12,19 @@ const MessageButton = ({
   size = "default" // "small", "default", "large"
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleStartChat = async () => {
     try {
       console.log('🚀 Starting chat with:', { participantId, participantRole, participantName });
       
-      // Just navigate to chat page with the participant ID
-      // The chat page will handle fetching/creating the conversation
-      navigate(`/chat?user=${participantId}`);
+      // Determine chat route based on current user's role
+      const userRole = user?.role || localStorage.getItem("userRole");
+      const isWorker = userRole === ROLES.WORKER || userRole === "seller" || userRole === "worker";
+      const chatRoute = isWorker ? '/worker-chat' : '/customer-chat';
+      
+      // Navigate to appropriate chat page with the participant ID
+      navigate(`${chatRoute}?conversation=${participantId}`);
       
     } catch (error) {
       console.error('❌ Failed to navigate to chat:', error);

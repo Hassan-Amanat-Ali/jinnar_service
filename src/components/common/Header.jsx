@@ -64,7 +64,7 @@ export default function Navbar() {
 
             {/* Right Icons - Desktop */}
             <div className="hidden md:flex items-center space-x-3 cursop">
-              <div onClick={() => navigate("/chat")}>
+              <div onClick={() => navigate("/customer-chat")}>
                 <IconButton
                   icon={<MessageSquare size={14} color="#74C7F2" />}
                   className={"border-0 cursor-pointer"}
@@ -154,7 +154,7 @@ export default function Navbar() {
                   <MobileNavItem
                     icon={<MessageSquare size={14} />}
                     label="Messages"
-                    to="/chat"
+                    to="/customer-chat"
                     onNavigate={() => setIsMobileMenuOpen(false)}
                   />
                   <MobileNavItem

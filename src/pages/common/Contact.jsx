@@ -4,8 +4,8 @@ const contactDetails = [
   {
     icon: Mail,
     label: "Email",
-    value: "hello@workconnect.com",
-    href: "mailto:hello@workconnect.com",
+    value: "support@jinnar.com",
+    href: "mailto:support@jinnar.com",
   },
   {
     icon: Phone,
@@ -21,7 +21,7 @@ const contactDetails = [
   {
     icon: MapPin,
     label: "Location",
-    value: "San Francisco, CA",
+    value: "9550 Spring Green BLVD, STE 408-336, Katy, TX 77494",
   },
 ];
 

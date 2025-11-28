@@ -6,3 +6,4 @@ export * from "./workerApi";
 export * from "./chatApi";
 export * from "./chatbotApi";
 export * from "./faqApi";
+export * from "./orderApi";

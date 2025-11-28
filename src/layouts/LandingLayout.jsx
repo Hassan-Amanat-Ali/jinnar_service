@@ -43,6 +43,7 @@ const LandingHeader = () => {
     { to: "/what-is-jinnar", label: "What is Jinnar" },
     { to: "/landing-services", label: "Services" },
     { to: "/#top-workers", label: "Workers" },
+    { to: "/how-training-works", label: "Free Training" },
     { to: "/help", label: "Help" },
   ];
 

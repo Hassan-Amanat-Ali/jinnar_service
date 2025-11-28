@@ -56,15 +56,18 @@ const SectionCard = ({ title, children, className = "" }) => (
 const BookingDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
+
   // DEBUG LOGS
   console.log("=== BOOKING DETAIL DEBUG START ===");
   console.log("🔍 1. Route ID from useParams:", id);
   console.log("🔍 2. ID type:", typeof id);
   console.log("🔍 3. ID length:", id?.length);
   console.log("🔍 4. Current URL:", window.location.href);
-  console.log("🔍 5. ID is valid MongoDB ObjectId format:", /^[0-9a-fA-F]{24}$/.test(id));
-  
+  console.log(
+    "🔍 5. ID is valid MongoDB ObjectId format:",
+    /^[0-9a-fA-F]{24}$/.test(id)
+  );
+
   // Custom fetch hook as RTK Query replacement
   const [fetchState, setFetchState] = React.useState({
     data: null,
@@ -72,60 +75,65 @@ const BookingDetail = () => {
     error: null,
     isFetching: false,
     isSuccess: false,
-    isError: false
+    isError: false,
   });
 
   const customRefetch = React.useCallback(() => {
     if (!id || id.length !== 24) return;
-    
+
     console.log("🚀 CUSTOM FETCH - Starting API request for order:", id);
-    setFetchState(prev => ({ ...prev, isLoading: true, isFetching: true, error: null }));
-    
+    setFetchState((prev) => ({
+      ...prev,
+      isLoading: true,
+      isFetching: true,
+      error: null,
+    }));
+
     const token = localStorage.getItem("token");
     fetch(`https://jinnar-marketplace.onrender.com/api/orders/${id}`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     })
-    .then(response => {
-      console.log("🚀 Custom fetch response status:", response.status);
-      console.log("🚀 Custom fetch response ok:", response.ok);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      return response.json();
-    })
-    .then(data => {
-      console.log("🚀 Custom fetch response data:", data);
-      const order = data.order || data;
-      console.log("🚀 Extracted order:", order);
-      setFetchState({
-        data: order,
-        isLoading: false,
-        isFetching: false,
-        isSuccess: true,
-        isError: false,
-        error: null
+      .then((response) => {
+        console.log("🚀 Custom fetch response status:", response.status);
+        console.log("🚀 Custom fetch response ok:", response.ok);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log("🚀 Custom fetch response data:", data);
+        const order = data.order || data;
+        console.log("🚀 Extracted order:", order);
+        setFetchState({
+          data: order,
+          isLoading: false,
+          isFetching: false,
+          isSuccess: true,
+          isError: false,
+          error: null,
+        });
+      })
+      .catch((error) => {
+        console.log("🚀 Custom fetch error:", error);
+        setFetchState({
+          data: null,
+          isLoading: false,
+          isFetching: false,
+          isSuccess: false,
+          isError: true,
+          error: { message: error.message, status: error.status },
+        });
       });
-    })
-    .catch(error => {
-      console.log("🚀 Custom fetch error:", error);
-      setFetchState({
-        data: null,
-        isLoading: false,
-        isFetching: false,
-        isSuccess: false,
-        isError: true,
-        error: { message: error.message, status: error.status }
-      });
-    });
   }, [id]);
 
   React.useEffect(() => {
     customRefetch();
   }, [customRefetch]);
-  
+
   // Use custom fetch state instead of RTK Query (which has issues)
   const order = fetchState.data;
   const isLoading = fetchState.isLoading;
@@ -134,7 +142,7 @@ const BookingDetail = () => {
   const isSuccess = fetchState.isSuccess;
   const isError = fetchState.isError;
   const refetch = customRefetch;
-  
+
   // DEBUG LOGS for API response
   console.log("📡 5. Custom API Query ID being sent:", id);
   console.log("📡 6. Custom API isLoading:", isLoading);
@@ -146,14 +154,14 @@ const BookingDetail = () => {
   console.log("📡 9. Custom API error data:", error?.data);
   console.log("📡 10. Custom API error message:", error?.message);
   console.log("📡 11. Raw API response data:", order);
-  
+
   // Use the fetched data directly
   const finalOrder = order;
   const finalIsLoading = isLoading;
-  
+
   console.log("🔀 13. Final order (RTK or manual):", finalOrder);
   console.log("🔀 14. Final loading state:", finalIsLoading);
-  
+
   if (finalOrder) {
     console.log("✅ 15. ORDER EXISTS - Detailed breakdown:");
     console.log("   📋 Order _id:", finalOrder._id);
@@ -170,7 +178,7 @@ const BookingDetail = () => {
   } else {
     console.warn("❌ 15. NO ORDER DATA FOUND (neither RTK Query nor manual)");
   }
-  
+
   const [acceptJob, { isLoading: isAccepting }] = useAcceptJobMutation();
   const [declineJob, { isLoading: isDeclining }] = useDeclineJobMutation();
   const [reviewOrder, { isLoading: isReviewing }] = useReviewOrderMutation();
@@ -195,7 +203,7 @@ const BookingDetail = () => {
   const handleDecline = async () => {
     const reason = prompt("Please provide a reason for declining:");
     if (!reason) return;
-    
+
     try {
       await declineJob({ id: finalOrder._id, reason }).unwrap();
       refetch();
@@ -207,20 +215,18 @@ const BookingDetail = () => {
     }
   };
 
-
-
   // Handle review order
   const handleReview = async () => {
     if (!reviewText.trim()) {
       alert("Please provide a review");
       return;
     }
-    
+
     try {
       await reviewOrder({
         orderId: finalOrder._id,
         rating: rating.toString(), // API expects string
-        review: reviewText
+        review: reviewText,
       }).unwrap();
       refetch();
       setShowReviewModal(false);
@@ -237,11 +243,11 @@ const BookingDetail = () => {
   const formatDate = (dateString) => {
     if (!dateString) return "Not specified";
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -260,14 +266,19 @@ const BookingDetail = () => {
     const statusMap = {
       pending: { color: "bg-yellow-100 text-yellow-800", text: "Pending" },
       accepted: { color: "bg-blue-100 text-blue-800", text: "Accepted" },
-      "in-progress": { color: "bg-purple-100 text-purple-800", text: "In Progress" },
+      "in-progress": {
+        color: "bg-purple-100 text-purple-800",
+        text: "In Progress",
+      },
       completed: { color: "bg-green-100 text-green-800", text: "Completed" },
       cancelled: { color: "bg-red-100 text-red-800", text: "Cancelled" },
       declined: { color: "bg-gray-100 text-gray-800", text: "Declined" },
     };
     const badge = statusMap[status?.toLowerCase()] || statusMap.pending;
     return (
-      <span className={`px-3 py-1 rounded-full text-sm font-medium ${badge.color}`}>
+      <span
+        className={`px-3 py-1 rounded-full text-sm font-medium ${badge.color}`}
+      >
         {badge.text}
       </span>
     );
@@ -321,7 +332,7 @@ const BookingDetail = () => {
     console.warn("   ⚠️ finalOrder === undefined:", finalOrder === undefined);
     console.warn("   ⚠️ isLoading:", isLoading);
     console.warn("   ⚠️ error:", error);
-    
+
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center max-w-md mx-auto p-6">
@@ -360,12 +371,15 @@ const BookingDetail = () => {
   // Extract data from the order - using correct API field names
   const customer = finalOrder?.buyerId || {}; // Changed from customerId to buyerId
   const gig = finalOrder?.gigId || {}; // Changed from serviceId to gigId
-  
+
   // Log successful order loading
   console.log("✅ ORDER LOADED SUCCESSFULLY - About to render");
   console.log("✅ Will render with gig title:", gig?.title || "Service");
-  console.log("✅ Will render with customer name:", customer?.name || customer?.mobileNumber || "Customer");
-  
+  console.log(
+    "✅ Will render with customer name:",
+    customer?.name || customer?.mobileNumber || "Customer"
+  );
+
   if (finalOrder) {
     console.log("👤 13. CUSTOMER (buyerId) breakdown:");
     console.log("   👤 Customer object:", customer);
@@ -373,7 +387,7 @@ const BookingDetail = () => {
     console.log("   👤 Customer name:", customer.name);
     console.log("   👤 Customer mobileNumber:", customer.mobileNumber);
     console.log("   👤 Customer email:", customer.email);
-    
+
     console.log("🔧 14. GIG (gigId) breakdown:");
     console.log("   🔧 Gig object:", gig);
     console.log("   🔧 Gig _id:", gig._id);
@@ -381,13 +395,16 @@ const BookingDetail = () => {
     console.log("   🔧 Gig skills:", gig.skills);
     console.log("   🔧 Gig images:", gig.images);
     console.log("   🔧 Gig images count:", gig.images?.length);
-    
+
     console.log("🎯 15. COMPUTED VALUES:");
     console.log("   🎯 Display title:", gig.title || "Service");
-    console.log("   🎯 Display customer name:", customer.name || customer.mobileNumber || "Customer");
+    console.log(
+      "   🎯 Display customer name:",
+      customer.name || customer.mobileNumber || "Customer"
+    );
     console.log("   🎯 Formatted date would be:", finalOrder.date);
     console.log("   🎯 Formatted time would be:", finalOrder.timeSlot);
-    
+
     console.log("📍 16. LOCATION breakdown:");
     if (finalOrder.location) {
       console.log("   📍 Location object:", finalOrder.location);
@@ -419,7 +436,7 @@ const BookingDetail = () => {
                 <div className="flex justify-center">
                   {getStatusBadge(finalOrder.status)}
                 </div>
-                {finalOrder.status === 'pending' && (
+                {finalOrder.status === "pending" && (
                   <div className="mt-4 space-y-2">
                     <button
                       onClick={handleAccept}
@@ -448,7 +465,7 @@ const BookingDetail = () => {
                   </div>
                 )}
 
-                {finalOrder.status === 'completed' && !finalOrder.review && (
+                {finalOrder.status === "completed" && !finalOrder.review && (
                   <div className="mt-4">
                     <button
                       onClick={() => setShowReviewModal(true)}
@@ -465,13 +482,19 @@ const BookingDetail = () => {
               <SectionCard title="Customer Information">
                 <div className="flex flex-col items-center text-center mb-4">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
-                    {customer.name?.charAt(0) || customer.mobileNumber?.charAt(0) || "C"}
+                    {customer.name?.charAt(0) ||
+                      customer.mobileNumber?.charAt(0) ||
+                      "C"}
                   </div>
-                  <h4 className="mt-3 font-bold text-lg">{customer.name || "Customer"}</h4>
+                  <h4 className="mt-3 font-bold text-lg">
+                    {customer.name || "Customer"}
+                  </h4>
                   {customer.rating && (
                     <div className="flex items-center gap-1 mt-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-semibold">{customer.rating}</span>
+                      <span className="text-sm font-semibold">
+                        {customer.rating}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -489,10 +512,13 @@ const BookingDetail = () => {
                       <span>{customer.email}</span>
                     </div>
                   )}
-                  {(finalOrder.location?.lat && finalOrder.location?.lng) && (
+                  {finalOrder.location?.lat && finalOrder.location?.lng && (
                     <div className="flex items-start gap-3 text-sm">
                       <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                      <span>Lat: {finalOrder.location.lat.toFixed(4)}, Lng: {finalOrder.location.lng.toFixed(4)}</span>
+                      <span>
+                        Lat: {finalOrder.location.lat.toFixed(4)}, Lng:{" "}
+                        {finalOrder.location.lng.toFixed(4)}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -515,25 +541,34 @@ const BookingDetail = () => {
                     <Wrench className="w-6 h-6 text-blue-600" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-bold text-lg">{gig.title || "Service"}</h4>
-                    <p className="text-gray-600 text-sm mt-1">Gig ID: {gig._id || "N/A"}</p>
+                    <h4 className="font-bold text-lg">
+                      {gig.title || "Service"}
+                    </h4>
+                    <p className="text-gray-600 text-sm mt-1">
+                      Gig ID: {gig._id || "N/A"}
+                    </p>
                   </div>
                 </div>
 
                 {/* Service Images */}
                 {gig.images && gig.images.length > 0 && (
                   <div className="mb-4">
-                    <h5 className="font-semibold text-sm text-gray-700 mb-3">Service Images</h5>
+                    <h5 className="font-semibold text-sm text-gray-700 mb-3">
+                      Service Images
+                    </h5>
                     <div className="grid grid-cols-2 gap-3">
                       {gig.images.slice(0, 4).map((image, index) => (
-                        <div key={image._id || index} className="relative aspect-square rounded-lg overflow-hidden">
-                          <img 
-                            src={image.url} 
+                        <div
+                          key={image._id || index}
+                          className="relative aspect-square rounded-lg overflow-hidden"
+                        >
+                          <img
+                            src={image.url}
                             alt={`Service image ${index + 1}`}
                             className="w-full h-full object-cover hover:scale-105 transition-transform"
                             onError={(e) => {
-                              e.target.src = '/placeholder-image.jpg';
-                              e.target.alt = 'Image not available';
+                              e.target.src = "/placeholder-image.jpg";
+                              e.target.alt = "Image not available";
                             }}
                           />
                         </div>
@@ -549,11 +584,15 @@ const BookingDetail = () => {
 
                 {finalOrder.jobDescription && (
                   <div className="mt-4">
-                    <h5 className="font-semibold text-sm text-gray-700 mb-2">Job Description</h5>
-                    <p className="text-gray-600 text-sm">{finalOrder.jobDescription}</p>
+                    <h5 className="font-semibold text-sm text-gray-700 mb-2">
+                      Job Description
+                    </h5>
+                    <p className="text-gray-600 text-sm">
+                      {finalOrder.jobDescription}
+                    </p>
                   </div>
                 )}
-                
+
                 {finalOrder.emergency && (
                   <div className="mt-4">
                     <span className="inline-flex items-center px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
@@ -564,14 +603,18 @@ const BookingDetail = () => {
 
                 {finalOrder.specialInstructions && (
                   <div className="mt-4">
-                    <h5 className="font-semibold text-sm text-gray-700 mb-2">Special Instructions</h5>
+                    <h5 className="font-semibold text-sm text-gray-700 mb-2">
+                      Special Instructions
+                    </h5>
                     <ul className="space-y-1 text-sm text-gray-600">
-                      {finalOrder.specialInstructions.split('\n').map((instruction, idx) => (
-                        <li key={idx} className="flex items-start gap-2">
-                          <span className="text-blue-600 mt-1">•</span>
-                          <span>{instruction}</span>
-                        </li>
-                      ))}
+                      {finalOrder.specialInstructions
+                        .split("\n")
+                        .map((instruction, idx) => (
+                          <li key={idx} className="flex items-start gap-2">
+                            <span className="text-blue-600 mt-1">•</span>
+                            <span>{instruction}</span>
+                          </li>
+                        ))}
                     </ul>
                   </div>
                 )}
@@ -583,23 +626,28 @@ const BookingDetail = () => {
                   <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
                     <Calendar className="w-5 h-5 text-blue-600 mb-2" />
                     <div className="text-xs text-gray-600">Date</div>
-                    <div className="font-semibold mt-1">{formatDate(finalOrder.date)}</div>
+                    <div className="font-semibold mt-1">
+                      {formatDate(finalOrder.date)}
+                    </div>
                   </div>
                   <div className="p-4 rounded-xl bg-blue-50 border border-blue-100">
                     <Clock className="w-5 h-5 text-blue-600 mb-2" />
                     <div className="text-xs text-gray-600">Time</div>
-                    <div className="font-semibold mt-1">{formatTimeSlot(finalOrder.timeSlot)}</div>
+                    <div className="font-semibold mt-1">
+                      {formatTimeSlot(finalOrder.timeSlot)}
+                    </div>
                   </div>
                 </div>
 
-                {(finalOrder.location?.lat && finalOrder.location?.lng) && (
+                {finalOrder.location?.lat && finalOrder.location?.lng && (
                   <div className="mt-4 p-4 rounded-xl bg-gray-50 border border-gray-100">
                     <div className="flex items-start gap-3">
                       <MapPin className="w-5 h-5 text-blue-600 mt-0.5" />
                       <div className="flex-1">
                         <div className="font-semibold">Service Location</div>
                         <div className="text-sm text-gray-600 mt-1">
-                          Latitude: {finalOrder.location.lat}<br/>
+                          Latitude: {finalOrder.location.lat}
+                          <br />
                           Longitude: {finalOrder.location.lng}
                         </div>
                       </div>
@@ -613,50 +661,73 @@ const BookingDetail = () => {
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <span className="text-gray-600">Created:</span>
-                      <div className="font-medium">{formatDate(finalOrder.createdAt)}</div>
+                      <div className="font-medium">
+                        {formatDate(finalOrder.createdAt)}
+                      </div>
                     </div>
                     <div>
                       <span className="text-gray-600">Updated:</span>
-                      <div className="font-medium">{formatDate(finalOrder.updatedAt)}</div>
+                      <div className="font-medium">
+                        {formatDate(finalOrder.updatedAt)}
+                      </div>
                     </div>
                   </div>
                   {finalOrder.rating && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
                       <span className="text-gray-600">Rating:</span>
                       <div className="flex items-center gap-1 mt-1">
-                        {[1,2,3,4,5].map(star => (
-                          <Star 
-                            key={star} 
-                            className={`w-4 h-4 ${star <= finalOrder.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-4 h-4 ${
+                              star <= finalOrder.rating
+                                ? "text-yellow-400 fill-current"
+                                : "text-gray-300"
+                            }`}
                           />
                         ))}
-                        <span className="ml-2 text-sm font-medium">{finalOrder.rating}/5</span>
+                        <span className="ml-2 text-sm font-medium">
+                          {finalOrder.rating}/5
+                        </span>
                       </div>
                       {finalOrder.review && (
-                        <p className="text-sm text-gray-600 mt-2">{finalOrder.review}</p>
+                        <p className="text-sm text-gray-600 mt-2">
+                          {finalOrder.review}
+                        </p>
                       )}
                     </div>
                   )}
                 </div>
               </SectionCard>
+              {console.log("Rendering Pricing Details section...", finalOrder)}
 
               {/* Pricing Details */}
               <SectionCard title="Pricing Details">
                 <div className="space-y-3">
-                  <LabelValue label="Pricing Type" value={finalOrder.pricingType || "Fixed Price"} />
-                  <LabelValue 
-                    label="Service Fee" 
-                    value="Price not available" 
+                  <LabelValue
+                    label="Pricing Type"
+                    value={finalOrder.pricingType || "Fixed Price"}
+                  />
+                  <LabelValue
+                    label="Service Fee"
+                    value={finalOrder.price}
                     valueClass="text-lg font-bold text-blue-600"
                   />
                   {finalOrder.paymentMethod && (
-                    <LabelValue label="Payment Method" value={finalOrder.paymentMethod} />
+                    <LabelValue
+                      label="Payment Method"
+                      value={finalOrder.paymentMethod}
+                    />
                   )}
                   {finalOrder.paymentStatus && (
-                    <LabelValue 
-                      label="Payment Status" 
+                    <LabelValue
+                      label="Payment Status"
                       value={finalOrder.paymentStatus}
-                      valueClass={finalOrder.paymentStatus === 'paid' ? 'text-green-600' : 'text-yellow-600'}
+                      valueClass={
+                        finalOrder.paymentStatus === "paid"
+                          ? "text-green-600"
+                          : "text-yellow-600"
+                      }
                     />
                   )}
                 </div>
@@ -666,25 +737,28 @@ const BookingDetail = () => {
         </div>
       </section>
 
-
-
       {/* Review Modal */}
       {showReviewModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold">Review Order</h3>
-              <button onClick={() => setShowReviewModal(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+              <button
+                onClick={() => setShowReviewModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
                 <X size={20} />
               </button>
             </div>
             <p className="text-sm text-gray-600 mb-4">
               Please rate your experience and leave a review.
             </p>
-            
+
             {/* Rating Stars */}
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rating
+              </label>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button

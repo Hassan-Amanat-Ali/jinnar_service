@@ -273,7 +273,7 @@ const WorkerProfile = () => {
                 <button
                   className="w-full justify-center rounded-md border border-[#74C7F2] bg-white px-4 py-3 text-sm font-semibold text-[#74C7F2] shadow-sm hover:bg-gray-50 inline-flex items-center gap-2 cursor-pointer"
                   aria-label="Message Worker"
-                  onClick={() => navigate("/chat")}
+                  onClick={() => navigate(`/customer-chat?conversation=${profile._id || id}`)}
                 >
                   <MessageCircle size={18} /> Message
                 </button>

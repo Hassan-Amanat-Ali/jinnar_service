@@ -14,7 +14,8 @@ import ResetPassword from "../pages/common/ResetPassword.jsx";
 import Help from "../pages/common/Help.jsx";
 import Contact from "../pages/common/Contact.jsx";
 import Notifications from "../pages/common/Notifications.jsx";
-import Chat from "../pages/common/Chat.jsx";
+import Chat from "../pages/customer/Chat.jsx";
+import Chat1 from "../pages/worker/Chat.jsx";
 import Profile from "../pages/common/Profile.jsx";
 import Complaint from "../pages/common/Complaint.jsx";
 import CustomerHome from "../pages/customer/Home.jsx";
@@ -78,10 +79,9 @@ const router = createBrowserRouter([
     children: [
       // Common pages
       { path: "contact", element: <Contact /> },
-
+      // { path: "chat", element: <Chat /> },
       { path: "privacy", element: <PrivacyPolicies /> },
       { path: "notifications", element: <Notifications /> },
-      { path: "chat", element: <Chat /> },
       { path: "profile", element: <Profile /> },
       { path: "complaint", element: <Complaint /> },
 
@@ -91,6 +91,14 @@ const router = createBrowserRouter([
         element: (
           <RoleGuard allow={[ROLES.CUSTOMER, ROLES.WORKER]}>
             <CustomerHome />
+          </RoleGuard>
+        ),
+      },
+      {
+        path: "customer-chat",
+        element: (
+          <RoleGuard allow={[ROLES.CUSTOMER, ROLES.WORKER]}>
+            <Chat />
           </RoleGuard>
         ),
       },
@@ -188,6 +196,8 @@ const router = createBrowserRouter([
       { path: "wallet", element: <Wallet /> },
       { path: "payment-methods", element: <PaymentMethods /> },
       { path: "worker/profile", element: <Profile /> },
+      { path: "worker-chat", element: <Chat1 /> },
+
       { path: "worker/profile/verification", element: <AccountVerification /> },
     ],
   },

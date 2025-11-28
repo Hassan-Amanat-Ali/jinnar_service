@@ -171,7 +171,7 @@ const HowTrainingWorks = () => {
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <a
-                href="https://jinnar.vercel.app/signup"
+                href="https://training.jinnar.com/signup"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-primary"
@@ -286,7 +286,7 @@ const HowTrainingWorks = () => {
 
             <Motion.div variants={fadeUp} className="text-center mt-8">
               <a
-                href="https://jinnar.vercel.app/courses"
+                href="https://training.jinnar.coms"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-primary"

@@ -13,8 +13,9 @@ const Landing = () => {
       <Hero />
       <HowItWorks />
       {/* <PopularServices /> */}
-      <FeaturedCourses />
       <TopWorkers />
+
+      <FeaturedCourses />
       {/* <Testimonials /> */}
       <SiteFooter />
     </div>
