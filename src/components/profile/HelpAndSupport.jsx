@@ -19,7 +19,7 @@ import {
   useGetMyTicketsQuery,
 } from "../../services/supportApi";
 import toast from "react-hot-toast";
-
+import {useAuth} from "../../context/AuthContext"
 const HelpAndSupport = () => {
   const navigate = useNavigate();
   const [openFaqs, setOpenFaqs] = useState({});
@@ -29,6 +29,9 @@ const HelpAndSupport = () => {
     message: "",
   });
 
+  const { user } = useAuth();
+  const isLoggedIn = !!user; // User is logged in if the 'user' object exists
+
   // Fetch FAQs from API
   const {
     data: faqCategories = [],
@@ -37,13 +40,15 @@ const HelpAndSupport = () => {
   } = useGetHelpFaqsQuery();
 
   // Fetch user's support tickets
-  const {
+const {
     data: ticketsData,
     isLoading: isLoadingTickets,
     isError: isErrorTickets,
     refetch: refetchTickets,
-  } = useGetMyTicketsQuery();
-
+    // 3. FIX: Conditionally skip the query if the user is not logged in
+  } = useGetMyTicketsQuery(undefined, {
+    skip: !isLoggedIn, 
+  });
   // Create support ticket mutation
   const [createTicket, { isLoading: isSubmitting }] =
     useCreateSupportTicketMutation();
