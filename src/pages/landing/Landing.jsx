@@ -1,7 +1,10 @@
 import Hero from "../../components/common/Hero";
 import Nav from "../../components/services/LandingNav.jsx";
 import WorkerCard from "../../components/services/WorkerCard";
-import { useSearchGigsQuery } from "../../services/workerApi";
+import {
+  useSearchGigsQuery,
+  useGetCategoriesQuery,
+} from "../../services/workerApi";
 import { useGetRecommendedWorkersMutation } from "../../services/recommendationApi";
 import { useSearchParams } from "react-router-dom";
 import SiteFooter from "../../components/Landing/SiteFooter.jsx";
@@ -32,8 +35,11 @@ const AllServicesLanding = () => {
     { data: recommendedData, isLoading: isRecommending },
   ] = useGetRecommendedWorkersMutation();
 
-  const category = searchParams.get("category");
-  const subcategory = searchParams.get("subcategory");
+  // Fetch categories to resolve names from IDs
+  const { data: categoriesData } = useGetCategoriesQuery();
+
+  const categoryId = searchParams.get("categoryId");
+  const subcategoryId = searchParams.get("subcategory");
   const location = searchParams.get("location");
   const searchParam = searchParams.get("search");
 
@@ -87,17 +93,17 @@ const AllServicesLanding = () => {
     }
 
     // Add category filter
-    if (category) {
-      params.category = category;
+    if (categoryId) {
+      params.category = categoryId;
     }
 
     // Add subcategory filter
-    if (subcategory) {
-      params.subcategory = subcategory;
+    if (subcategoryId) {
+      params.subcategory = subcategoryId;
     }
 
     return params;
-  }, [userLocation, debouncedSearchTerm, category, subcategory]);
+  }, [userLocation, debouncedSearchTerm, categoryId, subcategoryId]);
 
   // Use searchGigs API with location and filters
   const { data, isLoading, error } = useSearchGigsQuery(searchApiParams);
@@ -216,18 +222,6 @@ const AllServicesLanding = () => {
     }));
   }, [recommendedData]);
 
-  // Filter by location param (for URL-based location filtering)
-  const filteredGigsData = useMemo(() => {
-    if (!location) return gigsData;
-
-    // Location filtering is now handled by the API when we have user coordinates
-    // This is just for URL-based location text filtering
-    const locationLower = location.toLowerCase();
-    return gigsData.filter((gig) =>
-      gig.bio?.toLowerCase().includes(locationLower)
-    );
-  }, [gigsData, location]);
-
   return (
     <>
       <style>{`
@@ -342,15 +336,14 @@ const AllServicesLanding = () => {
         {debouncedSearchTerm.trim() && !showRecommendations && (
           <div className="text-center mb-4">
             <p className="text-sm text-gray-600">
-              {filteredGigsData.length} results found for "{debouncedSearchTerm}
-              "
+              {gigsData.length} results found for "{debouncedSearchTerm}"
             </p>
           </div>
         )}
 
         {/* Search Info */}
-        {(category ||
-          subcategory ||
+        {(categoryId ||
+          subcategoryId ||
           location ||
           (debouncedSearchTerm.trim() && !showRecommendations)) && (
           <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -362,14 +355,14 @@ const AllServicesLanding = () => {
                 "{debouncedSearchTerm}"
               </span>
             )}
-            {category && (
+            {categoryId && (
               <span className="bg-[#B6E0FE] text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
-                {formatFilterName(category)}
+                {formatFilterName(categoryId)}
               </span>
             )}
-            {subcategory && (
+            {subcategoryId && (
               <span className="bg-[#74C7F2] text-white px-3 py-1 rounded-full text-sm font-medium">
-                {formatFilterName(subcategory)}
+                {formatFilterName(subcategoryId)}
               </span>
             )}
             {location && (
@@ -462,18 +455,18 @@ const AllServicesLanding = () => {
               {error?.data?.error || "Please try again later"}
             </p>
           </div>
-        ) : filteredGigsData.length === 0 ? (
+        ) : gigsData.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 mb-2">No services available</p>
             <p className="text-gray-500">
-              {category || subcategory || debouncedSearchTerm
+              {categoryId || subcategoryId || debouncedSearchTerm
                 ? "Try adjusting your filters or search term"
                 : "Check back later for new services"}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6 place-items-center md:place-items-stretch">
-            {filteredGigsData.map((gig) => (
+            {gigsData.map((gig) => (
               <WorkerCard
                 key={gig.id}
                 gigId={gig.gigId}

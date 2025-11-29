@@ -18,7 +18,8 @@ const AllServices = () => {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [showRecommendations, setShowRecommendations] = useState(false);
 
-  const category = searchParams.get("category");
+  const categoryId = searchParams.get("category");
+  const subcategoryId = searchParams.get("subcategory");
   const searchParam = searchParams.get("search");
   const budget = searchParams.get("budget");
 
@@ -165,22 +166,22 @@ const AllServices = () => {
       });
     }
 
-    // Filter by category (skill)
-    if (category) {
+    // Filter by category ID
+    if (categoryId) {
       filtered = filtered.filter((gig) => {
-        const categoryLower = category.toLowerCase();
-        return (
-          gig.name.toLowerCase().includes(categoryLower) ||
-          gig.sellerSkills.some((skill) =>
-            skill.toLowerCase().includes(categoryLower)
-          ) ||
-          gig.bio?.toLowerCase().includes(categoryLower)
-        );
+        return gig.category === categoryId;
+      });
+    }
+
+    // Filter by subcategory ID
+    if (subcategoryId) {
+      filtered = filtered.filter((gig) => {
+        return gig.subcategories.some((sub) => sub._id === subcategoryId);
       });
     }
 
     return filtered;
-  }, [allGigsData, debouncedSearchTerm, category]);
+  }, [allGigsData, debouncedSearchTerm, categoryId, subcategoryId]);
 
   return (
     <>
@@ -317,7 +318,7 @@ const AllServices = () => {
 
 
         {/* Search Info */}
-        {(category ||
+        {(categoryId ||
           budget ||
           (debouncedSearchTerm.trim() && !showRecommendations)) && (
           <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -329,10 +330,8 @@ const AllServices = () => {
                 "{debouncedSearchTerm}"
               </span>
             )}
-            {category && (
-              <span className="bg-[#B6E0FE] text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
-                {category.charAt(0).toUpperCase() + category.slice(1)}
-              </span>
+            {categoryId && (
+              <span className="bg-[#B6E0FE] text-gray-700 px-3 py-1 rounded-full text-sm font-medium">Category</span>
             )}
             {budget && (
               <span className="bg-purple-50 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">

@@ -21,8 +21,8 @@ const Nav = () => {
   const { data: categoriesData, isLoading: categoriesLoading } =
     useGetCategoriesQuery();
 
-  const categoryParam = searchParams.get("category");
-  const subcategoryParam = searchParams.get("subcategory");
+  const categoryIdParam = searchParams.get("category");
+  const subcategoryIdParam = searchParams.get("subcategory");
 
   const [selectedCategory, setSelectedCategory] = React.useState(null);
   const [showSubcategories, setShowSubcategories] = React.useState(false);
@@ -45,18 +45,14 @@ const Nav = () => {
 
   // Set initial selection from URL params
   React.useEffect(() => {
-    if (categoryParam && categories.length > 0) {
-      const found = categories.find(
-        (cat) =>
-          cat.value === categoryParam ||
-          cat.name.toLowerCase() === categoryParam.toLowerCase()
-      );
+    if (categoryIdParam && categories.length > 0) {
+      const found = categories.find((cat) => cat._id === categoryIdParam);
       if (found) {
         setSelectedCategory(found);
         setShowSubcategories(true);
       }
     }
-  }, [categoryParam, categories]);
+  }, [categoryIdParam, categories]);
 
   const handleCategoryClick = (e, category) => {
     e.preventDefault();
@@ -72,7 +68,7 @@ const Nav = () => {
     } else {
       setSelectedCategory(category);
       setShowSubcategories(true);
-      setSearchParams({ category: category.value }, { replace: true });
+      setSearchParams({ category: category._id }, { replace: true });
     }
 
     // Restore scroll position after React updates - use multiple frames for reliability
@@ -92,7 +88,7 @@ const Nav = () => {
     const scrollY = window.scrollY;
 
     setSearchParams(
-      { category: selectedCategory.value, subcategory: subcategory.value },
+      { category: selectedCategory._id, subcategory: subcategory._id },
       { replace: true }
     );
 
@@ -173,7 +169,7 @@ const Nav = () => {
                   <button
                     key={subcategory._id}
                     className={`cursor-pointer shrink-0 text-xs px-2.5 sm:px-3 md:px-4 py-1 sm:py-1.5 rounded-xl whitespace-nowrap transition-all duration-200 ${
-                      subcategoryParam === subcategory.value
+                      subcategoryIdParam === subcategory._id
                         ? "bg-[#74C7F2] text-white font-medium"
                         : "bg-white text-gray-600 hover:bg-gray-200 border border-gray-200"
                     }`}
