@@ -1,46 +1,111 @@
 import React from "react";
-import { useGetCategoriesQuery } from "../../services/workerApi";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  useGetCategoriesQuery,
+  useGetSubcategoriesQuery,
+} from "../../services/workerApi";
+import { useSearchParams } from "react-router-dom";
+
+// Helper function to format category/subcategory names nicely
+const formatName = (name) => {
+  if (!name) return "";
+  // Replace dashes and underscores with spaces, then capitalize each word
+  return name
+    .replace(/[-_]/g, " ")
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
 
 const Nav = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { data: categoriesData, isLoading } = useGetCategoriesQuery();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { data: categoriesData, isLoading: categoriesLoading } =
+    useGetCategoriesQuery();
 
   const categoryParam = searchParams.get("category");
-  const [selectedService, setSelectedService] = React.useState(
-    categoryParam || "All"
-  );
+  const subcategoryParam = searchParams.get("subcategory");
 
-  // Combine "All" with API categories
-  const services = React.useMemo(() => {
-    const apiCategories = categoriesData?.skills || [];
-    return [
-      "All",
-      ...apiCategories.map((cat) => cat.charAt(0).toUpperCase() + cat.slice(1)),
-    ];
+  const [selectedCategory, setSelectedCategory] = React.useState(null);
+  const [showSubcategories, setShowSubcategories] = React.useState(false);
+
+  // Get subcategories for selected category
+  const { data: subcategoriesData, isLoading: subcategoriesLoading } =
+    useGetSubcategoriesQuery(selectedCategory?._id, {
+      skip: !selectedCategory?._id,
+    });
+
+  // Categories array from API
+  const categories = React.useMemo(() => {
+    return categoriesData || [];
   }, [categoriesData]);
 
+  // Subcategories array from API
+  const subcategories = React.useMemo(() => {
+    return subcategoriesData || [];
+  }, [subcategoriesData]);
+
+  // Set initial selection from URL params
   React.useEffect(() => {
-    if (categoryParam) {
-      setSelectedService(
-        categoryParam.charAt(0).toUpperCase() + categoryParam.slice(1)
+    if (categoryParam && categories.length > 0) {
+      const found = categories.find(
+        (cat) =>
+          cat.value === categoryParam ||
+          cat.name.toLowerCase() === categoryParam.toLowerCase()
       );
+      if (found) {
+        setSelectedCategory(found);
+        setShowSubcategories(true);
+      }
     }
-  }, [categoryParam]);
+  }, [categoryParam, categories]);
 
-  const handleServiceClick = (service) => {
-    setSelectedService(service);
+  const handleCategoryClick = (e, category) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-    // Update URL with filter
-    if (service === "All") {
-      navigate("/services");
+    // Save scroll position
+    const scrollY = window.scrollY;
+
+    if (category === "All") {
+      setSelectedCategory(null);
+      setShowSubcategories(false);
+      setSearchParams({}, { replace: true });
     } else {
-      const params = new URLSearchParams(searchParams);
-      params.set("category", service.toLowerCase());
-      navigate(`/services?${params.toString()}`);
+      setSelectedCategory(category);
+      setShowSubcategories(true);
+      setSearchParams({ category: category.value }, { replace: true });
     }
+
+    // Restore scroll position after React updates
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollY);
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollY);
+      });
+    });
   };
+
+  const handleSubcategoryClick = (e, subcategory) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Save scroll position
+    const scrollY = window.scrollY;
+
+    setSearchParams(
+      { category: selectedCategory.value, subcategory: subcategory.value },
+      { replace: true }
+    );
+
+    // Restore scroll position after React updates
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollY);
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollY);
+      });
+    });
+  };
+
+  const isLoading = categoriesLoading;
 
   return (
     <>
@@ -53,29 +118,80 @@ const Nav = () => {
           scrollbar-width: none;
         }
       `}</style>
+
+      {/* Categories Row */}
       <div className="w-full flex justify-center px-2 sm:px-4">
         <div className="max-w-[1200px] w-full overflow-x-auto scrollbar-hide">
           <div className="flex items-center justify-start gap-2 sm:gap-3 py-3">
             {isLoading ? (
               <div className="text-gray-500 text-sm">Loading categories...</div>
             ) : (
-              services.map((service, index) => (
+              <>
+                {/* All Button */}
                 <button
-                  key={index}
                   className={`cursor-pointer shrink-0 text-xs px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-2xl whitespace-nowrap transition-all duration-200 ${
-                    selectedService === service
+                    !selectedCategory
                       ? "bg-linear-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium"
                       : "bg-[#F2F2F2] text-gray-600 hover:bg-gray-300"
                   }`}
-                  onClick={() => handleServiceClick(service)}
+                  onClick={(e) => handleCategoryClick(e, "All")}
                 >
-                  {service}
+                  All
                 </button>
-              ))
+
+                {/* Category Buttons */}
+                {categories.map((category) => (
+                  <button
+                    key={category._id}
+                    className={`cursor-pointer shrink-0 text-xs px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-2xl whitespace-nowrap transition-all duration-200 ${
+                      selectedCategory?._id === category._id
+                        ? "bg-linear-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium"
+                        : "bg-[#F2F2F2] text-gray-600 hover:bg-gray-300"
+                    }`}
+                    onClick={(e) => handleCategoryClick(e, category)}
+                  >
+                    {formatName(category.name)}
+                  </button>
+                ))}
+              </>
             )}
           </div>
         </div>
       </div>
+
+      {/* Subcategories Row - Shows when a category is selected */}
+      {showSubcategories && selectedCategory && (
+        <div className="w-full flex justify-center px-2 sm:px-4 bg-gray-50">
+          <div className="max-w-[1200px] w-full overflow-x-auto scrollbar-hide">
+            <div className="flex items-center justify-start gap-2 sm:gap-3 py-2">
+              {subcategoriesLoading ? (
+                <div className="text-gray-400 text-xs">
+                  Loading subcategories...
+                </div>
+              ) : subcategories.length > 0 ? (
+                subcategories.map((subcategory) => (
+                  <button
+                    key={subcategory._id}
+                    className={`cursor-pointer shrink-0 text-xs px-2.5 sm:px-3 md:px-4 py-1 sm:py-1.5 rounded-xl whitespace-nowrap transition-all duration-200 ${
+                      subcategoryParam === subcategory.value
+                        ? "bg-[#74C7F2] text-white font-medium"
+                        : "bg-white text-gray-600 hover:bg-gray-200 border border-gray-200"
+                    }`}
+                    onClick={(e) => handleSubcategoryClick(e, subcategory)}
+                  >
+                    {formatName(subcategory.name)}
+                  </button>
+                ))
+              ) : (
+                <div className="text-gray-400 text-xs">
+                  No subcategories available
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <hr className="border-[1px] border-t border-gray-200 mt-2 sm:mt-4" />
     </>
   );

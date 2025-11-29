@@ -17,23 +17,27 @@ const Hero = () => {
   const { data: categoriesData, isLoading: categoriesLoading } =
     useGetCategoriesQuery();
 
-  // Extract categories from API response with fallback
-  const categories = categoriesData?.skills || [
-    "House Cleaning",
-    "Carpentry",
-    "Electrical Work",
-    "Plumbing",
-    "Home Repair",
-    "Auto Repairing",
-    "Pet Care",
-  ];
+  // Extract categories from API response (array of category objects)
+  const categories = categoriesData || [];
 
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategoryName, setSelectedCategoryName] = useState("");
   const [location, setLocation] = useState("");
 
-  const handleSelectCategory = (value) => {
-    setSelectedCategory(value);
+  // Helper function to format category names
+  const formatName = (name) => {
+    if (!name) return "";
+    return name
+      .replace(/[-_]/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  };
+
+  const handleSelectCategory = (category) => {
+    setSelectedCategory(category.value || category._id);
+    setSelectedCategoryName(formatName(category.name));
     setCategoryOpen(false);
   };
 
@@ -112,12 +116,12 @@ const Hero = () => {
                   >
                     <span
                       className={
-                        selectedCategory ? "text-black" : "text-black/50"
+                        selectedCategoryName ? "text-black" : "text-black/50"
                       }
                     >
                       {categoriesLoading
                         ? "Loading categories..."
-                        : selectedCategory || "Choose category"}
+                        : selectedCategoryName || "Choose category"}
                     </span>
                     <FiChevronDown
                       className={`absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none transition-transform duration-200 ${
@@ -125,26 +129,30 @@ const Hero = () => {
                       }`}
                     />
                   </button>
-                  {categoryOpen && (
+                  {categoryOpen && categories.length > 0 && (
                     <ul
                       role="listbox"
                       tabIndex={-1}
                       className="absolute z-50 mt-2 w-full max-h-56 overflow-auto scrollbar-hide rounded-xl border border-border bg-white shadow-xl text-black animate-in fade-in slide-in-from-top-2 duration-200"
                     >
-                      {categories.map((c) => (
+                      {categories.map((category) => (
                         <li
-                          key={c}
+                          key={category._id}
                           role="option"
-                          aria-selected={selectedCategory === c}
+                          aria-selected={
+                            selectedCategory ===
+                            (category.value || category._id)
+                          }
                           onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => handleSelectCategory(c)}
+                          onClick={() => handleSelectCategory(category)}
                           className={`px-4 py-2 text-sm cursor-pointer transition-colors ${
-                            selectedCategory === c
+                            selectedCategory ===
+                            (category.value || category._id)
                               ? "bg-secondary/10 text-secondary font-medium"
                               : "hover:bg-muted hover:text-secondary/80"
                           }`}
                         >
-                          {c.charAt(0).toUpperCase() + c.slice(1)}
+                          {formatName(category.name)}
                         </li>
                       ))}
                     </ul>

@@ -8,6 +8,17 @@ import SiteFooter from "../../components/Landing/SiteFooter.jsx";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { Sparkles } from "lucide-react";
 
+// Helper function to format category/subcategory names nicely
+const formatFilterName = (name) => {
+  if (!name) return "";
+  // Replace dashes and underscores with spaces, then capitalize each word
+  return name
+    .replace(/[-_]/g, " ")
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
+
 const AllServicesLanding = () => {
   const { data, isLoading, error } = useGetAllGigsQuery();
   const [
@@ -20,6 +31,7 @@ const AllServicesLanding = () => {
   const [showRecommendations, setShowRecommendations] = useState(false);
 
   const category = searchParams.get("category");
+  const subcategory = searchParams.get("subcategory");
   const location = searchParams.get("location");
   const searchParam = searchParams.get("search");
 
@@ -168,6 +180,20 @@ const AllServicesLanding = () => {
       });
     }
 
+    // Filter by subcategory
+    if (subcategory) {
+      filtered = filtered.filter((gig) => {
+        const subcategoryLower = subcategory.toLowerCase().replace(/-/g, " ");
+        return (
+          gig.name.toLowerCase().includes(subcategoryLower) ||
+          gig.sellerSkills.some((skill) =>
+            skill.toLowerCase().includes(subcategoryLower)
+          ) ||
+          gig.bio?.toLowerCase().includes(subcategoryLower)
+        );
+      });
+    }
+
     // Filter by location (if you have location data in your gigs)
     if (location) {
       filtered = filtered.filter((gig) => {
@@ -181,7 +207,7 @@ const AllServicesLanding = () => {
     }
 
     return filtered;
-  }, [allGigsData, debouncedSearchTerm, category, location]);
+  }, [allGigsData, debouncedSearchTerm, category, subcategory, location]);
 
   return (
     <>
@@ -290,6 +316,7 @@ const AllServicesLanding = () => {
 
         {/* Search Info */}
         {(category ||
+          subcategory ||
           location ||
           (debouncedSearchTerm.trim() && !showRecommendations)) && (
           <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -303,7 +330,12 @@ const AllServicesLanding = () => {
             )}
             {category && (
               <span className="bg-[#B6E0FE] text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
-                {category.charAt(0).toUpperCase() + category.slice(1)}
+                {formatFilterName(category)}
+              </span>
+            )}
+            {subcategory && (
+              <span className="bg-[#74C7F2] text-white px-3 py-1 rounded-full text-sm font-medium">
+                {formatFilterName(subcategory)}
               </span>
             )}
             {location && (

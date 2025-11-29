@@ -235,6 +235,13 @@ export const workerApi = baseApi.injectEndpoints({
       query: () => "/categories",
       providesTags: ["Categories"],
     }),
+    getSubcategories: builder.query({
+      query: (categoryId) => ({
+        url: "/categories/subcategories",
+        params: categoryId ? { categoryId } : {},
+      }),
+      providesTags: ["Subcategories"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -277,4 +284,5 @@ export const {
   useUpdateFcmTokenMutation,
   useFindWorkersQuery,
   useGetCategoriesQuery,
+  useGetSubcategoriesQuery,
 } = workerApi;

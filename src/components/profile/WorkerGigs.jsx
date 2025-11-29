@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Plus,
   Edit,
@@ -10,6 +10,7 @@ import {
   X,
   Upload,
   AlertTriangle,
+  ChevronDown,
 } from "lucide-react";
 import {
   useGetMyGigsQuery,
@@ -17,8 +18,20 @@ import {
   useUpdateGigMutation,
   useDeleteGigMutation,
   useUploadOtherImagesMutation,
+  useGetCategoriesQuery,
+  useGetSubcategoriesQuery,
 } from "../../services/workerApi";
 import toast from "react-hot-toast";
+
+// Helper function to format category/subcategory names nicely
+const formatName = (name) => {
+  if (!name) return "";
+  return name
+    .replace(/[-_]/g, " ")
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
 
 const WorkerGigs = () => {
   const { data, isLoading, error } = useGetMyGigsQuery();
@@ -27,6 +40,13 @@ const WorkerGigs = () => {
   const [deleteGig, { isLoading: isDeleting }] = useDeleteGigMutation();
   const [uploadOtherImages, { isLoading: isUploadingImages }] =
     useUploadOtherImagesMutation();
+
+  // Fetch categories
+  const { data: categoriesData, isLoading: categoriesLoading } =
+    useGetCategoriesQuery();
+
+  // Fetch ALL subcategories for displaying in gig cards
+  const { data: allSubcategoriesData } = useGetSubcategoriesQuery();
 
   const [showModal, setShowModal] = useState(false);
   const [editingGig, setEditingGig] = useState(null);
@@ -38,9 +58,53 @@ const WorkerGigs = () => {
     pricingMethod: "fixed",
     price: "",
     images: [],
-    skills: [],
+    categoryId: "",
+    primarySubcategory: "",
+    extraSubcategories: [],
   });
   const [imagePreview, setImagePreview] = useState([]);
+
+  // Fetch subcategories for the selected category in the form
+  const { data: subcategoriesData, isLoading: subcategoriesLoading } =
+    useGetSubcategoriesQuery(formData.categoryId, {
+      skip: !formData.categoryId,
+    });
+
+  // Categories and subcategories arrays
+  const categories = useMemo(() => categoriesData || [], [categoriesData]);
+  const subcategories = useMemo(
+    () => subcategoriesData || [],
+    [subcategoriesData]
+  );
+  const allSubcategories = useMemo(
+    () => allSubcategoriesData || [],
+    [allSubcategoriesData]
+  );
+
+  // Helper functions to get names by ID
+  const getCategoryName = (categoryIdOrObj) => {
+    if (!categoryIdOrObj) return null;
+    // If it's already an object with a name, use it
+    if (typeof categoryIdOrObj === "object" && categoryIdOrObj.name) {
+      return formatName(categoryIdOrObj.name);
+    }
+    // Otherwise, look it up in our categories
+    const category = categories.find((c) => c._id === categoryIdOrObj);
+    return category ? formatName(category.name) : null;
+  };
+
+  const getSubcategoryName = (subcategoryIdOrObj) => {
+    if (!subcategoryIdOrObj) return null;
+    // If it's already an object with a name, use it
+    if (typeof subcategoryIdOrObj === "object" && subcategoryIdOrObj.name) {
+      return formatName(subcategoryIdOrObj.name);
+    }
+    // Otherwise, look it up in all subcategories
+    const subcategory = allSubcategories.find(
+      (s) => s._id === subcategoryIdOrObj
+    );
+    return subcategory ? formatName(subcategory.name) : null;
+  };
 
   const gigs = data?.gigs || [];
 
@@ -92,7 +156,9 @@ const WorkerGigs = () => {
       pricingMethod: "fixed",
       price: "",
       images: [],
-      skills: [],
+      categoryId: "",
+      primarySubcategory: "",
+      extraSubcategories: [],
     });
     setImagePreview([]);
     setShowModal(true);
@@ -107,7 +173,10 @@ const WorkerGigs = () => {
       pricingMethod: gig.pricing.method,
       price: gig.pricing.price || "",
       images: [],
-      skills: gig.skills || [],
+      categoryId: gig.category?._id || gig.category || "",
+      primarySubcategory:
+        gig.primarySubcategory?._id || gig.primarySubcategory || "",
+      extraSubcategories: gig.extraSubcategories?.map((s) => s._id || s) || [],
     });
     setImagePreview(gig.images?.map((img) => img.url) || []);
     setShowModal(true);
@@ -126,12 +195,16 @@ const WorkerGigs = () => {
       toast.error("Description is required");
       return;
     }
-    if (!formData.price) {
+    if (formData.pricingMethod !== "negotiable" && !formData.price) {
       toast.error("Price is required");
       return;
     }
-    if (!formData.skills || formData.skills.length === 0) {
-      toast.error("At least one skill/category is required");
+    if (!formData.categoryId) {
+      toast.error("Please select a category");
+      return;
+    }
+    if (!formData.primarySubcategory) {
+      toast.error("Please select a primary subcategory");
       return;
     }
 
@@ -171,10 +244,15 @@ const WorkerGigs = () => {
       const gigData = {
         title: formData.title,
         description: formData.description,
-        pricingMethod: "fixed",
-        price: Number(formData.price),
+        pricingMethod: formData.pricingMethod,
+        price:
+          formData.pricingMethod === "negotiable"
+            ? undefined
+            : Number(formData.price),
         images: finalImages,
-        skills: formData.skills,
+        categoryId: formData.categoryId,
+        primarySubcategory: formData.primarySubcategory,
+        extraSubcategories: formData.extraSubcategories,
       };
 
       if (editingGig) {
@@ -192,7 +270,9 @@ const WorkerGigs = () => {
         pricingMethod: "fixed",
         price: "",
         images: [],
-        skills: [],
+        categoryId: "",
+        primarySubcategory: "",
+        extraSubcategories: [],
       });
       setImagePreview([]);
     } catch (err) {
@@ -345,10 +425,19 @@ const WorkerGigs = () => {
               {/* Pricing Badge */}
               <div className="absolute top-3 right-3 bg-white px-3 py-1.5 rounded-full shadow-md">
                 <div className="flex items-center gap-1">
-                  <DollarSign size={14} className="text-green-600" />
-                  <span className="text-sm font-bold text-gray-900">
-                    TZS {gig.pricing.price?.toLocaleString()}
-                  </span>
+                  {gig.pricing.method === "negotiable" ? (
+                    <span className="text-sm font-bold text-gray-900">
+                      Negotiable
+                    </span>
+                  ) : (
+                    <>
+                      <DollarSign size={14} className="text-green-600" />
+                      <span className="text-sm font-bold text-gray-900">
+                        TZS {gig.pricing.price?.toLocaleString()}
+                        {gig.pricing.method === "hourly" && "/hr"}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -361,19 +450,30 @@ const WorkerGigs = () => {
                 </h3>
               </div>
 
-              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                 {gig.description}
               </p>
 
-              {/* Image Count Badge */}
-              {gig.images && gig.images.length > 1 && (
-                <div className="flex items-center gap-2 mb-4">
+              {/* Category & Subcategory Badges */}
+              <div className="flex flex-wrap items-center gap-2 mb-4">
+                {gig.category && getCategoryName(gig.category) && (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                    {getCategoryName(gig.category)}
+                  </span>
+                )}
+                {gig.primarySubcategory &&
+                  getSubcategoryName(gig.primarySubcategory) && (
+                    <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">
+                      {getSubcategoryName(gig.primarySubcategory)}
+                    </span>
+                  )}
+                {gig.images && gig.images.length > 1 && (
                   <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">
                     <ImageIcon size={12} />
                     <span>{gig.images.length} images</span>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* Actions */}
               <div className="flex gap-2">
@@ -507,107 +607,236 @@ const WorkerGigs = () => {
               {/* Skills/Categories */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Skills/Categories <span className="text-red-500">*</span>
+                  Category <span className="text-red-500">*</span>
                 </label>
-                <div className="space-y-3">
-                  {/* Selected Skills */}
-                  {formData.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {formData.skills.map((skill, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm"
-                        >
-                          <span>{skill}</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setFormData((prev) => ({
-                                ...prev,
-                                skills: prev.skills.filter(
-                                  (_, i) => i !== index
-                                ),
-                              }));
-                            }}
-                            className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
-                          >
-                            <X size={14} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <div className="relative">
+                  <select
+                    name="categoryId"
+                    value={formData.categoryId}
+                    onChange={(e) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        categoryId: e.target.value,
+                        primarySubcategory: "",
+                        extraSubcategories: [],
+                      }));
+                    }}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all appearance-none bg-white"
+                    required
+                  >
+                    <option value="">Select a category</option>
+                    {categoriesLoading ? (
+                      <option disabled>Loading categories...</option>
+                    ) : (
+                      categories.map((category) => (
+                        <option key={category._id} value={category._id}>
+                          {formatName(category.name)}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <ChevronDown
+                    size={18}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
+                </div>
+              </div>
 
-                  {/* Add Skill Input */}
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Add skill or category"
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          const value = e.target.value.trim();
-                          if (value && !formData.skills.includes(value)) {
+              {/* Primary Subcategory */}
+              {formData.categoryId && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Primary Subcategory <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      name="primarySubcategory"
+                      value={formData.primarySubcategory}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          primarySubcategory: value,
+                          // Remove from extra if selected as primary
+                          extraSubcategories: prev.extraSubcategories.filter(
+                            (id) => id !== value
+                          ),
+                        }));
+                      }}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all appearance-none bg-white"
+                      required
+                    >
+                      <option value="">Select primary subcategory</option>
+                      {subcategoriesLoading ? (
+                        <option disabled>Loading subcategories...</option>
+                      ) : (
+                        subcategories.map((sub) => (
+                          <option key={sub._id} value={sub._id}>
+                            {formatName(sub.name)}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    <ChevronDown
+                      size={18}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    This is the main service you offer
+                  </p>
+                </div>
+              )}
+
+              {/* Extra Subcategories */}
+              {formData.categoryId && formData.primarySubcategory && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Additional Subcategories (Optional)
+                  </label>
+                  <div className="space-y-3">
+                    {/* Selected Extra Subcategories */}
+                    {formData.extraSubcategories.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {formData.extraSubcategories.map((subId) => {
+                          const sub = subcategories.find(
+                            (s) => s._id === subId
+                          );
+                          return (
+                            <div
+                              key={subId}
+                              className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm"
+                            >
+                              <span>{sub ? formatName(sub.name) : subId}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    extraSubcategories:
+                                      prev.extraSubcategories.filter(
+                                        (id) => id !== subId
+                                      ),
+                                  }));
+                                }}
+                                className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Add Extra Subcategory Dropdown */}
+                    <div className="relative">
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (
+                            value &&
+                            !formData.extraSubcategories.includes(value) &&
+                            value !== formData.primarySubcategory
+                          ) {
                             setFormData((prev) => ({
                               ...prev,
-                              skills: [...prev.skills, value],
+                              extraSubcategories: [
+                                ...prev.extraSubcategories,
+                                value,
+                              ],
                             }));
-                            e.target.value = "";
                           }
-                        }
-                      }}
-                      className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        const input = e.target.previousSibling;
-                        const value = input.value.trim();
-                        if (value && !formData.skills.includes(value)) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            skills: [...prev.skills, value],
-                          }));
-                          input.value = "";
-                        }
-                      }}
-                      className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                    >
-                      <Plus size={18} />
-                    </button>
+                        }}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all appearance-none bg-white"
+                      >
+                        <option value="">Add another subcategory</option>
+                        {subcategories
+                          .filter(
+                            (sub) =>
+                              sub._id !== formData.primarySubcategory &&
+                              !formData.extraSubcategories.includes(sub._id)
+                          )
+                          .map((sub) => (
+                            <option key={sub._id} value={sub._id}>
+                              {formatName(sub.name)}
+                            </option>
+                          ))}
+                      </select>
+                      <ChevronDown
+                        size={18}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Add more subcategories if your gig covers multiple
+                      services
+                    </p>
                   </div>
-                  <p className="text-xs text-gray-500">
-                    Press Enter or click + to add skills. Add skills like
-                    "Plumbing", "Electrical", "Carpentry", etc.
-                  </p>
+                </div>
+              )}
+
+              {/* Pricing Method */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pricing Method <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-3">
+                  {["fixed", "hourly", "negotiable"].map((method) => (
+                    <label
+                      key={method}
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border rounded-lg cursor-pointer transition-all ${
+                        formData.pricingMethod === method
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "border-gray-300 hover:border-gray-400"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="pricingMethod"
+                        value={method}
+                        checked={formData.pricingMethod === method}
+                        onChange={handleInputChange}
+                        className="sr-only"
+                      />
+                      <span className="text-sm font-medium capitalize">
+                        {method}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </div>
 
               {/* Price */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Price (TZS) <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <DollarSign
-                    size={18}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  />
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    placeholder="Enter amount"
-                    min={0}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                    required
-                  />
+              {formData.pricingMethod !== "negotiable" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Price (TZS) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <DollarSign
+                      size={18}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                    />
+                    <input
+                      type="number"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      placeholder="Enter amount"
+                      min={0}
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.pricingMethod === "hourly"
+                      ? "Price per hour"
+                      : "Total price for the service"}
+                  </p>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Total price for the service
-                </p>
-              </div>
+              )}
 
               {/* Images */}
               <div>
