@@ -231,6 +231,13 @@ export const workerApi = baseApi.injectEndpoints({
       }),
       providesTags: ["Workers"],
     }),
+    searchGigs: builder.query({
+      query: (params) => ({
+        url: "/gigs/search",
+        params: params || {},
+      }),
+      providesTags: ["Gigs"],
+    }),
     getCategories: builder.query({
       query: () => "/categories",
       providesTags: ["Categories"],
@@ -283,6 +290,7 @@ export const {
   useMarkOrderMessagesReadMutation,
   useUpdateFcmTokenMutation,
   useFindWorkersQuery,
+  useSearchGigsQuery,
   useGetCategoriesQuery,
   useGetSubcategoriesQuery,
 } = workerApi;

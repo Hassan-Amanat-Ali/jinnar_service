@@ -58,6 +58,10 @@ export const customerApi = baseApi.injectEndpoints({
       query: (params) => ({ url: "/gigs", params }),
       providesTags: ["Gigs"],
     }),
+    searchGigs: builder.query({
+      query: (params) => ({ url: "/gigs/search", params }),
+      providesTags: ["Gigs"],
+    }),
     findWorkers: builder.query({
       query: (params) => ({ url: "/workers/find", params }),
       providesTags: ["Workers"],
@@ -71,11 +75,15 @@ export const customerApi = baseApi.injectEndpoints({
       providesTags: ["Providers"],
     }),
     getWithdrawalProviders: builder.query({
-      query: () => "/payout/providers", 
+      query: () => "/payout/providers",
       providesTags: ["Providers"],
     }),
     predictCorrespondentBank: builder.mutation({
-      query: (data) => ({ url: "/wallet/predict-correspondent", method: "POST", body: data }),
+      query: (data) => ({
+        url: "/wallet/predict-correspondent",
+        method: "POST",
+        body: data,
+      }),
     }),
     depositMoney: builder.mutation({
       query: (data) => ({ url: "/wallet/deposit", method: "POST", body: data }),
@@ -147,6 +155,7 @@ export const {
   useCompleteOrderMutation,
   useRateAndReviewOrderMutation,
   useGetGigsQuery,
+  useSearchGigsQuery,
   useFindWorkersQuery,
   useGetWalletQuery,
   useGetDepositProvidersQuery,

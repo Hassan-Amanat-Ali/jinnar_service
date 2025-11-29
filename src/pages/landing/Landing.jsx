@@ -1,12 +1,12 @@
 import Hero from "../../components/common/Hero";
 import Nav from "../../components/services/LandingNav.jsx";
 import WorkerCard from "../../components/services/WorkerCard";
-import { useGetAllGigsQuery } from "../../services/workerApi";
+import { useSearchGigsQuery } from "../../services/workerApi";
 import { useGetRecommendedWorkersMutation } from "../../services/recommendationApi";
 import { useSearchParams } from "react-router-dom";
 import SiteFooter from "../../components/Landing/SiteFooter.jsx";
 import { useMemo, useState, useEffect, useCallback } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, MapPin } from "lucide-react";
 
 // Helper function to format category/subcategory names nicely
 const formatFilterName = (name) => {
@@ -20,20 +20,87 @@ const formatFilterName = (name) => {
 };
 
 const AllServicesLanding = () => {
-  const { data, isLoading, error } = useGetAllGigsQuery();
-  const [
-    getRecommendations,
-    { data: recommendedData, isLoading: isRecommending },
-  ] = useGetRecommendedWorkersMutation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationStatus, setLocationStatus] = useState("loading"); // "loading" | "granted" | "denied"
+
+  const [
+    getRecommendations,
+    { data: recommendedData, isLoading: isRecommending },
+  ] = useGetRecommendedWorkersMutation();
 
   const category = searchParams.get("category");
   const subcategory = searchParams.get("subcategory");
   const location = searchParams.get("location");
   const searchParam = searchParams.get("search");
+
+  // Get user's current location on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          setLocationStatus("granted");
+          console.log(
+            "User location:",
+            position.coords.latitude,
+            position.coords.longitude
+          );
+        },
+        (error) => {
+          console.error("Error getting location:", error.message);
+          setLocationStatus("denied");
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000, // Cache location for 5 minutes
+        }
+      );
+    } else {
+      setLocationStatus("denied");
+    }
+  }, []);
+
+  // Build search params for API
+  const searchApiParams = useMemo(() => {
+    const params = {
+      limit: 50,
+    };
+
+    // Add location if available
+    if (userLocation) {
+      params.latitude = userLocation.latitude;
+      params.longitude = userLocation.longitude;
+      params.radius = 50; // 50km radius
+    }
+
+    // Add search term
+    if (debouncedSearchTerm.trim()) {
+      params.search = debouncedSearchTerm.trim();
+    }
+
+    // Add category filter
+    if (category) {
+      params.category = category;
+    }
+
+    // Add subcategory filter
+    if (subcategory) {
+      params.subcategory = subcategory;
+    }
+
+    return params;
+  }, [userLocation, debouncedSearchTerm, category, subcategory]);
+
+  // Use searchGigs API with location and filters
+  const { data, isLoading, error } = useSearchGigsQuery(searchApiParams);
 
   // Initialize search term from URL parameter
   useEffect(() => {
@@ -86,7 +153,7 @@ const AllServicesLanding = () => {
   );
 
   // Transform API data to match WorkerCard component format with gig info
-  const allGigsData = useMemo(
+  const gigsData = useMemo(
     () =>
       data?.gigs?.map((gig) => {
         const mappedGig = {
@@ -103,17 +170,20 @@ const AllServicesLanding = () => {
             gig.pricing?.method === "negotiable"
               ? "Negotiable"
               : gig.pricing?.method === "hourly"
-              ? `TZS ${gig.pricing?.price}/hr`
-              : `TZS ${gig.pricing?.price}`,
+              ? `TZS ${gig.pricing?.price?.toLocaleString()}/hr`
+              : `TZS ${gig.pricing?.price?.toLocaleString()}`,
           bio: gig.description,
-          skills: gig.sellerId?.skills?.slice(0, 4) || [],
+          skills:
+            gig.subcategories?.map((s) => s.name)?.slice(0, 4) ||
+            gig.sellerId?.skills?.slice(0, 4) ||
+            [],
           jobsCompleted: gig.sellerId?.ordersCompleted || 0,
           rate:
             gig.pricing?.method === "negotiable"
               ? "Negotiable"
               : gig.pricing?.price || 0,
-          sellerSkills: gig.sellerId?.skills || [],
-          sellerAreas: gig.sellerId?.selectedAreas || [],
+          category: gig.category?.name || null,
+          subcategories: gig.subcategories || [],
         };
         return mappedGig;
       }) || [],
@@ -141,73 +211,22 @@ const AllServicesLanding = () => {
       skills: worker.skills?.slice(0, 4) || [],
       jobsCompleted: 0,
       rate: "Contact for pricing",
-      sellerSkills: worker.skills || [],
-      sellerAreas: worker.selectedAreas || [],
       matchScore: worker.matchScore || 0,
       isRecommended: true,
     }));
   }, [recommendedData]);
 
-  // Filter gigs based on search params and search term
-  const gigsData = useMemo(() => {
-    let filtered = allGigsData;
+  // Filter by location param (for URL-based location filtering)
+  const filteredGigsData = useMemo(() => {
+    if (!location) return gigsData;
 
-    // Filter by search term (debounced)
-    if (debouncedSearchTerm.trim()) {
-      const searchLower = debouncedSearchTerm.toLowerCase().trim();
-      filtered = filtered.filter((gig) => {
-        return (
-          gig.name.toLowerCase().includes(searchLower) ||
-          gig.bio?.toLowerCase().includes(searchLower) ||
-          gig.sellerSkills.some((skill) =>
-            skill.toLowerCase().includes(searchLower)
-          )
-        );
-      });
-    }
-
-    // Filter by category (skill)
-    if (category) {
-      filtered = filtered.filter((gig) => {
-        const categoryLower = category.toLowerCase();
-        return (
-          gig.name.toLowerCase().includes(categoryLower) ||
-          gig.sellerSkills.some((skill) =>
-            skill.toLowerCase().includes(categoryLower)
-          ) ||
-          gig.bio?.toLowerCase().includes(categoryLower)
-        );
-      });
-    }
-
-    // Filter by subcategory
-    if (subcategory) {
-      filtered = filtered.filter((gig) => {
-        const subcategoryLower = subcategory.toLowerCase().replace(/-/g, " ");
-        return (
-          gig.name.toLowerCase().includes(subcategoryLower) ||
-          gig.sellerSkills.some((skill) =>
-            skill.toLowerCase().includes(subcategoryLower)
-          ) ||
-          gig.bio?.toLowerCase().includes(subcategoryLower)
-        );
-      });
-    }
-
-    // Filter by location (if you have location data in your gigs)
-    if (location) {
-      filtered = filtered.filter((gig) => {
-        const locationLower = location.toLowerCase();
-        return (
-          gig.sellerAreas?.some((area) =>
-            area.name?.toLowerCase().includes(locationLower)
-          ) || gig.bio?.toLowerCase().includes(locationLower)
-        );
-      });
-    }
-
-    return filtered;
-  }, [allGigsData, debouncedSearchTerm, category, subcategory, location]);
+    // Location filtering is now handled by the API when we have user coordinates
+    // This is just for URL-based location text filtering
+    const locationLower = location.toLowerCase();
+    return gigsData.filter((gig) =>
+      gig.bio?.toLowerCase().includes(locationLower)
+    );
+  }, [gigsData, location]);
 
   return (
     <>
@@ -239,7 +258,21 @@ const AllServicesLanding = () => {
       />
       <Nav />
 
-      <div className="my-6 mt-16 max-w-[1200px] mx-auto">
+      <div className="my-6 mt-16 max-w-[1200px] mx-auto px-4">
+        {/* Location Status Banner */}
+        {locationStatus === "granted" && userLocation && (
+          <div className="mb-4 flex items-center gap-2 text-sm text-green-700 bg-green-50 px-4 py-2 rounded-lg">
+            <MapPin size={16} />
+            <span>Showing services near your location</span>
+          </div>
+        )}
+        {locationStatus === "denied" && (
+          <div className="mb-4 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 px-4 py-2 rounded-lg">
+            <MapPin size={16} />
+            <span>Enable location to see nearby services</span>
+          </div>
+        )}
+
         {/* Recommended Workers Section */}
         {showRecommendations && recommendedWorkersData.length > 0 && (
           <div className="mb-8">
@@ -309,7 +342,8 @@ const AllServicesLanding = () => {
         {debouncedSearchTerm.trim() && !showRecommendations && (
           <div className="text-center mb-4">
             <p className="text-sm text-gray-600">
-              {gigsData.length} results found for "{debouncedSearchTerm}"
+              {filteredGigsData.length} results found for "{debouncedSearchTerm}
+              "
             </p>
           </div>
         )}
@@ -428,14 +462,18 @@ const AllServicesLanding = () => {
               {error?.data?.error || "Please try again later"}
             </p>
           </div>
-        ) : gigsData.length === 0 ? (
+        ) : filteredGigsData.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-600 mb-2">No services available</p>
-            <p className="text-gray-500">Check back later for new services</p>
+            <p className="text-gray-500">
+              {category || subcategory || debouncedSearchTerm
+                ? "Try adjusting your filters or search term"
+                : "Check back later for new services"}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6 place-items-center md:place-items-stretch">
-            {gigsData.map((gig) => (
+            {filteredGigsData.map((gig) => (
               <WorkerCard
                 key={gig.id}
                 gigId={gig.gigId}

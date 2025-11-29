@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { LandingPageHeroBg } from "../../assets/index.js";
 import {
   FiUsers,
@@ -24,6 +24,64 @@ const Hero = () => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedCategoryName, setSelectedCategoryName] = useState("");
   const [location, setLocation] = useState("");
+  const [userCoords, setUserCoords] = useState(null);
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
+
+  // Get user's current location on mount
+  useEffect(() => {
+    getUserLocation();
+  }, []);
+
+  // Function to get user's current location
+  const getUserLocation = () => {
+    if (!navigator.geolocation) {
+      console.error("Geolocation is not supported by this browser");
+      return;
+    }
+
+    setIsGettingLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserCoords({ latitude, longitude });
+
+        // Reverse geocode to get location name
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`
+          );
+          const data = await response.json();
+
+          // Extract city/town/village name from the response
+          const locationName =
+            data.address?.city ||
+            data.address?.town ||
+            data.address?.village ||
+            data.address?.suburb ||
+            data.address?.county ||
+            data.address?.state ||
+            "Your Location";
+
+          setLocation(locationName);
+        } catch (error) {
+          console.error("Error reverse geocoding:", error);
+          setLocation("Your Location");
+        }
+
+        setIsGettingLocation(false);
+      },
+      (error) => {
+        console.error("Error getting location:", error.message);
+        setIsGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000, // Cache location for 5 minutes
+      }
+    );
+  };
 
   // Helper function to format category names
   const formatName = (name) => {
@@ -45,6 +103,12 @@ const Hero = () => {
     const params = new URLSearchParams();
     if (selectedCategory) params.append("category", selectedCategory);
     if (location.trim()) params.append("location", location.trim());
+
+    // Pass coordinates if available for more accurate location-based search
+    if (userCoords) {
+      params.append("latitude", userCoords.latitude);
+      params.append("longitude", userCoords.longitude);
+    }
 
     navigate(
       `/landing-services${params.toString() ? `?${params.toString()}` : ""}`
@@ -164,14 +228,25 @@ const Hero = () => {
                   Location
                 </h3>
                 <div className="relative">
-                  <FiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60" />
+                  {isGettingLocation ? (
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                      <div className="w-4 h-4 border-2 border-secondary/30 border-t-secondary rounded-full animate-spin"></div>
+                    </div>
+                  ) : (
+                    <FiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60" />
+                  )}
                   <input
                     type="text"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     onKeyPress={handleKeyPress}
                     className="w-full h-11 sm:h-12 rounded-xl border border-border pl-9 pr-3 text-sm text-black placeholder:text-black/50 bg-muted/60 hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
-                    placeholder="Enter Your Location"
+                    placeholder={
+                      isGettingLocation
+                        ? "Detecting location..."
+                        : "Enter Your Location"
+                    }
+                    disabled={isGettingLocation}
                   />
                 </div>
               </div>

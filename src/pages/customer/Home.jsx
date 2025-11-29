@@ -26,7 +26,7 @@ import Dropdown from "../../components/common/DropDown";
 import Card from "../common/Card";
 import { useNavigate } from "react-router-dom";
 import {
-  useGetGigsQuery,
+  useSearchGigsQuery,
   useGetMyOrdersQuery,
   useGetMyProfileQuery,
   useFindWorkersQuery,
@@ -39,16 +39,58 @@ const CustomerHome = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [selectedBudget, setSelectedBudget] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [userLocation, setUserLocation] = useState(null);
+  const [locationError, setLocationError] = useState(null);
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const [updateFcmToken] = useUpdateFcmTokenMutation();
 
-  // API Queries
+  // Get user's current location on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          console.log(
+            "User location:",
+            position.coords.latitude,
+            position.coords.longitude
+          );
+        },
+        (error) => {
+          console.error("Error getting location:", error.message);
+          setLocationError(error.message);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000, // Cache location for 5 minutes
+        }
+      );
+    } else {
+      setLocationError("Geolocation is not supported by this browser");
+    }
+  }, []);
+
+  // API Queries - Use searchGigs with location
   const {
-    data: gigs = [],
+    data: gigsData,
     isLoading: gigsLoading,
     error: gigsError,
-  } = useGetGigsQuery({ limit: 8 });
+  } = useSearchGigsQuery({
+    limit: 8,
+    ...(userLocation && {
+      latitude: userLocation.latitude,
+      longitude: userLocation.longitude,
+      radius: 50, // 50km radius
+    }),
+  });
+
+  const gigs = gigsData?.gigs || [];
+
   const {
     data: orders = [],
     isLoading: ordersLoading,
@@ -134,17 +176,22 @@ const CustomerHome = () => {
 
   // Transform gigs data for display
   const displayGigs =
-    (gigs?.gigs || gigs || [])?.slice(0, 8)?.map((gig) => ({
+    gigs?.slice(0, 8)?.map((gig) => ({
       id: gig._id,
       title: gig.title,
       img: gig.images?.[0]?.url || service1, // Use first image or fallback
-      rating: gig.averageRating || "N/A",
+      rating: gig.sellerId?.rating?.average || gig.averageRating || "N/A",
       description: gig.description,
-      starting: `$${gig.price || 0}`,
+      starting:
+        gig.pricing?.method === "negotiable"
+          ? "Negotiable"
+          : `TZS ${gig.pricing?.price?.toLocaleString() || 0}`,
       status: "Available",
       gigId: gig._id,
       sellerId: gig.sellerId?._id || gig.sellerId,
-      pricingMethod: gig.pricingMethod,
+      pricingMethod: gig.pricing?.method || gig.pricingMethod,
+      category: gig.category?.name || null,
+      subcategories: gig.subcategories || [],
     })) || [];
 
   const handleDropdownToggle = (dropdownName) => {
@@ -160,6 +207,11 @@ const CustomerHome = () => {
     }
     if (selectedBudget) {
       params.set("budget", selectedBudget);
+    }
+    // Pass user location to the search page
+    if (userLocation) {
+      params.set("latitude", userLocation.latitude);
+      params.set("longitude", userLocation.longitude);
     }
 
     // Navigate to AllServices with query parameters
@@ -329,7 +381,11 @@ const CustomerHome = () => {
               Popular Services Near You
             </h1>
             <p className="text-base sm:text-lg text-gray-600 leading-relaxed">
-              Trending services in your area
+              {userLocation
+                ? "Trending services in your area"
+                : locationError
+                ? "Enable location for nearby services"
+                : "Getting your location..."}
             </p>
           </div>
           <button
