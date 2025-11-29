@@ -1,18 +1,22 @@
-import Hero from "../../components/common/Hero";
-import Nav from "../../components/services/LandingNav.jsx";
+import Hero from "../../components/Landing/Hero.jsx";
 import WorkerCard from "../../components/services/WorkerCard";
 import {
   useSearchGigsQuery,
   useGetCategoriesQuery,
+  useGetSubcategoriesQuery,
 } from "../../services/workerApi";
-import { useGetRecommendedWorkersMutation } from "../../services/recommendationApi";
 import { useSearchParams } from "react-router-dom";
 import SiteFooter from "../../components/Landing/SiteFooter.jsx";
-import { useMemo, useState, useEffect, useCallback } from "react";
-import { Sparkles, MapPin } from "lucide-react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
+import { Sparkles, MapPin, ChevronDown } from "lucide-react";
+
+// Helper function to format names for display
+const formatName = (name) =>
+  name?.replace(/[-_]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) || "";
 
 // Helper function to format category/subcategory names nicely
 const formatFilterName = (name) => {
+  console.log(name);
   if (!name) return "";
   // Replace dashes and underscores with spaces, then capitalize each word
   return name
@@ -24,24 +28,33 @@ const formatFilterName = (name) => {
 
 const AllServicesLanding = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-  const [showRecommendations, setShowRecommendations] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [locationStatus, setLocationStatus] = useState("loading"); // "loading" | "granted" | "denied"
 
-  const [
-    getRecommendations,
-    { data: recommendedData, isLoading: isRecommending },
-  ] = useGetRecommendedWorkersMutation();
+  // State for dropdowns
+  const [openDropdown, setOpenDropdown] = useState(null);
+
+  // Local state for all filters to stage changes before search submission
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchParams.get("search") || "");
+  const [localCategoryId, setLocalCategoryId] = useState(searchParams.get("category") || "");
+  const [localSubcategoryId, setLocalSubcategoryId] = useState(searchParams.get("subcategory") || "");
+  const [localBudget, setLocalBudget] = useState(searchParams.get("budget") || "");
+  const [localSortBy, setLocalSortBy] = useState(searchParams.get("sortBy") || "");
+  const [localMinRating, setLocalMinRating] = useState(searchParams.get("minRating") || "");
 
   // Fetch categories to resolve names from IDs
-  const { data: categoriesData } = useGetCategoriesQuery();
+  const { data: categoriesData, isLoading: categoriesLoading } =
+    useGetCategoriesQuery();
 
-  const categoryId = searchParams.get("categoryId");
+  const categoryId = searchParams.get("category");
   const subcategoryId = searchParams.get("subcategory");
   const location = searchParams.get("location");
   const searchParam = searchParams.get("search");
+  const budget = searchParams.get("budget"); // For display
+  const minPrice = searchParams.get("minPrice");
+  const maxPrice = searchParams.get("maxPrice");
+  const sortBy = searchParams.get("sortBy");
+  const minRating = searchParams.get("minRating");
 
   // Get user's current location on mount
   useEffect(() => {
@@ -74,6 +87,18 @@ const AllServicesLanding = () => {
     }
   }, []);
 
+  // Fetch subcategories when a category is selected
+  const { data: subcategoriesData, isLoading: subcategoriesLoading } =
+    useGetSubcategoriesQuery(localCategoryId, {
+      skip: !localCategoryId,
+    });
+
+  const categories = useMemo(() => categoriesData || [], [categoriesData]);
+  const subcategories = useMemo(
+    () => subcategoriesData || [],
+    [subcategoriesData]
+  );
+
   // Build search params for API
   const searchApiParams = useMemo(() => {
     const params = {
@@ -87,11 +112,6 @@ const AllServicesLanding = () => {
       params.radius = 50; // 50km radius
     }
 
-    // Add search term
-    if (debouncedSearchTerm.trim()) {
-      params.search = debouncedSearchTerm.trim();
-    }
-
     // Add category filter
     if (categoryId) {
       params.category = categoryId;
@@ -102,54 +122,151 @@ const AllServicesLanding = () => {
       params.subcategory = subcategoryId;
     }
 
+    // Add budget filter
+    if (budget) {
+      if (minPrice) {
+        params.minPrice = minPrice;
+      }
+      if (maxPrice) {
+        params.maxPrice = maxPrice;
+      }
+    }
+
+    // Add sorting
+    if (sortBy) {
+      params.sortBy = sortBy;
+    }
+
+    // Add minimum rating
+    if (minRating) {
+      params.minRating = minRating;
+    }
+
+    // Add search term directly from URL
+    if (searchParam) {
+      params.search = searchParam;
+    }
+
     return params;
-  }, [userLocation, debouncedSearchTerm, categoryId, subcategoryId]);
+  }, [userLocation, searchParam, categoryId, subcategoryId, budget, minPrice, maxPrice, sortBy, minRating]);
+
+  // Log the API parameters to the console for debugging
+  console.log("🚀 API Request Parameters:", searchApiParams);
 
   // Use searchGigs API with location and filters
-  const { data, isLoading, error } = useSearchGigsQuery(searchApiParams);
+  const { data, isLoading, error } = useSearchGigsQuery(searchApiParams, {
+    keepUnusedDataFor: 0, // Invalidate cache when params change
+  });
 
   // Initialize search term from URL parameter
   useEffect(() => {
-    if (searchParam) {
-      setSearchTerm(searchParam);
-      setDebouncedSearchTerm(searchParam);
-    }
-  }, [searchParam]);
+    setLocalSearchTerm(searchParam || "");
+    setLocalCategoryId(categoryId || "");
+    setLocalSubcategoryId(subcategoryId || "");
+    setLocalSortBy(sortBy || "");
+    setLocalMinRating(minRating || "");
+  }, [searchParam, categoryId, subcategoryId, sortBy, minRating]);
 
-  // Debounce search term to improve performance
+  // On initial load, if there are params, trigger a search to ensure everything is in sync.
   useEffect(() => {
+    // Using a timeout to ensure the form is ready before submitting
     const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300); // 300ms debounce delay
+      if (searchParams.toString()) {
+        document.querySelector('form button[type="submit"]')?.click();
+      }
+    }, 100); // A small delay can help ensure all state is set.
 
     return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  // Trigger recommendations when search term changes
-  useEffect(() => {
-    if (debouncedSearchTerm.trim()) {
-      const jobRequest = {
-        title: debouncedSearchTerm,
-        description: debouncedSearchTerm,
-      };
-      getRecommendations(jobRequest);
-      setShowRecommendations(true);
-    } else {
-      setShowRecommendations(false);
-    }
-  }, [debouncedSearchTerm, getRecommendations]);
+  }, []); // Run only once on mount
 
   // Handle search input change - will be passed to Hero
-  const handleSearchChange = useCallback((value) => {
-    setSearchTerm(value);
-  }, []);
+  const handleSearchInputChange = (event) => {
+    setLocalSearchTerm(event.target.value);
+  };
+
+  // Handle search submission via button click
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const newParams = new URLSearchParams();
+
+    if (localSearchTerm.trim()) newParams.set('search', localSearchTerm.trim());
+    if (localCategoryId) newParams.set('category', localCategoryId);
+    if (localSubcategoryId) newParams.set('subcategory', localSubcategoryId);
+    if (localSortBy) newParams.set('sortBy', localSortBy);
+    if (localMinRating) newParams.set('minRating', localMinRating);
+
+    // Handle budget and price mapping
+    if (localBudget) {
+      newParams.set('budget', localBudget);
+      if (localBudget === "Under 20,000") {
+        newParams.set("maxPrice", "20000");
+      } else if (localBudget === "20,000 - 50,000") {
+        newParams.set("minPrice", "20000");
+        newParams.set("maxPrice", "50000");
+      } else if (localBudget === "50,000 - 100,000") {
+        newParams.set("minPrice", "50000");
+        newParams.set("maxPrice", "100000");
+      } else if (localBudget === "100,000+") {
+        newParams.set("minPrice", "100000");
+      }
+    }
+
+    setSearchParams(newParams, { replace: true });
+  };
+
+  const oldhandleSearchSubmit = (event) => {
+    setSearchParams(prev => {
+      if (localSearchTerm.trim()) {
+        prev.set('search', localSearchTerm.trim());
+      } else {
+        prev.delete('search');
+      }
+      return prev;
+    }, { replace: true });
+  };
 
   // Clear all filters
   const clearAllFilters = useCallback(() => {
-    setSearchTerm("");
-    setDebouncedSearchTerm("");
+    setLocalSearchTerm("");
     setSearchParams({});
   }, [setSearchParams]);
+
+  // Handlers for filter changes
+  const handleFilterChange = (param, value) => {
+    setSearchParams(
+      (prev) => {
+        if (value) {
+          prev.set(param, value);
+        } else {
+          prev.delete(param);
+        }
+
+        // Reset subcategory if category changes
+        if (param === "category") {
+          prev.delete("subcategory");
+        }
+
+        if (param !== "budget") {
+          prev.delete("minPrice");
+          prev.delete("maxPrice");
+        }
+
+        return prev;
+      },
+      { replace: true }
+    );
+    setOpenDropdown(null);
+  };
+
+  const budgetOptions = ["Under 20,000", "20,000 - 50,000", "50,000 - 100,000", "100,000+", "Negotiable"];
+  const sortOptions = {
+    rating: "Highest Rated",
+    experience: "Most Experienced",
+    price_low: "Price: Low to High",
+    price_high: "Price: High to Low",
+    newest: "Newest First",
+  };
+
 
   // Skeleton Component
   const Skeleton = ({ className = "" }) => (
@@ -196,31 +313,18 @@ const AllServicesLanding = () => {
     [data]
   );
 
-  // Transform recommended workers data
-  const recommendedWorkersData = useMemo(() => {
-    if (!recommendedData || recommendedData.length === 0) return [];
+  // Find category and subcategory names from their IDs for display
+  const categoryName = useMemo(() => {
+    if (!categoryId || !categoriesData) return null;
+    const category = categoriesData.find((cat) => cat._id === categoryId);
+    return category ? formatFilterName(category.name) : null;
+  }, [categoryId, categoriesData]);
 
-    return recommendedData.map((worker) => ({
-      id: worker._id,
-      gigId: null, // Recommendations are worker-based, not gig-based
-      sellerId: worker._id,
-      name: worker.name || "Worker",
-      image: worker.profilePicture || "https://via.placeholder.com/300x200",
-      rating: worker.rating?.average || 0,
-      reviews: worker.rating?.count || 0,
-      available: true,
-      experience: worker.yearsOfExperience || 0,
-      distance: "Contact for pricing",
-      bio: `Specializes in ${
-        worker.skills?.slice(0, 2).join(", ") || "various services"
-      }`,
-      skills: worker.skills?.slice(0, 4) || [],
-      jobsCompleted: 0,
-      rate: "Contact for pricing",
-      matchScore: worker.matchScore || 0,
-      isRecommended: true,
-    }));
-  }, [recommendedData]);
+  const subcategoryName = useMemo(() => {
+    if (!subcategoryId || !subcategories) return null;
+    const subcategory = subcategories.find((sub) => sub._id === subcategoryId);
+    return subcategory ? formatFilterName(subcategory.name) : null;
+  }, [subcategoryId, subcategories]);
 
   return (
     <>
@@ -245,12 +349,11 @@ const AllServicesLanding = () => {
         }
       `}</style>
 
-      <Hero
+      {/* <Hero
         className="h-88 lg:h-140"
-        onSearchChange={handleSearchChange}
-        searchValue={searchTerm}
-      />
-      <Nav />
+        // The Hero component's own search functionality will navigate here.
+        // This page's search is now handled by the form below.
+      /> */}
 
       <div className="my-6 mt-16 max-w-[1200px] mx-auto px-4">
         {/* Location Status Banner */}
@@ -267,102 +370,176 @@ const AllServicesLanding = () => {
           </div>
         )}
 
-        {/* Recommended Workers Section */}
-        {showRecommendations && recommendedWorkersData.length > 0 && (
-          <div className="mb-8">
-            {/* Simple Header */}
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="text-[#74C7F2]" size={20} />
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Recommended for You
-                </h2>
+        <form onSubmit={handleSearchSubmit}>
+          {/* SEARCH & FILTERS SECTION */}
+          <div className="mb-8 p-4 sm:p-5 md:p-7 bg-white/95 rounded-2xl sm:rounded-[28px] shadow-xl border border-gray-100">
+            {/* Search Input */}
+            <div className="mb-4">
+              <label className="text-lg sm:text-xl font-semibold text-black mb-2 sm:mb-3 block">What service are you looking for?</label>
+            <input
+              type="text"
+              value={localSearchTerm}
+              onChange={handleSearchInputChange}
+              placeholder="Search for services like 'plumber', 'electrician'..."
+                className="w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+            />
+            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Category Filter */}
+            <div className="relative">
+              <label className="text-xs font-semibold text-gray-600 mb-1 block">Category</label>
+              <select
+                value={localCategoryId}
+                onChange={(e) => {
+                  setLocalCategoryId(e.target.value);
+                  setLocalSubcategoryId(""); // Reset subcategory when category changes
+                }}
+                disabled={categoriesLoading}
+                className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+              >
+                <option value="">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat._id} value={cat._id}>
+                    {formatName(cat.name)}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 pt-2 flex items-center px-3 text-gray-700">
+                <ChevronDown size={20} />
               </div>
-              <p className="text-sm text-gray-600">
-                Based on your search: "{debouncedSearchTerm}"
-              </p>
             </div>
 
-            {isRecommending ? (
-              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="flex flex-col w-full max-w-sm rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden"
-                  >
-                    <Skeleton className="h-64 w-full" />
-                  </div>
+            {/* Subcategory Filter */}
+            <div className="relative">
+              <label className="text-xs font-semibold text-gray-600 mb-1 block">Subcategory</label>
+              <select
+                value={localSubcategoryId}
+                onChange={(e) => setLocalSubcategoryId(e.target.value)}
+                disabled={!localCategoryId || subcategoriesLoading}
+                className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200 disabled:bg-gray-200"
+              >
+                <option value="">All Subcategories</option>
+                {subcategories.map((sub) => (
+                  <option key={sub._id} value={sub._id}>
+                    {formatName(sub.name)}
+                  </option>
                 ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 pt-2 flex items-center px-3 text-gray-700">
+                <ChevronDown size={20} />
               </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-5 md:gap-6 place-items-center md:place-items-stretch">
-                {recommendedWorkersData.slice(0, 6).map((worker) => (
-                  <div key={worker.id} className="relative">
-                    {/* Simple Match Score Badge */}
-                    <div className="absolute -top-2 -right-2 z-10 bg-[#74C7F2] text-white px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
-                      {worker.matchScore}% Match
-                    </div>
+            </div>
 
-                    <WorkerCard
-                      gigId={worker.gigId}
-                      sellerId={worker.sellerId}
-                      name={worker.name}
-                      image={worker.image}
-                      rating={worker.rating}
-                      reviews={worker.reviews}
-                      available={worker.available}
-                      experience={worker.experience}
-                      distance={worker.distance}
-                      bio={worker.bio}
-                      skills={worker.skills}
-                      jobsCompleted={worker.jobsCompleted}
-                      rate={worker.rate}
-                    />
-                  </div>
+            {/* Budget Filter - Hidden for now */}
+            {/* <div className="relative">
+              <label className="text-xs font-semibold text-gray-600 mb-1 block">Budget (TZS)</label>
+              <select
+                value={localBudget}
+                onChange={(e) => setLocalBudget(e.target.value)}
+                className="appearance-none w-full bg-gray-50 border border-gray-200 text-gray-800 py-3 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+              >
+                <option value="">Any Budget</option>
+                {budgetOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
                 ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 pt-5 flex items-center px-2 text-gray-700">
+                <ChevronDown size={20} />
               </div>
-            )}
+            </div> */}
 
-            {/* Simple Divider */}
-            <div className="mt-8 mb-6 border-t border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mt-6">
-                All Services
-              </h3>
+            {/* Sort By Filter */}
+            <div className="relative">
+              <label className="text-xs font-semibold text-gray-600 mb-1 block">Sort By</label>
+              <select
+                value={localSortBy}
+                onChange={(e) => setLocalSortBy(e.target.value)}
+                className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+              >
+                <option value="">Relevance</option>
+                {Object.entries(sortOptions).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 pt-2 flex items-center px-3 text-gray-700">
+                <ChevronDown size={20} />
+              </div>
             </div>
           </div>
-        )}
+          {/* More Filters */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+            {/* Minimum Rating Filter */}
+            <div className="relative">
+              <label className="text-xs font-semibold text-gray-600 mb-1 block">Minimum Rating</label>
+              <select
+                value={localMinRating}
+                onChange={(e) => setLocalMinRating(e.target.value)}
+                className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+              >
+                <option value="">Any Rating</option>
+                {[4, 3, 2, 1].map(r => <option key={r} value={r}>{r} star{r > 1 && 's'} & up</option>)}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 pt-5 flex items-center px-2 text-gray-700">
+                <ChevronDown size={20} />
+              </div>
+            </div>
+
+            {/* Other filters like minExperience can be added here following the same pattern */}
+          </div>
+            {/* Search Button */}
+            <div className="mt-6 text-right">
+              <button type="submit" className="btn-primary">
+                Search
+              </button>
+            </div>
+          </div>
+        </form>
 
         {/* Search results count */}
-        {debouncedSearchTerm.trim() && !showRecommendations && (
-          <div className="text-center mb-4">
-            <p className="text-sm text-gray-600">
-              {gigsData.length} results found for "{debouncedSearchTerm}"
-            </p>
-          </div>
-        )}
-
         {/* Search Info */}
         {(categoryId ||
           subcategoryId ||
+          budget ||
+          sortBy ||
+          minRating ||
           location ||
-          (debouncedSearchTerm.trim() && !showRecommendations)) && (
+          searchParam) && (
           <div className="mb-6 flex flex-wrap items-center gap-3">
             <span className="text-gray-700 text-sm font-medium">
               Showing results for:
             </span>
-            {debouncedSearchTerm.trim() && (
+            {searchParam && (
               <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
-                "{debouncedSearchTerm}"
+                "{searchParam}"
               </span>
             )}
             {categoryId && (
-              <span className="bg-[#B6E0FE] text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
-                {formatFilterName(categoryId)}
+              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                {categoryName || "Category"}
               </span>
             )}
             {subcategoryId && (
-              <span className="bg-[#74C7F2] text-white px-3 py-1 rounded-full text-sm font-medium">
-                {formatFilterName(subcategoryId)}
+              <span className="bg-sky-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+                {subcategoryName || "Subcategory"}
+              </span>
+            )}
+            {budget && (
+              <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                {budget}
+              </span>
+            )}
+            {sortBy && (
+              <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">
+                Sorted by: {sortOptions[sortBy]}
+              </span>
+            )}
+            {minRating && (
+              <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+                {minRating}+ Stars
               </span>
             )}
             {location && (
@@ -459,7 +636,7 @@ const AllServicesLanding = () => {
           <div className="text-center py-12">
             <p className="text-gray-600 mb-2">No services available</p>
             <p className="text-gray-500">
-              {categoryId || subcategoryId || debouncedSearchTerm
+              {categoryId || subcategoryId || searchParam
                 ? "Try adjusting your filters or search term"
                 : "Check back later for new services"}
             </p>

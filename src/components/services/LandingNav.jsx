@@ -87,10 +87,15 @@ const Nav = () => {
     // Save scroll position
     const scrollY = window.scrollY;
 
-    setSearchParams(
-      { category: selectedCategory._id, subcategory: subcategory._id },
-      { replace: true }
-    );
+    if (subcategory === "All") {
+      // Only set the category, removing the subcategory
+      setSearchParams({ category: selectedCategory._id }, { replace: true });
+    } else {
+      setSearchParams(
+        { category: selectedCategory._id, subcategory: subcategory._id },
+        { replace: true }
+      );
+    }
 
     // Restore scroll position after React updates - use multiple frames for reliability
     requestAnimationFrame(() => {
@@ -165,19 +170,34 @@ const Nav = () => {
                   Loading subcategories...
                 </div>
               ) : subcategories.length > 0 ? (
-                subcategories.map((subcategory) => (
+                <>
+                  {/* "All" button for subcategories */}
                   <button
-                    key={subcategory._id}
                     className={`cursor-pointer shrink-0 text-xs px-2.5 sm:px-3 md:px-4 py-1 sm:py-1.5 rounded-xl whitespace-nowrap transition-all duration-200 ${
-                      subcategoryIdParam === subcategory._id
+                      !subcategoryIdParam // Active if no subcategory is selected
                         ? "bg-[#74C7F2] text-white font-medium"
                         : "bg-white text-gray-600 hover:bg-gray-200 border border-gray-200"
                     }`}
-                    onClick={(e) => handleSubcategoryClick(e, subcategory)}
+                    onClick={(e) => handleSubcategoryClick(e, "All")}
                   >
-                    {formatName(subcategory.name)}
+                    All
                   </button>
-                ))
+
+                  {/* Individual subcategory buttons */}
+                  {subcategories.map((subcategory) => (
+                    <button
+                      key={subcategory._id}
+                      className={`cursor-pointer shrink-0 text-xs px-2.5 sm:px-3 md:px-4 py-1 sm:py-1.5 rounded-xl whitespace-nowrap transition-all duration-200 ${
+                        subcategoryIdParam === subcategory._id
+                          ? "bg-[#74C7F2] text-white font-medium"
+                          : "bg-white text-gray-600 hover:bg-gray-200 border border-gray-200"
+                      }`}
+                      onClick={(e) => handleSubcategoryClick(e, subcategory)}
+                    >
+                      {formatName(subcategory.name)}
+                    </button>
+                  ))}
+                </>
               ) : (
                 <div className="text-gray-400 text-xs">
                   No subcategories available
