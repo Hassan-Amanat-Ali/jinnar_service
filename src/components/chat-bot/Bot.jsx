@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
   useSendChatbotMessageMutation,
-  useCreateGuestTicketMutation,
 } from "../../services/chatbotApi";
+import { useCreateSupportTicketMutation } from "../../services/supportApi";
+import { useAuth } from "../../context/AuthContext";
 
 const Bot = ({
   title = "Jinnar Assistant",
@@ -17,6 +18,7 @@ const Bot = ({
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [isAwaitingTicketQuery, setIsAwaitingTicketQuery] = useState(false);
   const [emailFormData, setEmailFormData] = useState({
     email: "",
     name: "",
@@ -26,11 +28,13 @@ const Bot = ({
   const listRef = useRef(null);
   const inputRef = useRef(null);
 
+  const { user } = useAuth();
+
   // RTK Query mutations
   const [sendMessage, { isLoading: isSending }] =
     useSendChatbotMessageMutation();
   const [createTicket, { isLoading: isCreatingTicket }] =
-    useCreateGuestTicketMutation();
+    useCreateSupportTicketMutation();
 
   // Position classes - responsive positioning
   const positionClasses = {
@@ -114,6 +118,11 @@ const Bot = ({
   const handleUserMessage = async (text) => {
     if (!text || !text.trim()) return;
 
+    if (isAwaitingTicketQuery) {
+      handleTicketFlow(text);
+      return;
+    }
+
     setInput("");
     addMessage("user", text.trim());
     await handleBotMessage(text.trim());
@@ -121,6 +130,12 @@ const Bot = ({
 
   const handleOptionClick = async (value) => {
     addMessage("user", value);
+    if (value === "contact_support_start") {
+      setIsAwaitingTicketQuery(true);
+      addMessage("bot", "Please describe your issue in detail for the support ticket.");
+      return;
+    }
+
     await handleBotMessage(value);
   };
 
@@ -136,18 +151,25 @@ const Bot = ({
       return;
     }
 
-    const lastUserMessage = messages
-      .filter((m) => m.from === "user")
-      .slice(-1)[0];
+    const lastUserMessage = messages.findLast((m) => m.from === "user");
     const userQuery = lastUserMessage?.text || "Support request from chatbot";
 
     try {
-      const result = await createTicket({
-        email: emailFormData.email,
-        name: emailFormData.name,
-        phone: emailFormData.phone,
+      const ticketData = {
+        subject: userQuery.substring(0, 100), // Use part of the message as subject
         message: userQuery,
-      }).unwrap();
+      };
+
+      if (!user) {
+        // This is now part of the payload for guest ticket creation via the same endpoint
+        ticketData.guestInfo = {
+          email: emailFormData.email,
+          name: emailFormData.name,
+          phone: emailFormData.phone,
+        };
+      }
+
+      const result = await createTicket(ticketData).unwrap();
 
       setShowEmailForm(false);
       setEmailFormData({ email: "", name: "", phone: "" });
@@ -155,7 +177,7 @@ const Bot = ({
       addMessage(
         "bot",
         result.message ||
-          `✅ Ticket created! We'll email you at ${emailFormData.email} shortly.`,
+          `✅ Ticket created! We'll get back to you shortly.`,
         [{ label: "🏠 Main Menu", value: "start" }]
       );
     } catch (error) {
@@ -167,6 +189,28 @@ const Bot = ({
           { label: "🔄 Try Again", value: "contact_support_start" },
           { label: "🏠 Main Menu", value: "start" },
         ]
+      );
+    }
+  };
+
+  const createTicketForLoggedInUser = async (message) => {
+    try {
+      const result = await createTicket({
+        subject: message.substring(0, 100),
+        message: message,
+      }).unwrap();
+
+      addMessage(
+        "bot",
+        result.message || `✅ Ticket created! We'll get back to you shortly.`,
+        [{ label: "🏠 Main Menu", value: "start" }]
+      );
+    } catch (error) {
+      console.error("Ticket creation error for logged in user:", error);
+      addMessage(
+        "bot",
+        "Sorry, I couldn't create your ticket. Please try again.",
+        [{ label: "🔄 Try Again", value: "contact_support_start" }]
       );
     }
   };
@@ -183,6 +227,20 @@ const Bot = ({
     const d = new Date(date);
     return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
+
+  const handleTicketFlow = (text) => {
+    setInput("");
+    addMessage("user", text.trim());
+    setIsAwaitingTicketQuery(false);
+
+    if (user) {
+      // If user is logged in, create ticket directly
+      createTicketForLoggedInUser(text.trim());
+    } else {
+      // If user is a guest, ask for their details
+      setShowEmailForm(true);
+    }
+  }
 
   return (
     <>
@@ -340,7 +398,7 @@ const Bot = ({
                           key={idx}
                           onClick={() => handleOptionClick(option.value)}
                           disabled={isSending}
-                          className="px-3 py-2 text-xs font-medium rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-3 py-1.5 text-xs font-medium rounded-full border border-gray-300 bg-white hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           style={{
                             color: brandColor,
                             borderColor: brandColor + "40",
@@ -377,7 +435,7 @@ const Bot = ({
             {showEmailForm ? (
               <form
                 onSubmit={handleEmailSubmit}
-                className="p-4 border-t border-gray-200 bg-white space-y-3"
+                className="p-4 border-t border-gray-200 bg-white space-y-3 animate-fadeIn"
               >
                 <input
                   type="text"
@@ -451,7 +509,7 @@ const Bot = ({
               <form
                 onSubmit={handleSubmit}
                 className="p-4 border-t border-gray-200 bg-white"
-              >
+              > 
                 <div className="flex gap-2 items-end">
                   <input
                     ref={inputRef}
@@ -460,10 +518,10 @@ const Bot = ({
                     placeholder="Type your message..."
                     aria-label="Type your message"
                     disabled={isSending}
-                    className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all duration-200 disabled:bg-gray-100 disabled:cursor-not-allowed"
                     style={{
                       focusRing: `2px solid ${brandColor}`,
-                    }}
+                    }} 
                     maxLength={500}
                   />
                   <button

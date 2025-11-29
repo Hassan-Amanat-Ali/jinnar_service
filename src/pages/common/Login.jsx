@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import {
   useCustomerLoginMutation,
   useWorkerLoginMutation,
+  useResendVerificationCodeMutation,
 } from "../../services/authApi";
 import { useGetMyProfileQuery } from "../../services/customerApi";
 import { toast } from "react-toastify";
@@ -26,12 +27,15 @@ const Login = () => {
     localStorage.getItem("userRole") || ROLES.CUSTOMER
   );
   const [shouldFetchProfile, setShouldFetchProfile] = useState(false);
+  const [showResendVerification, setShowResendVerification] = useState(false);
 
   // RTK Query hooks
   const [customerLogin, { isLoading: isCustomerLoading }] =
     useCustomerLoginMutation();
   const [workerLogin, { isLoading: isWorkerLoading }] =
     useWorkerLoginMutation();
+  const [resendCode, { isLoading: isResending }] =
+    useResendVerificationCodeMutation();
 
   // Fetch user profile after successful login
   const { data: profileData, isLoading: isProfileLoading, error: profileError } =
@@ -39,7 +43,7 @@ const Login = () => {
       skip: !shouldFetchProfile,
     });
 
-  const loading = isCustomerLoading || isWorkerLoading || isProfileLoading;
+  const loading = isCustomerLoading || isWorkerLoading || isProfileLoading || isResending;
 
   // Handle profile data and errors using useEffect
   useEffect(() => {
@@ -69,6 +73,7 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e?.preventDefault();
+    setShowResendVerification(false);
 
     // Validation
     if (!email.trim()) {
@@ -110,6 +115,14 @@ const Login = () => {
       
       const payload = err?.data || err;
 
+      const errorMessage = payload?.error || payload?.message || "";
+
+      if (errorMessage.toLowerCase().includes("verify your email")) {
+        setShowResendVerification(true);
+        toast.error(errorMessage);
+        return;
+      }
+
       // Handle different error formats
       if (payload?.error) {
         toast.error(payload.error);
@@ -131,6 +144,23 @@ const Login = () => {
       } else {
         toast.error("Login failed. Please try again");
       }
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email.trim()) {
+      toast.error("Please enter your email address first.");
+      return;
+    }
+
+    try {
+      const result = await resendCode({ email }).unwrap();
+      toast.success(result.message || "Verification code sent!");
+      setShowResendVerification(false);
+      navigate("/verify", { state: { email } });
+    } catch (err) {
+      const payload = err?.data || err;
+      toast.error(payload?.error || "Failed to resend verification code.");
     }
   };
 
@@ -258,6 +288,20 @@ const Login = () => {
                 {loading ? "Logging in..." : "Login"}
               </button>
             </form>
+
+            {showResendVerification && (
+              <div className="mt-4 text-center">
+                <button
+                  onClick={handleResendVerification}
+                  disabled={isResending}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50 disabled:cursor-wait"
+                >
+                  {isResending
+                    ? "Sending code..."
+                    : "Resend Verification Email"}
+                </button>
+              </div>
+            )}
 
             {/* Signup prompt */}
             <p className="mt-6 text-center text-sm text-[#141414]/80">

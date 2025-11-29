@@ -31,6 +31,13 @@ export const authApi = baseApi.injectEndpoints({
         body: data,
       }),
     }),
+    resendVerificationCode: builder.mutation({
+      query: (data) => ({
+        url: "/auth/resend-verification",
+        method: "POST",
+        body: data,
+      }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -43,4 +50,5 @@ export const {
   useVerifyCodeMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
+  useResendVerificationCodeMutation,
 } = authApi;

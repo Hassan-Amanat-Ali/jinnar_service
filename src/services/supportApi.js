@@ -5,7 +5,7 @@ export const supportApi = baseApi.injectEndpoints({
     // Create a new support ticket
     createSupportTicket: builder.mutation({
       query: (data) => ({
-        url: "/support/tickets",
+        url: "/support/tickets", // This endpoint now handles both logged-in and guest users
         method: "POST",
         body: data,
       }),

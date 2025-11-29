@@ -11,9 +11,9 @@ const Landing = () => {
   return (
     <div className="bg-white">
       <Hero />
-      <HowItWorks />
       {/* <PopularServices /> */}
       <TopWorkers />
+      <HowItWorks />
 
       <FeaturedCourses />
       {/* <Testimonials /> */}
