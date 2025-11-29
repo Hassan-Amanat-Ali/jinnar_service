@@ -15,11 +15,14 @@ import {
   useResendVerificationCodeMutation,
 } from "../../services/authApi";
 import { useGetMyProfileQuery } from "../../services/customerApi";
+import { baseApi } from "../../services/baseApi";
 import { toast } from "react-toastify";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useDispatch } from "react-redux";
 
 const Login = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { setRole, setUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,12 +41,18 @@ const Login = () => {
     useResendVerificationCodeMutation();
 
   // Fetch user profile after successful login
-  const { data: profileData, isLoading: isProfileLoading, error: profileError } =
-    useGetMyProfileQuery(undefined, {
-      skip: !shouldFetchProfile,
-    });
+  const {
+    data: profileData,
+    isLoading: isProfileLoading,
+    error: profileError,
+    refetch: refetchProfile,
+  } = useGetMyProfileQuery(undefined, {
+    skip: !shouldFetchProfile,
+    refetchOnMountOrArgChange: true,
+  });
 
-  const loading = isCustomerLoading || isWorkerLoading || isProfileLoading || isResending;
+  const loading =
+    isCustomerLoading || isWorkerLoading || isProfileLoading || isResending;
 
   // Handle profile data and errors using useEffect
   useEffect(() => {
@@ -53,13 +62,23 @@ const Login = () => {
       const apiRole = profileData.profile.role;
       const appRole = mapApiRoleToAppRole(apiRole);
 
+      console.log("Login - API Role:", apiRole, "-> App Role:", appRole);
+
       if (appRole) {
+        // Store role in localStorage for persistence
+        localStorage.setItem("userRole", appRole);
         setRole(appRole);
         setUser(profileData.profile);
         toast.success("Welcome back! Login successful");
         setShouldFetchProfile(false);
-        navigate(appRole === ROLES.CUSTOMER ? "/customer-home" : "/worker-home");
+
+        // Navigate based on actual role from database
+        const targetRoute =
+          appRole === ROLES.CUSTOMER ? "/customer-home" : "/worker-home";
+        console.log("Navigating to:", targetRoute);
+        navigate(targetRoute);
       } else {
+        console.error("Failed to map role:", apiRole);
         setShouldFetchProfile(false);
         toast.error("Unable to determine user role. Please try again");
       }
@@ -69,7 +88,14 @@ const Login = () => {
       setShouldFetchProfile(false);
       toast.error("Failed to load user profile. Please try again");
     }
-  }, [profileData, profileError, shouldFetchProfile, setRole, setUser, navigate]);
+  }, [
+    profileData,
+    profileError,
+    shouldFetchProfile,
+    setRole,
+    setUser,
+    navigate,
+  ]);
 
   const handleLogin = async (e) => {
     e?.preventDefault();
@@ -101,8 +127,12 @@ const Login = () => {
       }).unwrap();
 
       if (result && result.token) {
-        // Store token and trigger profile fetch
+        // Store token
         localStorage.setItem("token", result.token);
+
+        // Reset API cache to ensure fresh data for new user
+        dispatch(baseApi.util.resetApiState());
+
         // Trigger profile fetch which will set the role from API response
         setShouldFetchProfile(true);
       } else {
@@ -112,7 +142,7 @@ const Login = () => {
     } catch (err) {
       console.error("Login error:", err);
       setShouldFetchProfile(false);
-      
+
       const payload = err?.data || err;
 
       const errorMessage = payload?.error || payload?.message || "";
