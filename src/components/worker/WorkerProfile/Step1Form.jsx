@@ -8,6 +8,7 @@ import {
   useUploadProfilePictureMutation,
 } from "../../../services/workerApi";
 import { setProfile } from "../../../features/worker/profileSlice";
+import { getFullImageUrl } from "../../../utils/fileUrl.js";
 
 const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
   const dispatch = useDispatch();
@@ -52,7 +53,7 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
           "Setting profile image preview:",
           profileData.profilePicture
         );
-        setProfileImagePreview(profileData.profilePicture);
+        setProfileImagePreview(getFullImageUrl(profileData.profilePicture));
       } else {
         console.log("No profile image found in profileData");
       }

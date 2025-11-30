@@ -6,6 +6,7 @@ import star from "../../assets/icons/star.png";
 import Button from "../common/Button";
 import { useNavigate } from "react-router-dom";
 import { useFindWorkersQuery } from "../../services/workerApi";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 const TopWorkers = () => {
   const navigate = useNavigate();
@@ -67,9 +68,9 @@ const TopWorkers = () => {
           profession: worker.skills?.[0] || "Professional",
           rating: worker.rating?.average || 4.5,
           image:
-            worker.profilePicture ||
-            worker.profileImage?.url ||
-            fallbackWorkers[0].image,
+            getFullImageUrl(worker.profilePicture) ||
+            getFullImageUrl(worker.profileImage?.url) ||
+            fallbackWorkers[0].image, // Fallback to a local image
           skills: worker.skills?.slice(0, 2) || ["Professional"],
         }))
       : fallbackWorkers;

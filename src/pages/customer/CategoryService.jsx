@@ -4,6 +4,7 @@ import Dropdown from "../../components/common/DropDown";
 import { MapPin } from "lucide-react";
 import WorkerCard from "../../components/services/WorkerCard";
 import worker from "../../assets/images/worker-card.jpg";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 const CategoryService = () => {
   const [openDropdown, setOpenDropdown] = React.useState(null);
@@ -16,7 +17,7 @@ const CategoryService = () => {
     {
       id: 1,
       name: "Ali Hassan",
-      image: worker,
+      image: getFullImageUrl(worker),
       rating: 4.9,
       reviews: 172,
       available: true,
@@ -30,7 +31,7 @@ const CategoryService = () => {
     {
       id: 2,
       name: "Mohammed Said",
-      image: worker,
+      image: getFullImageUrl(worker),
       rating: 4.7,
       reviews: 89,
       available: true,
@@ -44,7 +45,7 @@ const CategoryService = () => {
     {
       id: 3,
       name: "John Mwamba",
-      image: worker,
+      image: getFullImageUrl(worker),
       rating: 4.8,
       reviews: 203,
       available: false,
@@ -58,7 +59,7 @@ const CategoryService = () => {
     {
       id: 4,
       name: "Grace Kimani",
-      image: worker,
+      image: getFullImageUrl(worker),
       rating: 4.6,
       reviews: 134,
       available: true,
@@ -72,7 +73,7 @@ const CategoryService = () => {
     {
       id: 5,
       name: "David Mpesa",
-      image: worker,
+      image: getFullImageUrl(worker),
       rating: 4.9,
       reviews: 298,
       available: true,
@@ -86,7 +87,7 @@ const CategoryService = () => {
     {
       id: 6,
       name: "Sarah Muthoni",
-      image: worker,
+      image: getFullImageUrl(worker),
       rating: 4.5,
       reviews: 76,
       available: true,

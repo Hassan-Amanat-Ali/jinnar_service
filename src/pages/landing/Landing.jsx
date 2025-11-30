@@ -9,6 +9,7 @@ import { useSearchParams } from "react-router-dom";
 import SiteFooter from "../../components/Landing/SiteFooter.jsx";
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { Sparkles, MapPin, ChevronDown } from "lucide-react";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 // Helper function to format names for display
 const formatName = (name) =>
@@ -284,7 +285,8 @@ const AllServicesLanding = () => {
           gigId: gig._id,
           sellerId: gig.sellerId?._id,
           name: gig.title, // Using gig title as the main name
-          image: gig.images?.[0]?.url || "https://via.placeholder.com/300x200",
+          image:
+            getFullImageUrl(gig.images?.[0]?.url) || "https://via.placeholder.com/300x200",
           rating: gig.sellerId?.rating?.average || 0,
           reviews: gig.sellerId?.rating?.count || 0,
           available: true,

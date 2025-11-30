@@ -38,6 +38,14 @@ export const workerApi = baseApi.injectEndpoints({
         body: formData,
       }),
     }),
+    uploadGigImage: builder.mutation({
+      query: ({ gigId, formData }) => ({
+        url: `/upload/gig-image/${gigId}`,
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: (result, error, { gigId }) => [{ type: "Gigs", id: gigId }, "Gigs"],
+    }),
     uploadOtherImages: builder.mutation({
       query: (formData) => ({
         url: "/upload/other-images",
@@ -68,6 +76,14 @@ export const workerApi = baseApi.injectEndpoints({
         body: data,
       }),
       invalidatesTags: ["Gigs"],
+    }),
+    deleteGigImage: builder.mutation({
+      query: ({ gigId, imageUrl }) => ({
+        url: `/gigs/delete-image/${gigId}`,
+        method: "DELETE",
+        body: { imageUrl },
+      }),
+      invalidatesTags: (result, error, { gigId }) => [{ type: "Gigs", id: gigId }, "Gigs"],
     }),
     deleteGig: builder.mutation({
       query: (id) => ({ url: `/gigs/delete/${id}`, method: "DELETE" }),
@@ -260,12 +276,14 @@ export const {
   useUploadPortfolioImagesMutation,
   useUploadVideosMutation,
   useUploadCertificatesMutation,
+  useUploadGigImageMutation,
   useUploadOtherImagesMutation,
   useGetMyGigsQuery,
   useGetAllGigsQuery,
   useGetGigByIdQuery,
   useCreateGigMutation,
   useUpdateGigMutation,
+  useDeleteGigImageMutation,
   useDeleteGigMutation,
   useGetAvailableJobsQuery,
   useGetMyOrdersQuery,

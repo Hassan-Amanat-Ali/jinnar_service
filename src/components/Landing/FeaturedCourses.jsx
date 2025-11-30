@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FiClock, FiUsers } from "react-icons/fi";
 import { collection, getDocs, query, limit, orderBy } from "firebase/firestore";
 import { db } from "../../firebase/config";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 const FeaturedCourses = () => {
   const [courses, setCourses] = useState([]);
@@ -164,7 +165,7 @@ const FeaturedCourses = () => {
                 {/* Image */}
                 <div className="relative">
                   <img
-                    src={course.thumbnail}
+                    src={getFullImageUrl(course.thumbnail)}
                     alt={course.title || "Course Image"}
                     className="w-full h-48 object-cover"
                     onError={(e) => {

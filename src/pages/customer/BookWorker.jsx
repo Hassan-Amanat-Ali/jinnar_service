@@ -7,6 +7,7 @@ import {
   useGetGigByIdQuery,
 } from "../../services/workerApi";
 import { useCreateOrderMutation } from "../../services/customerApi";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 import LocationPicker from "../../components/common/LocationPicker";
 
 import {
@@ -137,7 +138,7 @@ const BookWorker = () => {
           <div className="rounded-[25px] border border-neutral-300 w-full lg:w-1/3 h-fit py-6 flex flex-col items-center justify-center shadow-xl gap-4 bg-white">
             <div className="text-center flex flex-col items-center px-4">
               <img
-                src={profile.profilePicture || ali}
+                src={getFullImageUrl(profile.profilePicture) || ali}
                 alt={profile.name}
                 className="w-20 h-20 object-cover rounded-full"
               />

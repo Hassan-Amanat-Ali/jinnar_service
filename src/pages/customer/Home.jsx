@@ -34,6 +34,7 @@ import {
 } from "../../services/customerApi";
 import AuthContext from "../../context/AuthContext";
 import { requestNotificationPermission } from "../../utils/fcm";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 const CustomerHome = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -179,7 +180,7 @@ const CustomerHome = () => {
     gigs?.slice(0, 8)?.map((gig) => ({
       id: gig._id,
       title: gig.title,
-      img: gig.images?.[0]?.url || service1, // Use first image or fallback
+      img: getFullImageUrl(gig.images?.[0]?.url) || service1, // Use first image or fallback
       rating: gig.sellerId?.rating?.average || gig.averageRating || "N/A",
       description: gig.description,
       starting:

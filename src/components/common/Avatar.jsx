@@ -1,5 +1,6 @@
 import React from 'react';
 import { User } from 'lucide-react';
+import { getFullImageUrl } from '../../utils/fileUrl.js';
 
 /**
  * Avatar component that displays profile picture or fallback to initials/icon
@@ -71,7 +72,7 @@ const Avatar = ({ src, name, size = 'default', className = '' }) => {
   if (src && !imageError) {
     return (
       <img
-        src={src}
+        src={getFullImageUrl(src)}
         alt={name || 'User'}
         className={`${sizeClass} rounded-full object-cover shrink-0 ${className}`}
         onError={() => setImageError(true)}

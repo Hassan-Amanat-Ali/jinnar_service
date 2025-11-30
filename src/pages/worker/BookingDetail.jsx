@@ -27,6 +27,7 @@ import {
   useDeclineJobMutation,
   useReviewOrderMutation,
 } from "../../services/workerApi";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 // Small UI helpers
 const LabelValue = ({ label, value, valueClass = "" }) => (
@@ -481,11 +482,17 @@ const BookingDetail = () => {
               {/* Customer Info Card */}
               <SectionCard title="Customer Information">
                 <div className="flex flex-col items-center text-center mb-4">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
-                    {customer.name?.charAt(0) ||
-                      customer.mobileNumber?.charAt(0) ||
-                      "C"}
-                  </div>
+                  {customer.profilePicture ? (
+                    <img
+                      src={getFullImageUrl(customer.profilePicture)}
+                      alt={customer.name || "Customer"}
+                      className="w-20 h-20 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
+                      {customer.name?.charAt(0) || "C"}
+                    </div>
+                  )}
                   <h4 className="mt-3 font-bold text-lg">
                     {customer.name || "Customer"}
                   </h4>
@@ -563,7 +570,7 @@ const BookingDetail = () => {
                           className="relative aspect-square rounded-lg overflow-hidden"
                         >
                           <img
-                            src={image.url}
+                            src={getFullImageUrl(image.url)}
                             alt={`Service image ${index + 1}`}
                             className="w-full h-full object-cover hover:scale-105 transition-transform"
                             onError={(e) => {

@@ -17,11 +17,13 @@ import {
   useCreateGigMutation,
   useUpdateGigMutation,
   useDeleteGigMutation,
-  useUploadOtherImagesMutation,
+  useUploadGigImageMutation,
+  useDeleteGigImageMutation,
   useGetCategoriesQuery,
   useGetSubcategoriesQuery,
 } from "../../services/workerApi";
 import toast from "react-hot-toast";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 // Helper function to format category/subcategory names nicely
 const formatName = (name) => {
@@ -38,8 +40,9 @@ const WorkerGigs = () => {
   const [createGig, { isLoading: isCreating }] = useCreateGigMutation();
   const [updateGig, { isLoading: isUpdating }] = useUpdateGigMutation();
   const [deleteGig, { isLoading: isDeleting }] = useDeleteGigMutation();
-  const [uploadOtherImages, { isLoading: isUploadingImages }] =
-    useUploadOtherImagesMutation();
+  const [uploadGigImage, { isLoading: isUploadingImages }] =
+    useUploadGigImageMutation();
+  const [deleteGigImage] = useDeleteGigImageMutation();
 
   // Fetch categories
   const { data: categoriesData, isLoading: categoriesLoading } =
@@ -139,12 +142,24 @@ const WorkerGigs = () => {
   };
 
   // Remove image from preview
-  const removeImage = (index) => {
-    setImagePreview((prev) => prev.filter((_, i) => i !== index));
+  const removeImage = async (index) => {
+    const imageToRemove = imagePreview[index];
+    const newImagePreviews = imagePreview.filter((_, i) => i !== index);
+
+    // If it's a string, it's an existing image URL from the server
+    if (editingGig && typeof imageToRemove === 'string') {
+      // Optimistically update the UI
+      setImagePreview(newImagePreviews);
+      // Fire and forget the delete request to the backend
+      await deleteGigImage({ gigId: editingGig._id, imageUrl: imageToRemove });
+    }
+
+    // Also update the local state for new file uploads
     setFormData((prev) => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
     }));
+    setImagePreview(newImagePreviews);
   };
 
   // Open modal for creating new gig
@@ -178,7 +193,7 @@ const WorkerGigs = () => {
         gig.primarySubcategory?._id || gig.primarySubcategory || "",
       extraSubcategories: gig.extraSubcategories?.map((s) => s._id || s) || [],
     });
-    setImagePreview(gig.images?.map((img) => img.url) || []);
+    setImagePreview(gig.images?.map((img) => getFullImageUrl(img.url)) || []);
     setShowModal(true);
   };
 
@@ -195,7 +210,7 @@ const WorkerGigs = () => {
       toast.error("Description is required");
       return;
     }
-    if (formData.pricingMethod !== "negotiable" && !formData.price) {
+    if (!formData.price) {
       toast.error("Price is required");
       return;
     }
@@ -213,53 +228,48 @@ const WorkerGigs = () => {
     );
 
     try {
-      // Upload new images if any
-      let uploadedImageUrls = [];
-      if (formData.images.length > 0) {
-        toast.loading("Uploading images...", { id: loadingToast });
-
-        const formDataImages = new FormData();
-        formData.images.forEach((image) => {
-          formDataImages.append("otherImages", image);
-        });
-
-        const uploadResult = await uploadOtherImages(formDataImages).unwrap();
-        uploadedImageUrls = uploadResult.files.map((file) => file.url); // Extract only URLs
-      }
-
-      // For editing, preserve existing images and add new ones
-      let finalImages = uploadedImageUrls;
-      if (editingGig && editingGig.images) {
-        // Keep existing images that weren't removed
-        const existingImageUrls = editingGig.images
-          .filter((img) => imagePreview.includes(img.url))
-          .map((img) => img.url);
-        finalImages = [...existingImageUrls, ...uploadedImageUrls];
-      }
-
-      toast.loading(editingGig ? "Updating gig..." : "Creating gig...", {
-        id: loadingToast,
-      });
-
       const gigData = {
         title: formData.title,
         description: formData.description,
-        pricingMethod: formData.pricingMethod,
-        price:
-          formData.pricingMethod === "negotiable"
-            ? undefined
-            : Number(formData.price),
-        images: finalImages,
+        pricingMethod: "fixed",
+        price: Number(formData.price),
         categoryId: formData.categoryId,
         primarySubcategory: formData.primarySubcategory,
         extraSubcategories: formData.extraSubcategories,
       };
 
       if (editingGig) {
+        // --- UPDATE GIG ---
+        // 1. Update text data first. The backend will preserve existing images.
+        toast.loading("Updating gig details...", { id: loadingToast });
         await updateGig({ id: editingGig._id, ...gigData }).unwrap();
+
+        // 2. Upload only the *new* images, if any
+        if (formData.images.length > 0) {
+          toast.loading("Uploading new images...", { id: loadingToast });
+          const imageFormData = new FormData();
+          formData.images.forEach((imageFile) => {
+            imageFormData.append("gig_images", imageFile);
+          });
+          await uploadGigImage({ gigId: editingGig._id, formData: imageFormData }).unwrap();
+        }
+
         toast.success("Gig updated successfully", { id: loadingToast });
       } else {
-        await createGig(gigData).unwrap();
+        // --- CREATE GIG ---
+        // 1. Create the gig with text data
+        const newGig = await createGig(gigData).unwrap();
+
+        // 2. If images were selected, upload them to the new gig's ID
+        if (formData.images.length > 0 && newGig.gig?._id) {
+          toast.loading("Uploading images...", { id: loadingToast });
+          const imageFormData = new FormData();
+          formData.images.forEach((imageFile) => {
+            imageFormData.append("gig_images", imageFile);
+          });
+          await uploadGigImage({ gigId: newGig.gig._id, formData: imageFormData }).unwrap();
+        }
+
         toast.success("Gig created successfully", { id: loadingToast });
       }
 
@@ -413,7 +423,7 @@ const WorkerGigs = () => {
             <div className="relative h-48 bg-gray-200">
               {gig.images && gig.images.length > 0 ? (
                 <img
-                  src={gig.images[0].url}
+                  src={getFullImageUrl(gig.images[0].url)}
                   alt={gig.title}
                   className="w-full h-full object-cover"
                 />
@@ -777,66 +787,31 @@ const WorkerGigs = () => {
                 </div>
               )}
 
-              {/* Pricing Method */}
+              {/* Price */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Pricing Method <span className="text-red-500">*</span>
+                  Price (TZS) <span className="text-red-500">*</span>
                 </label>
-                <div className="flex gap-3">
-                  {["fixed", "hourly", "negotiable"].map((method) => (
-                    <label
-                      key={method}
-                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 border rounded-lg cursor-pointer transition-all ${
-                        formData.pricingMethod === method
-                          ? "border-blue-500 bg-blue-50 text-blue-700"
-                          : "border-gray-300 hover:border-gray-400"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="pricingMethod"
-                        value={method}
-                        checked={formData.pricingMethod === method}
-                        onChange={handleInputChange}
-                        className="sr-only"
-                      />
-                      <span className="text-sm font-medium capitalize">
-                        {method}
-                      </span>
-                    </label>
-                  ))}
+                <div className="relative">
+                  <DollarSign
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    placeholder="Enter amount"
+                    min={0}
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    required
+                  />
                 </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Total price for the service
+                </p>
               </div>
-
-              {/* Price */}
-              {formData.pricingMethod !== "negotiable" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price (TZS) <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <DollarSign
-                      size={18}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    />
-                    <input
-                      type="number"
-                      name="price"
-                      value={formData.price}
-                      onChange={handleInputChange}
-                      placeholder="Enter amount"
-                      min={0}
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                      required
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {formData.pricingMethod === "hourly"
-                      ? "Price per hour"
-                      : "Total price for the service"}
-                  </p>
-                </div>
-              )}
 
               {/* Images */}
               <div>
@@ -856,7 +831,7 @@ const WorkerGigs = () => {
                           />
                           <button
                             type="button"
-                            onClick={() => removeImage(index)}
+                            onClick={(e) => { e.preventDefault(); removeImage(index); }}
                             className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <X size={14} />
@@ -868,7 +843,11 @@ const WorkerGigs = () => {
 
                   {/* Upload Button */}
                   {imagePreview.length < 3 && (
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all">
+                    <label
+                      className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all ${
+                        isUploadingImages ? "cursor-not-allowed opacity-50" : ""
+                      }`}
+                    >
                       <Upload className="text-gray-400 mb-2" size={32} />
                       <span className="text-sm text-gray-600">
                         Click to upload images
@@ -881,6 +860,7 @@ const WorkerGigs = () => {
                         accept="image/*"
                         multiple
                         onChange={handleImageUpload}
+                        disabled={isUploadingImages}
                         className="hidden"
                       />
                     </label>
@@ -899,10 +879,10 @@ const WorkerGigs = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isCreating || isUpdating}
+                  disabled={isCreating || isUpdating || isUploadingImages}
                   className="flex-1 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium px-4 py-2.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
                 >
-                  {isCreating || isUpdating
+                  {isCreating || isUpdating || isUploadingImages
                     ? "Saving..."
                     : editingGig
                     ? "Update Gig"

@@ -4,6 +4,7 @@ import JobCard from "../../components/customer/MyBookingsCard";
 import Hero from "../../components/common/Hero";
 import { Loader2, Search, Filter } from "lucide-react";
 import { useGetMyOrdersQuery } from "../../services/customerApi";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 const CustomerBookings = () => {
   const navigate = useNavigate();
@@ -79,14 +80,14 @@ const CustomerBookings = () => {
   // Transform API data to match JobCard component expectations
   const transformedBookings = filteredBookings.map((booking) => ({
     id: booking._id,
-    serviceImage: booking.gigId?.images?.[0]?.url || null,
+    serviceImage: getFullImageUrl(booking.gigId?.images?.[0]?.url) || null,
     serviceTitle: booking.gigId?.title || "Service",
     serviceDescription: booking.jobDescription || "No description available",
     emergencyTag: booking.emergency ? "Emergency" : null,
     statusTag:
       booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) ||
       "Unknown",
-    workerImage: booking.sellerId?.profilePicture || null,
+    workerImage: getFullImageUrl(booking.sellerId?.profilePicture) || null,
     workerName: booking.sellerId?.name || "Worker",
     workerRating: booking.sellerId?.rating || "N/A",
     date: booking.date ? new Date(booking.date).toLocaleDateString() : "TBD",

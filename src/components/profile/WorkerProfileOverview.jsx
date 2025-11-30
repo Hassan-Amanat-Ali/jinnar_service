@@ -23,6 +23,7 @@ import {
   Shield,
 } from "lucide-react";
 import { useGetMyProfileQuery } from "../../services/workerApi";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 // Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
@@ -448,7 +449,7 @@ const WorkerProfileOverview = () => {
             <div className="shrink-0">
               {profile.profilePicture ? (
                 <img
-                  src={profile.profilePicture}
+                  src={getFullImageUrl(profile.profilePicture)}
                   alt={profile.name}
                   className="w-20 h-20 rounded-full object-cover"
                 />
@@ -736,7 +737,7 @@ const WorkerProfileOverview = () => {
                     className="aspect-square bg-gray-200 rounded-lg overflow-hidden"
                   >
                     <img
-                      src={image.url}
+                      src={getFullImageUrl(image.url)}
                       alt={`Portfolio ${idx + 1}`}
                       className="w-full h-full object-cover"
                     />

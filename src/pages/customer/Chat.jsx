@@ -23,6 +23,7 @@ import {
   useSendMessageMutation,
   useMarkAsReadMutation,
 } from "../../services/chatApi";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 // Contact Item Component
 const ContactItem = ({
@@ -68,7 +69,7 @@ const ContactItem = ({
     >
       <div className="relative">
         <Avatar
-          src={otherParticipant?.profilePicture}
+          src={getFullImageUrl(otherParticipant?.profilePicture)}
           name={otherParticipant?.name}
           size="md"
           className="h-8 w-8 md:h-10 md:w-10"
@@ -150,9 +151,9 @@ const MessageBubble = ({ message, currentUserId, otherParticipant }) => {
     <div className={`flex gap-2 md:gap-3 ${isMe ? "flex-row-reverse" : ""}`}>
       {!isMe && (
         <Avatar
-          src={
-            otherParticipant?.profilePicture || message.sender?.profilePicture
-          }
+          src={getFullImageUrl(
+            otherParticipant?.profilePicture || message.sender?.profilePicture,
+          )}
           name={otherParticipant?.name || message.sender?.name}
           size="default"
           className="h-6 w-6 md:h-8 md:w-8"
@@ -675,7 +676,7 @@ const Chat = () => {
                     <ArrowLeft className="w-6 h-6 text-gray-600" />
                   </button>
                   <Avatar
-                    src={otherParticipant?.profilePicture}
+                    src={getFullImageUrl(otherParticipant?.profilePicture)}
                     name={otherParticipant?.name}
                     size="default"
                     className="h-6 w-6 md:h-8 md:w-8"

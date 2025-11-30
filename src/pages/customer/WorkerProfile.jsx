@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetPublicProfileQuery } from "../../services/workerApi";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 const RatingStars = ({ value = 5, outOf = 5, size = 16 }) => {
   const stars = Array.from({ length: outOf }, (_, i) => i < Math.round(value));
@@ -230,9 +231,9 @@ const WorkerProfile = () => {
             <div className="flex flex-col items-center text-center">
               <div className="h-24 w-24 overflow-hidden rounded-full border border-gray-200 shadow-sm">
                 <img
-                  src={
+                  src={getFullImageUrl(
                     profile.profilePicture || "https://via.placeholder.com/150"
-                  }
+                  )}
                   alt={profile.name}
                   className="h-full w-full object-cover"
                 />
@@ -361,7 +362,11 @@ const WorkerProfile = () => {
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-3">
                 {profile.portfolioImages.map((img, idx) => (
-                  <Thumb key={idx} src={img.url} alt={`Portfolio ${idx + 1}`} />
+                  <Thumb
+                    key={idx}
+                    src={getFullImageUrl(img.url)}
+                    alt={`Portfolio ${idx + 1}`}
+                  />
                 ))}
               </div>
             </section>
@@ -383,7 +388,7 @@ const WorkerProfile = () => {
                 {profile.certificates.map((cert, idx) => (
                   <a
                     key={idx}
-                    href={cert.url}
+                    href={getFullImageUrl(cert.url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"

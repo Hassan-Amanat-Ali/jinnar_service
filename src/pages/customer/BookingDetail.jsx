@@ -22,6 +22,7 @@ import {
   useCompleteOrderMutation,
   useRateAndReviewOrderMutation,
 } from "../../services/customerApi";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 const BookingDetail = () => {
   const { slug } = useParams();
@@ -263,7 +264,7 @@ const BookingDetail = () => {
             <div className="flex flex-col items-center text-center">
               {worker.profilePicture ? (
                 <img
-                  src={worker.profilePicture}
+                  src={getFullImageUrl(worker.profilePicture)}
                   alt={worker.name}
                   className="w-20 h-20 rounded-full object-cover"
                 />

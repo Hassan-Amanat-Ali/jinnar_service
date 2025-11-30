@@ -16,6 +16,7 @@ import ali from "../../assets/images/ali-hassan.jpg";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useGetOrderByIdQuery } from "../../services/workerApi";
 import { useStartConversationMutation } from "../../services/customerApi";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 const BookingConfirm = () => {
   const navigate = useNavigate();
@@ -133,7 +134,9 @@ const BookingConfirm = () => {
               {/* Left: worker */}
               <div className="flex items-center gap-3">
                 <img
-                  src={seller?.profilePicture || seller?.profileImage || ali}
+                  src={
+                    getFullImageUrl(seller?.profilePicture || seller?.profileImage) || ali
+                  }
                   alt={seller?.name || "Worker"}
                   className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
                   onError={(e) => {

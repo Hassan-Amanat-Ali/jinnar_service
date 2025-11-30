@@ -23,6 +23,7 @@ import {
   useUploadCertificatesMutation,
 } from "../../../services/workerApi";
 import { setProfile } from "../../../features/worker/profileSlice";
+import { getFullImageUrl } from "../../../utils/fileUrl.js";
 
 const humanFileType = (file) => {
   const type = file.type || "";
@@ -58,7 +59,7 @@ const Thumb = ({ file, onRemove, isExisting = false }) => {
     <div className="relative w-40 h-28 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center group">
       {isExisting && kind === "image" ? (
         <img
-          src={file.url}
+          src={getFullImageUrl(file.url)}
           alt={displayName}
           className="w-full h-full object-cover"
         />
