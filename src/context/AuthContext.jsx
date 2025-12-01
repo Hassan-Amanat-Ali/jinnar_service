@@ -4,17 +4,26 @@ import { ROLES } from "../constants/roles.js";
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
+  const [loading, setLoading] = useState(true);
   // Initialize role from localStorage if available
   const [role, setRole] = useState(() => {
     const storedRole = localStorage.getItem("role");
     return storedRole || null;
   });
-
   // Store user profile data
   const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
   });
+
+  // Check initial auth status from localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    const storedRole = localStorage.getItem("role");
+    setUser(storedUser ? JSON.parse(storedUser) : null);
+    setRole(storedRole || null);
+    setLoading(false); // Finished loading
+  }, []);
 
   // Persist role to localStorage whenever it changes
   useEffect(() => {
@@ -34,7 +43,16 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
-  const value = useMemo(() => ({ role, setRole, user, setUser }), [role, user]);
+  const logout = () => {
+    setUser(null);
+    setRole(null);
+    // The useEffects above will handle removing from localStorage
+  };
+
+  const value = useMemo(
+    () => ({ loading, role, setRole, user, setUser, logout }),
+    [loading, role, user]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

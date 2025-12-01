@@ -46,6 +46,7 @@ import JinnarDetailed from "../components/common/JinnarDetailed.jsx";
 import HowTrainingWorks from "../components/common/HowTrainingWorks.jsx";
 import { ROLES } from "../constants/roles.js";
 import RoleGuard from "../components/common/RoleGuard.jsx";
+import GuestGuard from "../components/common/GuestGuard.jsx";
 import PrivacyPolicies from "../pages/common/PrivacyPolicy.jsx";
 import AllServicesLanding from "../pages/landing/Landing.jsx";
 import SupportTicketDetail from "../components/profile/SupportTicketDetail.jsx";
@@ -56,36 +57,67 @@ const router = createBrowserRouter([
   // Public landing pages - accessible to everyone
   {
     element: <LandingLayout />,
+    children: [{
+      element: <GuestGuard />,
+      children: [
+        { index: true, element: <Landing /> },
+        { path: "landing-services", element: <AllServicesLanding /> },
+        { path: "what-is-jinnar", element: <Jinnar /> },
+        { path: "what-is-jinnar/detailed", element: <JinnarDetailed /> },
+        { path: "how-training-works", element: <HowTrainingWorks /> },
+        { path: "help", element: <Help /> },
+        { path: "privacy-policy", element: <PrivacyPolicies /> },
+        { path: "terms-condition", element: <Terms /> },
+        { path: "about-us", element: <AboutUs /> },
+      ],
+    }],
+  },
+  // Public auth pages - accessible only to unauthenticated users
+  {
+    element: <GuestGuard />,
     children: [
-      { index: true, element: <Landing /> },
-      { path: "landing-services", element: <AllServicesLanding /> },
-      { path: "what-is-jinnar", element: <Jinnar /> },
-      { path: "what-is-jinnar/detailed", element: <JinnarDetailed /> },
-      { path: "how-training-works", element: <HowTrainingWorks /> },
-      { path: "help", element: <Help /> },
-      { path: "privacy-policy", element: <PrivacyPolicies /> },
-      { path: "terms-condition", element: <Terms /> },
-      { path: "about-us", element: <AboutUs /> },
+      { path: "role", element: <RoleSelection /> },
+      { path: "login", element: <Login /> },
+      { path: "signup", element: <Signup /> },
+      { path: "verify", element: <Verify /> },
+      { path: "forgot-password", element: <ForgotPassword /> },
+      { path: "reset-password", element: <ResetPassword /> },
     ],
   },
-  // Public auth pages - no layout
-  { path: "role", element: <RoleSelection /> },
-  { path: "login", element: <Login /> },
-  { path: "signup", element: <Signup /> },
-  { path: "verify", element: <Verify /> },
-  { path: "forgot-password", element: <ForgotPassword /> },
-  { path: "reset-password", element: <ResetPassword /> },
   {
     element: <MainLayout />,
     children: [
       // Common pages
       { path: "contact", element: <Contact /> },
-      // { path: "chat", element: <Chat /> },
       { path: "privacy", element: <PrivacyPolicies /> },
-      { path: "notifications", element: <Notifications /> },
-      { path: "profile", element: <Profile /> },
-      { path: "complaint", element: <Complaint /> },
-      { path: "profile/support-ticket/:id", element: <SupportTicketDetail /> },
+      {
+        path: "notifications",
+        element: (
+          <RoleGuard allow={[ROLES.CUSTOMER, ROLES.WORKER]}>
+            <Notifications />
+          </RoleGuard>
+        ),
+      },
+      {
+        path: "profile",
+        element: (
+          <RoleGuard allow={[ROLES.CUSTOMER, ROLES.WORKER]}>
+            <Profile />
+          </RoleGuard>
+        ),
+      },
+      {
+        path: "complaint",
+        element: (
+          <RoleGuard allow={[ROLES.CUSTOMER, ROLES.WORKER]}>
+            <Complaint />
+          </RoleGuard>
+        ),
+      },
+      {
+        path: "profile/support-ticket/:id",
+        element: <SupportTicketDetail />,
+      },
 
       // Customer pages - simple flat routing (accessible to customers AND workers)
       {

@@ -15,7 +15,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import { useDispatch } from "react-redux";
-import { logout } from "../../features/auth/authSlice";
+import { clearUser } from "../../features/auth/authSlice";
 import { useAuth } from "../../context/AuthContext.jsx";
 
 // Import customer profile components
@@ -207,13 +207,12 @@ const Profile = () => {
   }, [isWorkerProfile]);
 
   const dispatch = useDispatch();
-  const { setRole } = useAuth();
+  const { logout: contextLogout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Clear redux auth and local storage and context role
-    dispatch(logout());
-    setRole(null);
+    contextLogout(); // This clears AuthContext state and localStorage
+    dispatch(clearUser()); // This clears the Redux state
     navigate("/role");
   };
 

@@ -37,18 +37,16 @@ const HelpAndSupport = () => {
     data: faqCategories = [],
     isLoading: isLoadingFaqs,
     isError: isErrorFaqs,
-  } = useGetHelpFaqsQuery();
+  } = useGetHelpFaqsQuery(undefined, { skip: false || !isLoggedIn });
 
   // Fetch user's support tickets
-const {
+  const {
     data: ticketsData,
     isLoading: isLoadingTickets,
     isError: isErrorTickets,
     refetch: refetchTickets,
-    // 3. FIX: Conditionally skip the query if the user is not logged in
-  } = useGetMyTicketsQuery(undefined, {
-    skip: !isLoggedIn, 
-  });
+    // Conditionally skip the query if the user is not logged in
+  } = useGetMyTicketsQuery(undefined, { skip: !isLoggedIn });
   // Create support ticket mutation
   const [createTicket, { isLoading: isSubmitting }] =
     useCreateSupportTicketMutation();
@@ -223,81 +221,82 @@ const {
       </div>
 
       {/* My Support Tickets */}
-      <div className="mb-8 border border-gray-200 rounded-xl p-5 shadow-md">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">
-          My Support Tickets
-        </h2>
-        <p className="text-sm text-gray-500 mb-6">
-          Track the status of your support requests.
-        </p>
+      {isLoggedIn && (
+        <div className="mb-8 border border-gray-200 rounded-xl p-5 shadow-md">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">
+            My Support Tickets
+          </h2>
+          <p className="text-sm text-gray-500 mb-6">
+            Track the status of your support requests.
+          </p>
 
-        {isLoadingTickets ? (
-          <div className="space-y-3">
-            {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="p-4 border border-gray-200 rounded-lg animate-pulse"
-              >
-                <div className="flex justify-between items-center">
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-48" />
-                    <div className="h-3 bg-gray-200 rounded w-32" />
-                  </div>
-                  <div className="h-6 bg-gray-200 rounded-full w-20" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : isErrorTickets ? (
-          <div className="text-center py-8 text-red-500">
-            Failed to load support tickets.
-          </div>
-        ) : ticketsData?.length > 0 ? (
-          <div className="space-y-3">
-            {ticketsData.map((ticket) => (
-              <div
-                key={ticket._id}
-                onClick={() => navigate(`/profile/support-ticket/${ticket._id}`)}
-                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900 truncate">
-                      {ticket.subject}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Ticket #{ticket.ticketId} • Last updated:{" "}
-                      {formatDate(ticket.updatedAt)}
-                    </p>
-                  </div>
-                  <div
-                    className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                      ticket.status === "open"
-                        ? "bg-blue-100 text-blue-800"
-                        : ticket.status === "in_progress"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
-                  >
-                    {ticket.status.replace("_", " ")}
+          {isLoadingTickets ? (
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="p-4 border border-gray-200 rounded-lg animate-pulse"
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-48" />
+                      <div className="h-3 bg-gray-200 rounded w-32" />
+                    </div>
+                    <div className="h-6 bg-gray-200 rounded-full w-20" />
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
-            <Ticket
-              size={32}
-              className="mx-auto text-gray-400 mb-3"
-            />
-            <h3 className="font-medium text-gray-900">No Tickets Found</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              You haven't submitted any support tickets yet.
-            </p>
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          ) : isErrorTickets ? (
+            <div className="text-center py-8 text-red-500">
+              Failed to load support tickets.
+            </div>
+          ) : ticketsData?.length > 0 ? (
+            <div className="space-y-3">
+              {ticketsData.map((ticket) => (
+                <div
+                  key={ticket._id}
+                  onClick={() =>
+                    navigate(`/profile/support-ticket/${ticket._id}`)
+                  }
+                  className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900 truncate">
+                        {ticket.subject}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Ticket #{ticket.ticketId} • Last updated:{" "}
+                        {formatDate(ticket.updatedAt)}
+                      </p>
+                    </div>
+                    <div
+                      className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                        ticket.status === "open"
+                          ? "bg-blue-100 text-blue-800"
+                          : ticket.status === "in_progress"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      {ticket.status.replace("_", " ")}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+              <Ticket size={32} className="mx-auto text-gray-400 mb-3" />
+              <h3 className="font-medium text-gray-900">No Tickets Found</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                You haven't submitted any support tickets yet.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Frequently Asked Questions */}
       <div className="mb-8 border border-gray-200 rounded-xl p-5 shadow-md">
