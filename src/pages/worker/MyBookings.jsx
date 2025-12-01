@@ -10,6 +10,7 @@ import {
   Search,
   Filter,
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext.jsx";
 import { useGetMyOrdersQuery } from "../../services/workerApi";
 
 const MyBookings = () => {
@@ -17,17 +18,19 @@ const MyBookings = () => {
   const [filter, setFilter] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
 
+  const { user } = useAuth();
   const { data: apiResponse, isLoading, error } = useGetMyOrdersQuery();
 
   // DEBUG: Log API response
   console.log("📋 MyBookings - API Response:", apiResponse);
   
-  // Extract orders array from API response - handle different response structures
-  const orders = Array.isArray(apiResponse) 
+  // Extract and filter orders array from API response
+  const orders = (Array.isArray(apiResponse) 
     ? apiResponse 
-    : apiResponse?.orders || apiResponse?.data || [];
+    : apiResponse?.orders || apiResponse?.data || []
+  ).filter(order => order.buyerId?._id !== user?._id);
 
-  console.log("📋 MyBookings - Extracted orders:", orders);
+  console.log("📋 MyBookings - Extracted and filtered orders:", orders);
   console.log("📋 MyBookings - Orders count:", orders?.length);
 
   // Format date

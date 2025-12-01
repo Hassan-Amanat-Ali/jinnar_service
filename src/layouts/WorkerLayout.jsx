@@ -10,12 +10,28 @@ import {
   FiSearch,
   FiMessageSquare,
 } from "react-icons/fi";
-import { Wallet, BriefcaseBusiness } from "lucide-react";
+import { useAuth } from "../context/AuthContext.jsx";
+import { Wallet, BriefcaseBusiness, ArrowLeftRight } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import ScrollToTop from "../components/common/ScrollToTop.jsx";
 import Footer from "../components/common/Footer";
 import GoogleTranslate from "../components/common/GoogleTranslate.jsx";
 import logo from "../assets/logo.png";
+
+const SwitchRoleButton = ({ role, onClick }) => {
+  return (
+    <button
+      onClick={onClick}
+      title={`Switch to ${role === "customer" ? "Worker" : "Customer"}`}
+      className="flex items-center space-x-2 text-xs px-2.5 py-1.5 rounded-md transition bg-sky-50 hover:bg-sky-100 border border-sky-200"
+    >
+      <ArrowLeftRight size={14} color="#74C7F2" />
+      <span className="text-gray-700 font-medium">
+        {role === "customer" ? "Worker" : "Customer"}
+      </span>
+    </button>
+  );
+};
 
 const WorkerNavbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -34,6 +50,16 @@ const WorkerNavbar = () => {
   //   // Add logout logic here
   //   navigate("/");
   // };
+
+  const { role, switchRole } = useAuth();
+
+  const handleSwitchRole = () => {
+    const newRole = role === "customer" ? "worker" : "customer";
+    switchRole(newRole);
+    navigate(newRole === "worker" ? "/worker-home" : "/customer-home", {
+      replace: true,
+    });
+  };
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -82,6 +108,7 @@ const WorkerNavbar = () => {
 
             {/* Right Icons - Far Right */}
             <div className="hidden md:flex items-center space-x-2 shrink-0">
+              <SwitchRoleButton role={role} onClick={handleSwitchRole} />
               <div onClick={() => navigate("/worker-chat")}>
                 <IconButton
                   icon={<FiMessageSquare size={14} color="#74C7F2" />}
@@ -165,6 +192,12 @@ const WorkerNavbar = () => {
                     />
                   ))}
 
+                  <MobileNavItem
+                    icon={<ArrowLeftRight size={14} />}
+                    label={`Switch to ${role === "customer" ? "Worker" : "Customer"}`}
+                    to="#"
+                    onNavigate={handleSwitchRole}
+                  />
                   <MobileNavItem
                     icon={<FiMessageSquare size={14} />}
                     label="Messages"

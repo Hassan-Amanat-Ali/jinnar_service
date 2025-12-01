@@ -49,8 +49,12 @@ export const AuthProvider = ({ children }) => {
     // The useEffects above will handle removing from localStorage
   };
 
+  const switchRole = (newRole) => {
+    setRole(newRole);
+  };
+
   const value = useMemo(
-    () => ({ loading, role, setRole, user, setUser, logout }),
+    () => ({ loading, role, setRole, user, setUser, logout, switchRole }),
     [loading, role, user]
   );
 

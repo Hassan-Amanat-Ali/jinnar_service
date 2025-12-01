@@ -8,12 +8,29 @@ import {
   Menu,
   X,
   Wallet,
+  ArrowLeftRight,
 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import GoogleTranslate from "./GoogleTranslate.jsx";
 import logo from "../../assets/logo.png";
+import { useAuth } from "../../context/AuthContext.jsx";
+
+const SwitchRoleButton = ({ role, onClick }) => {
+  return (
+    <button
+      onClick={onClick}
+      title={`Switch to ${role === "customer" ? "Worker" : "Customer"}`}
+      className="flex items-center space-x-2 text-xs px-2.5 py-1.5 rounded-md transition bg-sky-50 hover:bg-sky-100 border border-sky-200"
+    >
+      <ArrowLeftRight size={14} color="#74C7F2" />
+      <span className="text-gray-700 font-medium">
+        {role === "customer" ? "Worker" : "Customer"}
+      </span>
+    </button>
+  );
+};
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -21,6 +38,16 @@ export default function Navbar() {
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const { role, switchRole } = useAuth();
+
+  const handleSwitchRole = () => {
+    const newRole = role === "customer" ? "worker" : "customer";
+    switchRole(newRole);
+    navigate(newRole === "worker" ? "/worker-home" : "/customer-home", {
+      replace: true,
+    });
   };
 
   return (
@@ -63,7 +90,8 @@ export default function Navbar() {
             </div>
 
             {/* Right Icons - Desktop */}
-            <div className="hidden md:flex items-center space-x-3 cursop">
+            <div className="hidden md:flex items-center space-x-3">
+              <SwitchRoleButton role={role} onClick={handleSwitchRole} />
               <div onClick={() => navigate("/customer-chat")}>
                 <IconButton
                   icon={<MessageSquare size={14} color="#74C7F2" />}
@@ -150,6 +178,12 @@ export default function Navbar() {
                     label="Profile"
                     to="/profile"
                     onNavigate={() => setIsMobileMenuOpen(false)}
+                  />
+                  <MobileNavItem
+                    icon={<ArrowLeftRight size={14} />}
+                    label={`Switch to ${role === "customer" ? "Worker" : "Customer"}`}
+                    to="#"
+                    onNavigate={handleSwitchRole}
                   />
                   <MobileNavItem
                     icon={<MessageSquare size={14} />}
