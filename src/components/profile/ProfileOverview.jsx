@@ -1,17 +1,20 @@
 import { useState, useEffect } from "react";
-import { User, Mail, Phone, MapPin, Edit, Plus } from "lucide-react";
+import { User, Mail, Phone, MapPin, Edit, Plus, Camera } from "lucide-react";
 import {
   useGetMyProfileQuery as useGetCustomerProfileQuery,
   useUpdateProfileMutation as useUpdateCustomerProfileMutation,
+  useUploadProfilePictureMutation as useUploadCustomerProfilePictureMutation,
 } from "../../services/customerApi";
 import {
   useGetMyProfileQuery as useGetWorkerProfileQuery,
   useUpdateProfileMutation as useUpdateWorkerProfileMutation,
+  useUploadProfilePictureMutation as useUploadWorkerProfilePictureMutation,
 } from "../../services/workerApi";
 import { ProfileSkeleton } from "../common/SkeletonLoader";
 import { ROLES } from "../../constants/roles";
 import { toast } from "react-toastify";
 import LocationPicker from "../common/LocationPicker";
+import { getFullImageUrl } from "../../utils/fileUrl";
 
 const ProfileOverview = () => {
   const [isEditMode, setIsEditMode] = useState(false);
@@ -25,7 +28,9 @@ const ProfileOverview = () => {
     preferredAreas: [],
     languages: [],
     notifications: [],
+    profilePicture: null,
   });
+  const [profileImagePreview, setProfileImagePreview] = useState(null);
 
   const role = localStorage.getItem("role");
   const isCustomer = role === ROLES.CUSTOMER;
@@ -39,6 +44,9 @@ const ProfileOverview = () => {
 
   const [updateCustomerProfile] = useUpdateCustomerProfileMutation();
   const [updateWorkerProfile] = useUpdateWorkerProfileMutation();
+  const [uploadCustomerProfilePicture] =
+    useUploadCustomerProfilePictureMutation();
+  const [uploadWorkerProfilePicture] = useUploadWorkerProfilePictureMutation();
 
   const {
     data: profileData,
@@ -51,6 +59,10 @@ const ProfileOverview = () => {
     ? updateCustomerProfile
     : updateWorkerProfile;
 
+  const uploadProfilePicture = isCustomer
+    ? uploadCustomerProfilePicture
+    : uploadWorkerProfilePicture;
+
   useEffect(() => {
     if (profileData?.profile) {
       const profile = profileData.profile;
@@ -62,13 +74,44 @@ const ProfileOverview = () => {
         preferredAreas: profile.preferredAreas || [],
         languages: profile.languages || [],
         notifications: profile.notifications || [],
+        profilePicture: null,
       });
+
+      // Set profile image preview if exists
+      if (profile.profilePicture) {
+        setProfileImagePreview(getFullImageUrl(profile.profilePicture));
+      }
     }
   }, [profileData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ["image/jpeg", "image/jpg", "image/png"];
+      if (!validTypes.includes(file.type)) {
+        toast.error("Please upload a valid image (JPG or PNG)");
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size must be less than 5MB");
+        return;
+      }
+
+      setFormData({ ...formData, profilePicture: file });
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfileImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleAddLocation = () => {
@@ -114,9 +157,25 @@ const ProfileOverview = () => {
 
   const handleSave = async () => {
     try {
+      // Step 1: Upload profile picture if changed
+      let profileImageData = profileData?.profile?.profileImage;
+      if (formData.profilePicture instanceof File) {
+        const imageFormData = new FormData();
+        imageFormData.append("profilePicture", formData.profilePicture);
+
+        const imageResult = await uploadProfilePicture(imageFormData).unwrap();
+        profileImageData = imageResult.file?.url || imageResult.url;
+      }
+
+      // Step 2: Update profile data
       const updateData = {
         name: formData.name,
       };
+
+      // Add profile picture if available
+      if (profileImageData) {
+        updateData.profilePicture = profileImageData;
+      }
 
       if (isCustomer) {
         if (formData.preferredAreas.length > 0) {
@@ -206,11 +265,38 @@ const ProfileOverview = () => {
       {}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 mb-8 p-6 rounded-2xl border border-neutral-100 shadow-sm">
         <div className="relative">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#B6E0FE] to-[#74C7F2] rounded-full flex items-center justify-center">
-            <span className="text-xl sm:text-2xl font-bold text-white">
-              {getInitials(formData.name)}
-            </span>
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#B6E0FE] to-[#74C7F2] rounded-full flex items-center justify-center overflow-hidden">
+            {profileImagePreview ? (
+              <img
+                src={profileImagePreview}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-xl sm:text-2xl font-bold text-white">
+                {getInitials(formData.name)}
+              </span>
+            )}
           </div>
+          {isEditMode && (
+            <>
+              <button
+                onClick={() =>
+                  document.getElementById("profile-image-upload").click()
+                }
+                className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#74C7F2] rounded-full flex items-center justify-center hover:bg-[#5BAEE6] transition-colors"
+              >
+                <Camera size={12} className="text-white" />
+              </button>
+              <input
+                type="file"
+                id="profile-image-upload"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="hidden"
+              />
+            </>
+          )}
         </div>
         <div className="flex-1">
           <h3 className="text-xl font-bold text-gray-900 mb-1">

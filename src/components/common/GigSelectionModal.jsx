@@ -1,16 +1,12 @@
 import { useState } from "react";
 import { X, Package, DollarSign, Star, Clock, Loader2 } from "lucide-react";
 import { useGetMyGigsQuery } from "../../services";
+import { getFullImageUrl } from "../../utils/fileUrl";
 
-const GigSelectionModal = ({ 
-  isOpen, 
-  onClose, 
-  onGigSelect,
-  receiverName 
-}) => {
+const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
   const [selectedGigId, setSelectedGigId] = useState("");
   const { data: gigsResponse, isLoading: gigsLoading } = useGetMyGigsQuery();
-  
+
   // Handle different API response structures
   // Get gigs from the correct response structure (same as WorkerGigs.jsx)
   const gigs = gigsResponse?.gigs || [];
@@ -22,11 +18,11 @@ const GigSelectionModal = ({
     gigsLength: gigs.length,
     isLoading: gigsLoading,
     hasGigsProperty: !!gigsResponse?.gigs,
-    isArray: Array.isArray(gigs)
+    isArray: Array.isArray(gigs),
   });
 
   const handleContinue = () => {
-    const selectedGig = gigs.find(gig => gig._id === selectedGigId);
+    const selectedGig = gigs.find((gig) => gig._id === selectedGigId);
     if (selectedGig) {
       onGigSelect(selectedGig);
     }
@@ -35,7 +31,9 @@ const GigSelectionModal = ({
   const formatPrice = (pricing) => {
     // Handle both pricing object {method, price} and direct price value
     const price = pricing?.price || pricing || 0;
-    return typeof price === 'number' ? price.toFixed(2) : parseFloat(price || 0).toFixed(2);
+    return typeof price === "number"
+      ? price.toFixed(2)
+      : parseFloat(price || 0).toFixed(2);
   };
 
   if (!isOpen) return null;
@@ -43,11 +41,11 @@ const GigSelectionModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Transparent Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black bg-opacity-10 backdrop-blur-[1px]" 
+      <div
+        className="absolute inset-0 bg-black bg-opacity-10 backdrop-blur-[1px]"
         onClick={onClose}
       />
-      
+
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-hidden">
         {/* Header */}
@@ -84,7 +82,9 @@ const GigSelectionModal = ({
             {gigsLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                <span className="ml-3 text-gray-600">Loading your services...</span>
+                <span className="ml-3 text-gray-600">
+                  Loading your services...
+                </span>
               </div>
             ) : Array.isArray(gigs) && gigs.length > 0 ? (
               <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -92,8 +92,8 @@ const GigSelectionModal = ({
                   <label
                     key={gig._id}
                     className={`block p-4 border rounded-xl cursor-pointer transition-all hover:shadow-md ${
-                      selectedGigId === gig._id 
-                        ? "border-blue-500 bg-blue-50 shadow-md" 
+                      selectedGigId === gig._id
+                        ? "border-blue-500 bg-blue-50 shadow-md"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
@@ -105,29 +105,33 @@ const GigSelectionModal = ({
                       onChange={(e) => setSelectedGigId(e.target.value)}
                       className="sr-only"
                     />
-                    
+
                     <div className="flex items-start gap-4">
                       {/* Gig Image */}
-                      {gig.images && Array.isArray(gig.images) && gig.images.length > 0 && (
-                        <div className="shrink-0">
-                          <img
-                            src={gig.images[0]?.url || gig.images[0]}
-                            alt={gig.title}
-                            className="w-16 h-16 rounded-lg object-cover"
-                          />
-                        </div>
-                      )}
-                      
+                      {gig.images &&
+                        Array.isArray(gig.images) &&
+                        gig.images.length > 0 && (
+                          <div className="shrink-0">
+                            <img
+                              src={getFullImageUrl(
+                                gig.images[0]?.url || gig.images[0]
+                              )}
+                              alt={gig.title}
+                              className="w-16 h-16 rounded-lg object-cover"
+                            />
+                          </div>
+                        )}
+
                       {/* Gig Info */}
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-gray-900 mb-1 line-clamp-1">
                           {gig.title}
                         </h4>
-                        
+
                         <p className="text-sm text-gray-600 mb-2 line-clamp-2">
                           {gig.description}
                         </p>
-                        
+
                         <div className="flex items-center gap-4 text-sm text-gray-500">
                           <div className="flex items-center gap-1">
                             <DollarSign className="w-4 h-4" />
@@ -135,14 +139,14 @@ const GigSelectionModal = ({
                               ${formatPrice(gig.pricing)}
                             </span>
                           </div>
-                          
+
                           {gig.deliveryTime && (
                             <div className="flex items-center gap-1">
                               <Clock className="w-4 h-4" />
                               <span>{gig.deliveryTime} days</span>
                             </div>
                           )}
-                          
+
                           {gig.rating && (
                             <div className="flex items-center gap-1">
                               <Star className="w-4 h-4 text-yellow-400 fill-current" />
@@ -155,7 +159,7 @@ const GigSelectionModal = ({
                         {gig.skills && gig.skills.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
                             {gig.skills.slice(0, 3).map((skill, index) => (
-                              <span 
+                              <span
                                 key={index}
                                 className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-md"
                               >
@@ -170,7 +174,7 @@ const GigSelectionModal = ({
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Selection Indicator */}
                       {selectedGigId === gig._id && (
                         <div className="shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
@@ -188,7 +192,8 @@ const GigSelectionModal = ({
                   No Services Available
                 </h4>
                 <p className="text-gray-600 mb-4">
-                  You need to create a service first before sending custom offers.
+                  You need to create a service first before sending custom
+                  offers.
                 </p>
                 <button
                   onClick={onClose}

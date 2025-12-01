@@ -14,6 +14,14 @@ export const customerApi = baseApi.injectEndpoints({
       query: (data) => ({ url: "/user/update", method: "POST", body: data }),
       invalidatesTags: ["Profile"],
     }),
+    uploadProfilePicture: builder.mutation({
+      query: (formData) => ({
+        url: "/upload/profile-picture",
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["Profile"],
+    }),
     getMyOrders: builder.query({
       query: () => "/orders/my-orders",
       providesTags: ["Orders"],
@@ -145,6 +153,7 @@ export const {
   useGetMyProfileQuery,
   useGetPublicProfileQuery,
   useUpdateProfileMutation,
+  useUploadProfilePictureMutation,
   useGetMyOrdersQuery,
   useGetOrderByIdQuery,
   useGetActiveJobsQuery,

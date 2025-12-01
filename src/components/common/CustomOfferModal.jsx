@@ -1,14 +1,22 @@
 import { useState, useEffect } from "react";
-import { X, DollarSign, FileText, Package, Loader2, ArrowLeft } from "lucide-react";
+import {
+  X,
+  DollarSign,
+  FileText,
+  Package,
+  Loader2,
+  ArrowLeft,
+} from "lucide-react";
 import { useSendCustomOfferMutation } from "../../services";
+import { getFullImageUrl } from "../../utils/fileUrl";
 
-const CustomOfferModal = ({ 
-  isOpen, 
-  onClose, 
-  receiverId, 
+const CustomOfferModal = ({
+  isOpen,
+  onClose,
+  receiverId,
   receiverName,
   selectedGig,
-  onOfferSent 
+  onOfferSent,
 }) => {
   const [formData, setFormData] = useState({
     price: "",
@@ -22,7 +30,10 @@ const CustomOfferModal = ({
   useEffect(() => {
     if (isOpen && selectedGig) {
       setFormData({
-        price: selectedGig.pricing?.price?.toString() || selectedGig.pricing?.toString() || "",
+        price:
+          selectedGig.pricing?.price?.toString() ||
+          selectedGig.pricing?.toString() ||
+          "",
         description: "",
       });
       setError("");
@@ -33,18 +44,18 @@ const CustomOfferModal = ({
   useEffect(() => {
     if (selectedGig) {
       const basePrice = getPriceValue(selectedGig.pricing);
-      
+
       console.log("🔧 Setting form data with price:", basePrice);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        customPrice: basePrice.toString()
+        customPrice: basePrice.toString(),
       }));
     }
   }, [selectedGig]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!selectedGig || !formData.price || !formData.description) {
       setError("Please fill in all fields");
       return;
@@ -71,21 +82,19 @@ const CustomOfferModal = ({
       onClose();
     } catch (error) {
       console.error("❌ Failed to send offer:", error);
-      setError(error?.data?.message || "Failed to send offer. Please try again.");
+      setError(
+        error?.data?.message || "Failed to send offer. Please try again."
+      );
     }
   };
 
   // Helper function to safely get price from pricing object
   const getPriceValue = (pricing) => {
-    if (typeof pricing === 'object' && pricing !== null) {
+    if (typeof pricing === "object" && pricing !== null) {
       return pricing.price || 0;
     }
     return pricing || 0;
   };
-
-
-
-
 
   // Debug the selectedGig to find the problematic object rendering
   console.log("🔍 Selected Gig Debug:", {
@@ -93,7 +102,7 @@ const CustomOfferModal = ({
     pricing: selectedGig?.pricing,
     pricingType: typeof selectedGig?.pricing,
     hasMethodKey: selectedGig?.pricing?.method,
-    hasPriceKey: selectedGig?.pricing?.price
+    hasPriceKey: selectedGig?.pricing?.price,
   });
 
   if (!isOpen) return null;
@@ -101,11 +110,11 @@ const CustomOfferModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Transparent Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black bg-opacity-10 backdrop-blur-[1px]" 
+      <div
+        className="absolute inset-0 bg-black bg-opacity-10 backdrop-blur-[1px]"
         onClick={onClose}
       />
-      
+
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
@@ -145,18 +154,24 @@ const CustomOfferModal = ({
               <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                 <div className="flex items-center gap-2 mb-3">
                   <Package className="w-5 h-5 text-gray-600" />
-                  <h3 className="font-medium text-gray-900">Selected Service</h3>
+                  <h3 className="font-medium text-gray-900">
+                    Selected Service
+                  </h3>
                 </div>
-                
+
                 <div className="flex items-start gap-4">
-                  {selectedGig.images && Array.isArray(selectedGig.images) && selectedGig.images.length > 0 && (
-                    <img
-                      src={selectedGig.images[0]?.url || selectedGig.images[0]}
-                      alt={selectedGig.title}
-                      className="w-16 h-16 rounded-lg object-cover shrink-0"
-                    />
-                  )}
-                  
+                  {selectedGig.images &&
+                    Array.isArray(selectedGig.images) &&
+                    selectedGig.images.length > 0 && (
+                      <img
+                        src={getFullImageUrl(
+                          selectedGig.images[0]?.url || selectedGig.images[0]
+                        )}
+                        alt={selectedGig.title}
+                        className="w-16 h-16 rounded-lg object-cover shrink-0"
+                      />
+                    )}
+
                   <div className="flex-1 min-w-0">
                     <h4 className="font-semibold text-gray-900 mb-1">
                       {selectedGig.title}
@@ -188,14 +203,17 @@ const CustomOfferModal = ({
                 step="0.01"
                 min="0.01"
                 value={formData.price}
-                onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, price: e.target.value }))
+                }
                 placeholder="Enter your custom price"
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-medium"
                 required
               />
               {selectedGig && (
                 <p className="text-xs text-gray-600 mt-2">
-                  💡 Base price for "{selectedGig.title}" is ${selectedGig.pricing?.price || selectedGig.pricing || 0}. 
+                  💡 Base price for "{selectedGig.title}" is $
+                  {selectedGig.pricing?.price || selectedGig.pricing || 0}.
                   Adjust based on custom requirements.
                 </p>
               )}
@@ -209,14 +227,21 @@ const CustomOfferModal = ({
               </label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
                 placeholder="Describe what you'll deliver, timeline, number of revisions, additional services, etc..."
                 rows={5}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 required
               />
               <div className="mt-2 text-xs text-gray-600">
-                <p className="mb-1">💡 <strong>Be specific about:</strong></p>
+                <p className="mb-1">
+                  💡 <strong>Be specific about:</strong>
+                </p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   <li>What exactly you'll deliver</li>
                   <li>Timeline and milestones</li>
@@ -245,7 +270,12 @@ const CustomOfferModal = ({
             </button>
             <button
               type="submit"
-              disabled={isSending || !selectedGig || !formData.price || !formData.description}
+              disabled={
+                isSending ||
+                !selectedGig ||
+                !formData.price ||
+                !formData.description
+              }
               className="flex-1 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-3 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
             >
               {isSending ? (
