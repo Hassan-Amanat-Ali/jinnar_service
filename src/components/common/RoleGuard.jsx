@@ -3,8 +3,15 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { ROLES } from "../../constants/roles.js";
 
 const RoleGuard = ({ allow, children }) => {
-  const { role } = useAuth();
+  const { role, isSwitchingRole } = useAuth();
   const location = useLocation();
+
+  // If a role switch is in progress, render the children to avoid
+  // premature redirects before navigation can complete.
+  if (isSwitchingRole) {
+    return children;
+  }
+
   // If no role is set (e.g., not logged in), redirect to role selection.
   if (!role) {
     return <Navigate to="/role" state={{ from: location }} replace />;

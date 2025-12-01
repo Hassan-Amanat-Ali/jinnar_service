@@ -1,31 +1,32 @@
 import { createContext, useContext, useMemo, useState, useEffect } from "react";
-import { ROLES } from "../constants/roles.js";
+import { useDispatch } from "react-redux";
+import toast from "react-hot-toast";
+import { ROLES, mapApiRoleToAppRole } from "../constants/roles.js";
+import { useSwitchRoleMutation } from "../services/authApi.js";
+import { baseApi } from "../services/baseApi.js";
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
-  // Initialize role from localStorage if available
-  const [role, setRole] = useState(() => {
-    const storedRole = localStorage.getItem("role");
-    return storedRole || null;
-  });
-  // Store user profile data
+  const [role, setRole] = useState(() => localStorage.getItem("role") || null);
   const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
-  // Check initial auth status from localStorage
+  const [switchRoleMutation, { isLoading: isSwitchingRole }] =
+    useSwitchRoleMutation();
+  const dispatch = useDispatch();
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     const storedRole = localStorage.getItem("role");
     setUser(storedUser ? JSON.parse(storedUser) : null);
     setRole(storedRole || null);
-    setLoading(false); // Finished loading
+    setLoading(false);
   }, []);
 
-  // Persist role to localStorage whenever it changes
   useEffect(() => {
     if (role) {
       localStorage.setItem("role", role);
@@ -34,7 +35,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, [role]);
 
-  // Persist user to localStorage whenever it changes
   useEffect(() => {
     if (user) {
       localStorage.setItem("user", JSON.stringify(user));
@@ -46,16 +46,41 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setRole(null);
-    // The useEffects above will handle removing from localStorage
+    localStorage.removeItem("token");
   };
 
-  const switchRole = (newRole) => {
-    setRole(newRole);
+  const switchRole = async (newRole) => {
+    const apiRole = newRole === ROLES.CUSTOMER ? "buyer" : "seller";
+    try {
+      const result = await switchRoleMutation({ newRole: apiRole }).unwrap();
+      
+      if (result.token) {
+        localStorage.setItem("token", result.token);
+        
+        const appRole = mapApiRoleToAppRole(result.role);
+        
+        // Don't set the role here, return it to the caller
+        toast.success(result.message || `Switched to ${appRole} role`);
+        return appRole; 
+      }
+    } catch (err) {
+      toast.error(err?.data?.error || "Failed to switch role.");
+      throw err; 
+    }
   };
 
   const value = useMemo(
-    () => ({ loading, role, setRole, user, setUser, logout, switchRole }),
-    [loading, role, user]
+    () => ({
+      loading,
+      role,
+      setRole,
+      user,
+      setUser,
+      logout,
+      switchRole,
+      isSwitchingRole,
+    }),
+    [loading, role, user, isSwitchingRole]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -71,3 +96,4 @@ export const isValidRole = (maybeRole) =>
   Object.values(ROLES).includes(maybeRole);
 
 export default AuthContext;
+

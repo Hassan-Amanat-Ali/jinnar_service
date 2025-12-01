@@ -16,17 +16,24 @@ import { NavLink, useNavigate } from "react-router-dom";
 import GoogleTranslate from "./GoogleTranslate.jsx";
 import logo from "../../assets/logo.png";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useDispatch } from "react-redux";
+import { baseApi } from "../../services/baseApi.js";
 
-const SwitchRoleButton = ({ role, onClick }) => {
+const SwitchRoleButton = ({ role, onClick, isLoading }) => {
   return (
     <button
       onClick={onClick}
+      disabled={isLoading}
       title={`Switch to ${role === "customer" ? "Worker" : "Customer"}`}
-      className="flex items-center space-x-2 text-xs px-2.5 py-1.5 rounded-md transition bg-sky-50 hover:bg-sky-100 border border-sky-200"
+      className="flex items-center space-x-2 text-xs px-2.5 py-1.5 rounded-md transition bg-sky-50 hover:bg-sky-100 border border-sky-200 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <ArrowLeftRight size={14} color="#74C7F2" />
       <span className="text-gray-700 font-medium">
-        {role === "customer" ? "Worker" : "Customer"}
+        {isLoading
+          ? "Switching..."
+          : role === "customer"
+          ? "Worker"
+          : "Customer"}
       </span>
     </button>
   );
@@ -35,19 +42,31 @@ const SwitchRoleButton = ({ role, onClick }) => {
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
-  const { role, switchRole } = useAuth();
+  const { role, setRole, switchRole, isSwitchingRole } = useAuth();
 
-  const handleSwitchRole = () => {
+  const handleSwitchRole = async () => {
     const newRole = role === "customer" ? "worker" : "customer";
-    switchRole(newRole);
-    navigate(newRole === "worker" ? "/worker-home" : "/customer-home", {
-      replace: true,
-    });
+    try {
+      const resultingRole = await switchRole(newRole);
+      if (resultingRole) {
+        setRole(resultingRole);
+        dispatch(baseApi.util.resetApiState());
+        navigate(
+          resultingRole === "worker" ? "/worker-home" : "/customer-home",
+          {
+            replace: true,
+          }
+        );
+      }
+    } catch (error) {
+      // Error is already handled by toast in context
+    }
   };
 
   return (
@@ -91,7 +110,11 @@ export default function Navbar() {
 
             {/* Right Icons - Desktop */}
             <div className="hidden md:flex items-center space-x-3">
-              <SwitchRoleButton role={role} onClick={handleSwitchRole} />
+              <SwitchRoleButton
+                role={role}
+                onClick={handleSwitchRole}
+                isLoading={isSwitchingRole}
+              />
               <div onClick={() => navigate("/customer-chat")}>
                 <IconButton
                   icon={<MessageSquare size={14} color="#74C7F2" />}
@@ -184,6 +207,7 @@ export default function Navbar() {
                     label={`Switch to ${role === "customer" ? "Worker" : "Customer"}`}
                     to="#"
                     onNavigate={handleSwitchRole}
+                    disabled={isSwitchingRole}
                   />
                   <MobileNavItem
                     icon={<MessageSquare size={14} />}

@@ -38,6 +38,13 @@ export const authApi = baseApi.injectEndpoints({
         body: data,
       }),
     }),
+    switchRole: builder.mutation({
+      query: (data) => ({
+        url: "/auth/switch-role",
+        method: "POST",
+        body: data,
+      }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -51,4 +58,5 @@ export const {
   useForgotPasswordMutation,
   useResetPasswordMutation,
   useResendVerificationCodeMutation,
+  useSwitchRoleMutation,
 } = authApi;
