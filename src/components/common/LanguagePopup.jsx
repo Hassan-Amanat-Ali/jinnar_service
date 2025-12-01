@@ -7,11 +7,13 @@ const LanguagePopup = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // For testing: Always show the popup after a delay.
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 1500); // Delay to allow the page to load
-    return () => clearTimeout(timer);
+    const languageSelected = localStorage.getItem("languageSelected");
+    if (!languageSelected) {
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+      }, 1500); // Delay to allow the page to load
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const handleLanguageSelect = (langCode) => {
@@ -23,7 +25,7 @@ const LanguagePopup = () => {
     }
 
     // Remember the user's choice and hide the popup
-    // localStorage.setItem("languageSelected", "true"); // Commented out for testing
+    localStorage.setItem("languageSelected", "true");
     setIsVisible(false);
   };
 
