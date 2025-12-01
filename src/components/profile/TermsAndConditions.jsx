@@ -33,7 +33,7 @@ const TermsAndConditions = () => {
         {
           title: "2.2 Account Registration & Verification",
           content:
-            "You must provide accurate, current, and complete information during registration. Jinnar may require identity verification through government-issued identification or facial recognition. Workers may be required to provide proof of qualifications, licenses, certifications, insurance, or health and safety compliance documents. Failure to complete verification may limit or suspend account access.",
+            "You must provide accurate, current, and complete information during registration. Jinnar may require identity verification through government-issued identification, facial recognition, phone verification, or third-party providers. Workers may be required to provide proof of qualifications, licenses, certifications, insurance, or health and safety compliance documents. Failure to complete verification may limit or suspend account access.",
         },
         {
           title: "2.3 Account Ownership & Non-Transferability",
@@ -248,7 +248,7 @@ const TermsAndConditions = () => {
         {
           title: "10.1 Data Collection & Usage",
           content:
-            "Jinnar may collect: (a) identification data (name, DOB, ID, passport, driver's license); (b) contact data (email, address); (c) financial data (payment methods, transaction history); (d) employment data (skills, qualifications, ratings, certifications); (e) technical data (device, IP, geolocation, cookies); (f) communications data (messages, tickets, reviews). Data is used for identity verification, transaction facilitation, fraud prevention, Platform improvement, compliance, and user communication.",
+            "Jinnar may collect: (a) identification data (name, DOB, ID, passport, driver's license); (b) contact data (email, phone, address); (c) financial data (payment methods, transaction history); (d) employment data (skills, qualifications, ratings, certifications); (e) technical data (device, IP, geolocation, cookies); (f) communications data (messages, tickets, reviews). Data is used for identity verification, transaction facilitation, fraud prevention, Platform improvement, compliance, and user communication.",
         },
         {
           title: "10.2 Storage & Retention",

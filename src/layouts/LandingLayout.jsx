@@ -107,7 +107,7 @@ const LandingHeader = () => {
           <div className="flex items-center justify-end gap-2 sm:gap-3">
             {/* Desktop Login/Signup */}
             <Link
-              to="/role"
+              to="/login"
               state={{ next: "login" }}
               className="hidden sm:flex text-xs lg:text-sm font-medium text-black hover:text-black/80 items-center gap-2"
             >
@@ -186,7 +186,7 @@ const LandingHeader = () => {
                   {/* Mobile Action Buttons */}
                   <div className="pt-4 mt-4 border-t border-gray-200 space-y-3">
                     <Link
-                      to="/role"
+                      to="/login"
                       state={{ next: "login" }}
                       onClick={closeMobileMenu}
                       className="block px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all duration-200 text-center border border-gray-300"
