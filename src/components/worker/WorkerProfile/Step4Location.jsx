@@ -33,7 +33,11 @@ const Step4Location = forwardRef(({ profileData, isLoading, error }, ref) => {
             try {
               // Handle multiple formats: GeoJSON Point, plain coordinates, or legacy format
               let lat, lng;
-              if (area.type === "Point" && area.coordinates && Array.isArray(area.coordinates)) {
+              if (
+                area.type === "Point" &&
+                area.coordinates &&
+                Array.isArray(area.coordinates)
+              ) {
                 // GeoJSON Point format: {type: "Point", coordinates: [lng, lat]}
                 lng = area.coordinates[0];
                 lat = area.coordinates[1];
@@ -64,9 +68,7 @@ const Step4Location = forwardRef(({ profileData, isLoading, error }, ref) => {
                     resolve({
                       lat,
                       lng,
-                      address: `Location: ${lat.toFixed(
-                        4
-                      )}, ${lng.toFixed(4)}`,
+                      address: `Location: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
                     });
                   }
                 });
@@ -75,7 +77,11 @@ const Step4Location = forwardRef(({ profileData, isLoading, error }, ref) => {
               console.error("Reverse geocoding error:", error);
               // Handle multiple formats for error case too
               let lat, lng;
-              if (area.type === "Point" && area.coordinates && Array.isArray(area.coordinates)) {
+              if (
+                area.type === "Point" &&
+                area.coordinates &&
+                Array.isArray(area.coordinates)
+              ) {
                 lng = area.coordinates[0];
                 lat = area.coordinates[1];
               } else if (area.coordinates && Array.isArray(area.coordinates)) {
@@ -85,13 +91,11 @@ const Step4Location = forwardRef(({ profileData, isLoading, error }, ref) => {
                 lat = area.lat;
                 lng = area.lng;
               }
-              
+
               return {
                 lat,
                 lng,
-                address: `Location: ${lat.toFixed(4)}, ${lng.toFixed(
-                  4
-                )}`,
+                address: `Location: ${lat.toFixed(4)}, ${lng.toFixed(4)}`,
               };
             }
           }
@@ -119,12 +123,11 @@ const Step4Location = forwardRef(({ profileData, isLoading, error }, ref) => {
 
       loadingToast = toast.loading("Saving service locations...");
 
-      // Backend expects GeoJSON Point format with type and coordinates
+      // Backend expects address strings - it will handle geocoding automatically
       const updateData = {
-        selectedAreas: selectedAreas.map((area) => ({
-          type: "Point",
-          coordinates: [area.lng, area.lat], // GeoJSON format: [longitude, latitude]
-        })),
+        selectedAreas: selectedAreas.map(
+          (area) => area.address || "Location on map"
+        ),
       };
 
       console.log("Sending update data:", updateData);

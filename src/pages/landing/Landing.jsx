@@ -9,7 +9,7 @@ import { useSearchParams } from "react-router-dom";
 import SiteFooter from "../../components/Landing/SiteFooter.jsx";
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { Sparkles, MapPin, ChevronDown } from "lucide-react";
-import { getFullImageUrl } from "../../utils/fileUrl.js";
+import { getFullImageUrl, reverseGeocode } from "../../utils/fileUrl.js";
 
 // Helper function to format names for display
 const formatName = (name) =>
@@ -30,18 +30,31 @@ const formatFilterName = (name) => {
 const AllServicesLanding = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [userLocation, setUserLocation] = useState(null);
+  const [userAddress, setUserAddress] = useState(null);
   const [locationStatus, setLocationStatus] = useState("loading"); // "loading" | "granted" | "denied"
 
   // State for dropdowns
   const [openDropdown, setOpenDropdown] = useState(null);
 
   // Local state for all filters to stage changes before search submission
-  const [localSearchTerm, setLocalSearchTerm] = useState(searchParams.get("search") || "");
-  const [localCategoryId, setLocalCategoryId] = useState(searchParams.get("category") || "");
-  const [localSubcategoryId, setLocalSubcategoryId] = useState(searchParams.get("subcategory") || "");
-  const [localBudget, setLocalBudget] = useState(searchParams.get("budget") || "");
-  const [localSortBy, setLocalSortBy] = useState(searchParams.get("sortBy") || "");
-  const [localMinRating, setLocalMinRating] = useState(searchParams.get("minRating") || "");
+  const [localSearchTerm, setLocalSearchTerm] = useState(
+    searchParams.get("search") || ""
+  );
+  const [localCategoryId, setLocalCategoryId] = useState(
+    searchParams.get("category") || ""
+  );
+  const [localSubcategoryId, setLocalSubcategoryId] = useState(
+    searchParams.get("subcategory") || ""
+  );
+  const [localBudget, setLocalBudget] = useState(
+    searchParams.get("budget") || ""
+  );
+  const [localSortBy, setLocalSortBy] = useState(
+    searchParams.get("sortBy") || ""
+  );
+  const [localMinRating, setLocalMinRating] = useState(
+    searchParams.get("minRating") || ""
+  );
 
   // Fetch categories to resolve names from IDs
   const { data: categoriesData, isLoading: categoriesLoading } =
@@ -61,16 +74,27 @@ const AllServicesLanding = () => {
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
+        async (position) => {
+          const coords = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
-          });
+          };
+          setUserLocation(coords);
+
+          // Convert coordinates to address
+          const address = await reverseGeocode(
+            coords.latitude,
+            coords.longitude
+          );
+          setUserAddress(address);
+
           setLocationStatus("granted");
           console.log(
             "User location:",
-            position.coords.latitude,
-            position.coords.longitude
+            coords.latitude,
+            coords.longitude,
+            "Address:",
+            address
           );
         },
         (error) => {
@@ -107,9 +131,8 @@ const AllServicesLanding = () => {
     };
 
     // Add location if available
-    if (userLocation) {
-      params.latitude = userLocation.latitude;
-      params.longitude = userLocation.longitude;
+    if (userAddress) {
+      params.address = userAddress;
       params.radius = 50; // 50km radius
     }
 
@@ -149,7 +172,17 @@ const AllServicesLanding = () => {
     }
 
     return params;
-  }, [userLocation, searchParam, categoryId, subcategoryId, budget, minPrice, maxPrice, sortBy, minRating]);
+  }, [
+    userAddress,
+    searchParam,
+    categoryId,
+    subcategoryId,
+    budget,
+    minPrice,
+    maxPrice,
+    sortBy,
+    minRating,
+  ]);
 
   // Log the API parameters to the console for debugging
   console.log("🚀 API Request Parameters:", searchApiParams);
@@ -190,15 +223,15 @@ const AllServicesLanding = () => {
     event.preventDefault();
     const newParams = new URLSearchParams();
 
-    if (localSearchTerm.trim()) newParams.set('search', localSearchTerm.trim());
-    if (localCategoryId) newParams.set('category', localCategoryId);
-    if (localSubcategoryId) newParams.set('subcategory', localSubcategoryId);
-    if (localSortBy) newParams.set('sortBy', localSortBy);
-    if (localMinRating) newParams.set('minRating', localMinRating);
+    if (localSearchTerm.trim()) newParams.set("search", localSearchTerm.trim());
+    if (localCategoryId) newParams.set("category", localCategoryId);
+    if (localSubcategoryId) newParams.set("subcategory", localSubcategoryId);
+    if (localSortBy) newParams.set("sortBy", localSortBy);
+    if (localMinRating) newParams.set("minRating", localMinRating);
 
     // Handle budget and price mapping
     if (localBudget) {
-      newParams.set('budget', localBudget);
+      newParams.set("budget", localBudget);
       if (localBudget === "Under 20,000") {
         newParams.set("maxPrice", "20000");
       } else if (localBudget === "20,000 - 50,000") {
@@ -216,14 +249,17 @@ const AllServicesLanding = () => {
   };
 
   const oldhandleSearchSubmit = (event) => {
-    setSearchParams(prev => {
-      if (localSearchTerm.trim()) {
-        prev.set('search', localSearchTerm.trim());
-      } else {
-        prev.delete('search');
-      }
-      return prev;
-    }, { replace: true });
+    setSearchParams(
+      (prev) => {
+        if (localSearchTerm.trim()) {
+          prev.set("search", localSearchTerm.trim());
+        } else {
+          prev.delete("search");
+        }
+        return prev;
+      },
+      { replace: true }
+    );
   };
 
   // Clear all filters
@@ -259,7 +295,13 @@ const AllServicesLanding = () => {
     setOpenDropdown(null);
   };
 
-  const budgetOptions = ["Under 20,000", "20,000 - 50,000", "50,000 - 100,000", "100,000+", "Negotiable"];
+  const budgetOptions = [
+    "Under 20,000",
+    "20,000 - 50,000",
+    "50,000 - 100,000",
+    "100,000+",
+    "Negotiable",
+  ];
   const sortOptions = {
     rating: "Highest Rated",
     experience: "Most Experienced",
@@ -267,7 +309,6 @@ const AllServicesLanding = () => {
     price_high: "Price: High to Low",
     newest: "Newest First",
   };
-
 
   // Skeleton Component
   const Skeleton = ({ className = "" }) => (
@@ -286,7 +327,8 @@ const AllServicesLanding = () => {
           sellerId: gig.sellerId?._id,
           name: gig.title, // Using gig title as the main name
           image:
-            getFullImageUrl(gig.images?.[0]?.url) || "https://via.placeholder.com/300x200",
+            getFullImageUrl(gig.images?.[0]?.url) ||
+            "https://via.placeholder.com/300x200",
           rating: gig.sellerId?.rating?.average || 0,
           reviews: gig.sellerId?.rating?.count || 0,
           available: true,
@@ -377,63 +419,69 @@ const AllServicesLanding = () => {
           <div className="mb-8 p-4 sm:p-5 md:p-7 bg-white/95 rounded-2xl sm:rounded-[28px] shadow-xl border border-gray-100">
             {/* Search Input */}
             <div className="mb-4">
-              <label className="text-lg sm:text-xl font-semibold text-black mb-2 sm:mb-3 block">What service are you looking for?</label>
-            <input
-              type="text"
-              value={localSearchTerm}
-              onChange={handleSearchInputChange}
-              placeholder="Search for services like 'plumber', 'electrician'..."
+              <label className="text-lg sm:text-xl font-semibold text-black mb-2 sm:mb-3 block">
+                What service are you looking for?
+              </label>
+              <input
+                type="text"
+                value={localSearchTerm}
+                onChange={handleSearchInputChange}
+                placeholder="Search for services like 'plumber', 'electrician'..."
                 className="w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
-            />
+              />
             </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Category Filter */}
-            <div className="relative">
-              <label className="text-xs font-semibold text-gray-600 mb-1 block">Category</label>
-              <select
-                value={localCategoryId}
-                onChange={(e) => {
-                  setLocalCategoryId(e.target.value);
-                  setLocalSubcategoryId(""); // Reset subcategory when category changes
-                }}
-                disabled={categoriesLoading}
-                className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
-              >
-                <option value="">All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat._id} value={cat._id}>
-                    {formatName(cat.name)}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 pt-2 flex items-center px-3 text-gray-700">
-                <ChevronDown size={20} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Category Filter */}
+              <div className="relative">
+                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                  Category
+                </label>
+                <select
+                  value={localCategoryId}
+                  onChange={(e) => {
+                    setLocalCategoryId(e.target.value);
+                    setLocalSubcategoryId(""); // Reset subcategory when category changes
+                  }}
+                  disabled={categoriesLoading}
+                  className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat._id}>
+                      {formatName(cat.name)}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 pt-2 flex items-center px-3 text-gray-700">
+                  <ChevronDown size={20} />
+                </div>
               </div>
-            </div>
 
-            {/* Subcategory Filter */}
-            <div className="relative">
-              <label className="text-xs font-semibold text-gray-600 mb-1 block">Subcategory</label>
-              <select
-                value={localSubcategoryId}
-                onChange={(e) => setLocalSubcategoryId(e.target.value)}
-                disabled={!localCategoryId || subcategoriesLoading}
-                className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200 disabled:bg-gray-200"
-              >
-                <option value="">All Subcategories</option>
-                {subcategories.map((sub) => (
-                  <option key={sub._id} value={sub._id}>
-                    {formatName(sub.name)}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 pt-2 flex items-center px-3 text-gray-700">
-                <ChevronDown size={20} />
+              {/* Subcategory Filter */}
+              <div className="relative">
+                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                  Subcategory
+                </label>
+                <select
+                  value={localSubcategoryId}
+                  onChange={(e) => setLocalSubcategoryId(e.target.value)}
+                  disabled={!localCategoryId || subcategoriesLoading}
+                  className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200 disabled:bg-gray-200"
+                >
+                  <option value="">All Subcategories</option>
+                  {subcategories.map((sub) => (
+                    <option key={sub._id} value={sub._id}>
+                      {formatName(sub.name)}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 pt-2 flex items-center px-3 text-gray-700">
+                  <ChevronDown size={20} />
+                </div>
               </div>
-            </div>
 
-            {/* Budget Filter - Hidden for now */}
-            {/* <div className="relative">
+              {/* Budget Filter - Hidden for now */}
+              {/* <div className="relative">
               <label className="text-xs font-semibold text-gray-600 mb-1 block">Budget (TZS)</label>
               <select
                 value={localBudget}
@@ -452,46 +500,54 @@ const AllServicesLanding = () => {
               </div>
             </div> */}
 
-            {/* Sort By Filter */}
-            <div className="relative">
-              <label className="text-xs font-semibold text-gray-600 mb-1 block">Sort By</label>
-              <select
-                value={localSortBy}
-                onChange={(e) => setLocalSortBy(e.target.value)}
-                className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
-              >
-                <option value="">Relevance</option>
-                {Object.entries(sortOptions).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 pt-2 flex items-center px-3 text-gray-700">
-                <ChevronDown size={20} />
+              {/* Sort By Filter */}
+              <div className="relative">
+                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                  Sort By
+                </label>
+                <select
+                  value={localSortBy}
+                  onChange={(e) => setLocalSortBy(e.target.value)}
+                  className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                >
+                  <option value="">Relevance</option>
+                  {Object.entries(sortOptions).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 pt-2 flex items-center px-3 text-gray-700">
+                  <ChevronDown size={20} />
+                </div>
               </div>
             </div>
-          </div>
-          {/* More Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-            {/* Minimum Rating Filter */}
-            <div className="relative">
-              <label className="text-xs font-semibold text-gray-600 mb-1 block">Minimum Rating</label>
-              <select
-                value={localMinRating}
-                onChange={(e) => setLocalMinRating(e.target.value)}
-                className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
-              >
-                <option value="">Any Rating</option>
-                {[4, 3, 2, 1].map(r => <option key={r} value={r}>{r} star{r > 1 && 's'} & up</option>)}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 pt-5 flex items-center px-2 text-gray-700">
-                <ChevronDown size={20} />
+            {/* More Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+              {/* Minimum Rating Filter */}
+              <div className="relative">
+                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                  Minimum Rating
+                </label>
+                <select
+                  value={localMinRating}
+                  onChange={(e) => setLocalMinRating(e.target.value)}
+                  className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                >
+                  <option value="">Any Rating</option>
+                  {[4, 3, 2, 1].map((r) => (
+                    <option key={r} value={r}>
+                      {r} star{r > 1 && "s"} & up
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 pt-5 flex items-center px-2 text-gray-700">
+                  <ChevronDown size={20} />
+                </div>
               </div>
-            </div>
 
-            {/* Other filters like minExperience can be added here following the same pattern */}
-          </div>
+              {/* Other filters like minExperience can be added here following the same pattern */}
+            </div>
             {/* Search Button */}
             <div className="mt-6 text-right">
               <button type="submit" className="btn-primary">

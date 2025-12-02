@@ -7,7 +7,11 @@
 export const getFullImageUrl = (relativeUrl) => {
   // If the URL is falsy (null, undefined, empty string), return it as is.
   // Also, if it's already a full HTTP/HTTPS URL or a local blob URL, return it directly.
-  if (!relativeUrl || relativeUrl.startsWith('http') || relativeUrl.startsWith('blob:')) {
+  if (
+    !relativeUrl ||
+    relativeUrl.startsWith("http") ||
+    relativeUrl.startsWith("blob:")
+  ) {
     return relativeUrl;
   }
 
@@ -22,5 +26,34 @@ export const getFullImageUrl = (relativeUrl) => {
   }
 
   // Combine the base URL and the relative path, ensuring no double slashes.
-  return `${baseUrl.replace(/\/$/, '')}/${relativeUrl.replace(/^\//, '')}`;
+  return `${baseUrl.replace(/\/$/, "")}/${relativeUrl.replace(/^\//, "")}`;
+};
+
+/**
+ * Converts coordinates to address using reverse geocoding
+ * @param {number} lat - Latitude
+ * @param {number} lng - Longitude
+ * @returns {Promise<string|null>} Address string or null if failed
+ */
+export const reverseGeocode = async (lat, lng) => {
+  try {
+    // Use a free reverse geocoding service
+    const response = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch address");
+    }
+
+    const data = await response.json();
+
+    // Return the formatted address
+    return data.locality
+      ? `${data.locality}, ${data.principalSubdivision}, ${data.countryName}`
+      : `${data.principalSubdivision}, ${data.countryName}`;
+  } catch (error) {
+    console.error("Reverse geocoding failed:", error);
+    return null;
+  }
 };

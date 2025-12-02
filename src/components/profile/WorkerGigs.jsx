@@ -147,7 +147,7 @@ const WorkerGigs = () => {
     const newImagePreviews = imagePreview.filter((_, i) => i !== index);
 
     // If it's a string, it's an existing image URL from the server
-    if (editingGig && typeof imageToRemove === 'string') {
+    if (editingGig && typeof imageToRemove === "string") {
       // Optimistically update the UI
       setImagePreview(newImagePreviews);
       // Fire and forget the delete request to the backend
@@ -251,7 +251,10 @@ const WorkerGigs = () => {
           formData.images.forEach((imageFile) => {
             imageFormData.append("gig_images", imageFile);
           });
-          await uploadGigImage({ gigId: editingGig._id, formData: imageFormData }).unwrap();
+          await uploadGigImage({
+            gigId: editingGig._id,
+            formData: imageFormData,
+          }).unwrap();
         }
 
         toast.success("Gig updated successfully", { id: loadingToast });
@@ -267,7 +270,10 @@ const WorkerGigs = () => {
           formData.images.forEach((imageFile) => {
             imageFormData.append("gig_images", imageFile);
           });
-          await uploadGigImage({ gigId: newGig.gig._id, formData: imageFormData }).unwrap();
+          await uploadGigImage({
+            gigId: newGig.gig._id,
+            formData: imageFormData,
+          }).unwrap();
         }
 
         toast.success("Gig created successfully", { id: loadingToast });
@@ -831,7 +837,10 @@ const WorkerGigs = () => {
                           />
                           <button
                             type="button"
-                            onClick={(e) => { e.preventDefault(); removeImage(index); }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              removeImage(index);
+                            }}
                             className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                           >
                             <X size={14} />

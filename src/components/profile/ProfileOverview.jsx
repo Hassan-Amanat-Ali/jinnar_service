@@ -179,19 +179,17 @@ const ProfileOverview = () => {
 
       if (isCustomer) {
         if (formData.preferredAreas.length > 0) {
-          // Send only GeoJSON format to backend (remove address field)
-          updateData.preferredAreas = formData.preferredAreas.map((area) => ({
-            type: area.type,
-            coordinates: area.coordinates,
-          }));
+          // Send address strings to backend - backend will handle geocoding
+          updateData.preferredAreas = formData.preferredAreas.map(
+            (area) => area.address || "Location on map"
+          );
         }
       } else {
         if (formData.selectedAreas.length > 0) {
-          // Send only GeoJSON format to backend (remove address field)
-          updateData.selectedAreas = formData.selectedAreas.map((area) => ({
-            type: area.type,
-            coordinates: area.coordinates,
-          }));
+          // Send address strings to backend - backend will handle geocoding
+          updateData.selectedAreas = formData.selectedAreas.map(
+            (area) => area.address || "Location on map"
+          );
         }
       }
 

@@ -34,13 +34,14 @@ import {
 } from "../../services/customerApi";
 import AuthContext from "../../context/AuthContext";
 import { requestNotificationPermission } from "../../utils/fcm";
-import { getFullImageUrl } from "../../utils/fileUrl.js";
+import { getFullImageUrl, reverseGeocode } from "../../utils/fileUrl.js";
 
 const CustomerHome = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [selectedBudget, setSelectedBudget] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [userLocation, setUserLocation] = useState(null);
+  const [userAddress, setUserAddress] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
@@ -50,15 +51,26 @@ const CustomerHome = () => {
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
+        async (position) => {
+          const coords = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
-          });
+          };
+          setUserLocation(coords);
+
+          // Convert coordinates to address
+          const address = await reverseGeocode(
+            coords.latitude,
+            coords.longitude
+          );
+          setUserAddress(address);
+
           console.log(
             "User location:",
-            position.coords.latitude,
-            position.coords.longitude
+            coords.latitude,
+            coords.longitude,
+            "Address:",
+            address
           );
         },
         (error) => {
@@ -83,9 +95,8 @@ const CustomerHome = () => {
     error: gigsError,
   } = useSearchGigsQuery({
     limit: 8,
-    ...(userLocation && {
-      latitude: userLocation.latitude,
-      longitude: userLocation.longitude,
+    ...(userAddress && {
+      address: userAddress,
       radius: 50, // 50km radius
     }),
   });
