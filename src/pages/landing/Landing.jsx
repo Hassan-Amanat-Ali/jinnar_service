@@ -6,6 +6,7 @@ import {
   useGetSubcategoriesQuery,
 } from "../../services/workerApi";
 import { useSearchParams } from "react-router-dom";
+import { useGeocoding } from "../../hooks/useGeocoding.js";
 import SiteFooter from "../../components/Landing/SiteFooter.jsx";
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { Sparkles, MapPin, ChevronDown } from "lucide-react";
@@ -32,44 +33,39 @@ const AllServicesLanding = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [userAddress, setUserAddress] = useState(null);
   const [locationStatus, setLocationStatus] = useState("loading"); // "loading" | "granted" | "denied"
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
 
   // State for dropdowns
   const [openDropdown, setOpenDropdown] = useState(null);
 
   // Local state for all filters to stage changes before search submission
-  const [localSearchTerm, setLocalSearchTerm] = useState(
+  const [searchTerm, setSearchTerm] = useState(
     searchParams.get("search") || ""
   );
-  const [localCategoryId, setLocalCategoryId] = useState(
+  const [categoryId, setCategoryId] = useState(
     searchParams.get("category") || ""
   );
-  const [localSubcategoryId, setLocalSubcategoryId] = useState(
+  const [subcategoryId, setSubcategoryId] = useState(
     searchParams.get("subcategory") || ""
   );
-  const [localBudget, setLocalBudget] = useState(
+  const [budget, setBudget] = useState(
     searchParams.get("budget") || ""
   );
-  const [localSortBy, setLocalSortBy] = useState(
+  const [sortBy, setSortBy] = useState(
     searchParams.get("sortBy") || ""
   );
-  const [localMinRating, setLocalMinRating] = useState(
+  const [minRating, setMinRating] = useState(
     searchParams.get("minRating") || ""
   );
-  const [searchLocation, setSearchLocation] = useState("");
+  const [searchLocation, setSearchLocation] = useState(
+    searchParams.get("address") || ""
+  );
+  const { suggestions: locationSuggestions, isLoading: locationLoading } =
+    useGeocoding(searchLocation);
 
   // Fetch categories to resolve names from IDs
   const { data: categoriesData, isLoading: categoriesLoading } =
     useGetCategoriesQuery();
-
-  const categoryId = searchParams.get("category");
-  const subcategoryId = searchParams.get("subcategory");
-  const location = searchParams.get("location");
-  const searchParam = searchParams.get("search");
-  const budget = searchParams.get("budget"); // For display
-  const minPrice = searchParams.get("minPrice");
-  const maxPrice = searchParams.get("maxPrice");
-  const sortBy = searchParams.get("sortBy");
-  const minRating = searchParams.get("minRating");
 
   // Get user's current location on mount
   useEffect(() => {
@@ -115,8 +111,8 @@ const AllServicesLanding = () => {
 
   // Fetch subcategories when a category is selected
   const { data: subcategoriesData, isLoading: subcategoriesLoading } =
-    useGetSubcategoriesQuery(localCategoryId, {
-      skip: !localCategoryId,
+    useGetSubcategoriesQuery(categoryId, {
+      skip: !categoryId,
     });
 
   const categories = useMemo(() => categoriesData || [], [categoriesData]);
@@ -131,10 +127,11 @@ const AllServicesLanding = () => {
       limit: 50,
     };
 
-    // Add location if available
-    if (userAddress) {
-      params.address = userAddress;
-      params.radius = 50; // 50km radius
+    const locationToUse = searchLocation.trim() || userAddress;
+    if (locationToUse) {
+      params.address = locationToUse;
+      // Only add radius if we have an address
+      params.radius = 50;
     }
 
     // Add category filter
@@ -149,6 +146,19 @@ const AllServicesLanding = () => {
 
     // Add budget filter
     if (budget) {
+      if (budget === "Under 20,000") {
+        params.maxPrice = "20000";
+      } else if (budget === "20,000 - 50,000") {
+        params.minPrice = "20000";
+        params.maxPrice = "50000";
+      } else if (budget === "50,000 - 100,000") {
+        params.minPrice = "50000";
+        params.maxPrice = "100000";
+      } else if (budget === "100,000+") {
+        params.minPrice = "100000";
+      }
+      // For "Negotiable", we don't add price filters
+
       if (minPrice) {
         params.minPrice = minPrice;
       }
@@ -168,19 +178,18 @@ const AllServicesLanding = () => {
     }
 
     // Add search term directly from URL
-    if (searchParam) {
-      params.search = searchParam;
+    if (searchTerm) {
+      params.search = searchTerm;
     }
 
     return params;
   }, [
     userAddress,
-    searchParam,
+    searchLocation,
+    searchTerm,
     categoryId,
     subcategoryId,
     budget,
-    minPrice,
-    maxPrice,
     sortBy,
     minRating,
   ]);
@@ -193,85 +202,45 @@ const AllServicesLanding = () => {
     keepUnusedDataFor: 0, // Invalidate cache when params change
   });
 
-  // Initialize search term from URL parameter
+  // Sync URL params to local state on load
   useEffect(() => {
-    setLocalSearchTerm(searchParam || "");
-    setLocalCategoryId(categoryId || "");
-    setLocalSubcategoryId(subcategoryId || "");
-    setLocalSortBy(sortBy || "");
-    setLocalMinRating(minRating || "");
-  }, [searchParam, categoryId, subcategoryId, sortBy, minRating]);
-
-  // On initial load, if there are params, trigger a search to ensure everything is in sync.
-  useEffect(() => {
-    // Using a timeout to ensure the form is ready before submitting
-    const timer = setTimeout(() => {
-      if (searchParams.toString()) {
-        document.querySelector('form button[type="submit"]')?.click();
-      }
-    }, 100); // A small delay can help ensure all state is set.
-
-    return () => clearTimeout(timer);
-  }, []); // Run only once on mount
+    setSearchTerm(searchParams.get("search") || "");
+    setCategoryId(searchParams.get("category") || "");
+    setSubcategoryId(searchParams.get("subcategory") || "");
+    setSortBy(searchParams.get("sortBy") || "");
+    setMinRating(searchParams.get("minRating") || "");
+    setSearchLocation(searchParams.get("address") || "");
+    setBudget(searchParams.get("budget") || "");
+  }, [searchParams]);
 
   // Handle search input change - will be passed to Hero
   const handleSearchInputChange = (event) => {
-    setLocalSearchTerm(event.target.value);
+    setSearchTerm(event.target.value);
   };
 
   // Handle search submission via button click
   const handleSearchSubmit = (event) => {
     event.preventDefault();
     const newParams = new URLSearchParams();
-
-    if (localSearchTerm.trim()) newParams.set("search", localSearchTerm.trim());
-    if (localCategoryId) newParams.set("category", localCategoryId);
-    if (localSubcategoryId) newParams.set("subcategory", localSubcategoryId);
-    if (localSortBy) newParams.set("sortBy", localSortBy);
-    if (localMinRating) newParams.set("minRating", localMinRating);
-
-    // Use searchLocation if provided, otherwise use userAddress
-    const locationToUse = searchLocation.trim() || userAddress;
-    if (locationToUse) {
-      newParams.set("address", locationToUse);
-    }
-
-    // Handle budget and price mapping
-    if (localBudget) {
-      newParams.set("budget", localBudget);
-      if (localBudget === "Under 20,000") {
-        newParams.set("maxPrice", "20000");
-      } else if (localBudget === "20,000 - 50,000") {
-        newParams.set("minPrice", "20000");
-        newParams.set("maxPrice", "50000");
-      } else if (localBudget === "50,000 - 100,000") {
-        newParams.set("minPrice", "50000");
-        newParams.set("maxPrice", "100000");
-      } else if (localBudget === "100,000+") {
-        newParams.set("minPrice", "100000");
-      }
-    }
-
+    if (searchTerm.trim()) newParams.set("search", searchTerm.trim());
+    if (categoryId) newParams.set("category", categoryId);
+    if (subcategoryId) newParams.set("subcategory", subcategoryId);
+    if (sortBy) newParams.set("sortBy", sortBy);
+    if (minRating) newParams.set("minRating", minRating);
+    if (searchLocation.trim()) newParams.set("address", searchLocation.trim());
+    if (budget) newParams.set("budget", budget);
     setSearchParams(newParams, { replace: true });
-  };
-
-  const oldhandleSearchSubmit = (event) => {
-    setSearchParams(
-      (prev) => {
-        if (localSearchTerm.trim()) {
-          prev.set("search", localSearchTerm.trim());
-        } else {
-          prev.delete("search");
-        }
-        return prev;
-      },
-      { replace: true }
-    );
   };
 
   // Clear all filters
   const clearAllFilters = useCallback(() => {
-    setLocalSearchTerm("");
+    setSearchTerm("");
+    setCategoryId("");
+    setSubcategoryId("");
+    setSortBy("");
+    setMinRating("");
+    setSearchLocation("");
+    setBudget("");
     setSearchParams({});
   }, [setSearchParams]);
 
@@ -431,7 +400,7 @@ const AllServicesLanding = () => {
               </label>
               <input
                 type="text"
-                value={localSearchTerm}
+              value={searchTerm}
                 onChange={handleSearchInputChange}
                 placeholder="Search for services like 'plumber', 'electrician'..."
                 className="w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
@@ -450,11 +419,38 @@ const AllServicesLanding = () => {
                   <input
                     type="text"
                     value={searchLocation}
-                    onChange={(e) => setSearchLocation(e.target.value)}
+                    onChange={(e) => {
+                      setSearchLocation(e.target.value);
+                      setShowLocationSuggestions(true);
+                    }}
+                    onBlur={() =>
+                      setTimeout(() => setShowLocationSuggestions(false), 200)
+                    }
                     placeholder={userAddress || "Enter location..."}
                     className="w-full h-11 sm:h-12 rounded-xl border border-border pl-11 pr-4 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
                   />
                 </div>
+                {showLocationSuggestions && searchLocation.length > 2 && (
+                  <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto text-left">
+                    {locationLoading && (
+                      <div className="p-3 text-sm text-gray-500">
+                        Loading...
+                      </div>
+                    )}
+                    {locationSuggestions.map((suggestion) => (
+                      <div
+                        key={suggestion.place_id}
+                        className="p-3 text-sm text-gray-800 cursor-pointer hover:bg-gray-100"
+                        onMouseDown={() => {
+                          setSearchLocation(suggestion.display_name);
+                          setShowLocationSuggestions(false);
+                        }}
+                      >
+                        {suggestion.display_name}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Category Filter */}
@@ -463,10 +459,10 @@ const AllServicesLanding = () => {
                   Category
                 </label>
                 <select
-                  value={localCategoryId}
+                  value={categoryId}
                   onChange={(e) => {
-                    setLocalCategoryId(e.target.value);
-                    setLocalSubcategoryId(""); // Reset subcategory when category changes
+                    setCategoryId(e.target.value);
+                    setSubcategoryId(""); // Reset subcategory when category changes
                   }}
                   disabled={categoriesLoading}
                   className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
@@ -489,9 +485,9 @@ const AllServicesLanding = () => {
                   Subcategory
                 </label>
                 <select
-                  value={localSubcategoryId}
-                  onChange={(e) => setLocalSubcategoryId(e.target.value)}
-                  disabled={!localCategoryId || subcategoriesLoading}
+                  value={subcategoryId}
+                  onChange={(e) => setSubcategoryId(e.target.value)}
+                  disabled={!categoryId || subcategoriesLoading}
                   className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200 disabled:bg-gray-200"
                 >
                   <option value="">All Subcategories</option>
@@ -532,8 +528,8 @@ const AllServicesLanding = () => {
                   Sort By
                 </label>
                 <select
-                  value={localSortBy}
-                  onChange={(e) => setLocalSortBy(e.target.value)}
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
                   className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
                 >
                   <option value="">Relevance</option>
@@ -556,8 +552,8 @@ const AllServicesLanding = () => {
                   Minimum Rating
                 </label>
                 <select
-                  value={localMinRating}
-                  onChange={(e) => setLocalMinRating(e.target.value)}
+                  value={minRating}
+                  onChange={(e) => setMinRating(e.target.value)}
                   className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
                 >
                   <option value="">Any Rating</option>
@@ -590,15 +586,15 @@ const AllServicesLanding = () => {
           budget ||
           sortBy ||
           minRating ||
-          location ||
-          searchParam) && (
+          searchLocation ||
+          searchTerm) && (
           <div className="mb-6 flex flex-wrap items-center gap-3">
             <span className="text-gray-700 text-sm font-medium">
               Showing results for:
             </span>
-            {searchParam && (
+            {searchTerm && (
               <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
-                "{searchParam}"
+                "{searchTerm}"
               </span>
             )}
             {categoryId && (
@@ -626,9 +622,9 @@ const AllServicesLanding = () => {
                 {minRating}+ Stars
               </span>
             )}
-            {location && (
+            {searchLocation && (
               <span className="bg-[#B6E0FE] text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
-                {location}
+                {searchLocation}
               </span>
             )}
             <button
@@ -720,7 +716,7 @@ const AllServicesLanding = () => {
           <div className="text-center py-12">
             <p className="text-gray-600 mb-2">No services available</p>
             <p className="text-gray-500">
-              {categoryId || subcategoryId || searchParam
+              {categoryId || subcategoryId || searchTerm
                 ? "Try adjusting your filters or search term"
                 : "Check back later for new services"}
             </p>

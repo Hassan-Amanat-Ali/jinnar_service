@@ -13,6 +13,7 @@ import {
   useGetSubcategoriesQuery,
 } from "../../services/workerApi";
 import { reverseGeocode } from "../../utils/fileUrl.js";
+import { useGeocoding } from "../../hooks/useGeocoding.js";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -35,6 +36,12 @@ const Hero = () => {
   const [userAddress, setUserAddress] = useState(null);
   const [searchLocation, setSearchLocation] = useState("");
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Geocoding hook for location suggestions
+  const { suggestions: locationSuggestions, isLoading: locationLoading } =
+    useGeocoding(searchLocation);
+
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [minRating, setMinRating] = useState("");
@@ -96,16 +103,16 @@ const Hero = () => {
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (searchTerm.trim()) params.append("search", searchTerm.trim());
-    if (selectedCategory) params.append("category", selectedCategory);
-    if (selectedSubcategory) params.append("subcategory", selectedSubcategory);
-    if (sortBy) params.append("sortBy", sortBy);
-    if (minRating) params.append("minRating", minRating);
+    if (searchTerm.trim()) params.set("search", searchTerm.trim());
+    if (selectedCategory) params.set("category", selectedCategory);
+    if (selectedSubcategory) params.set("subcategory", selectedSubcategory);
+    if (sortBy) params.set("sortBy", sortBy);
+    if (minRating) params.set("minRating", minRating);
 
     // Use searchLocation if provided, otherwise use userAddress
     const locationToUse = searchLocation.trim() || userAddress;
     if (locationToUse) {
-      params.append("address", locationToUse);
+      params.set("address", locationToUse);
     }
 
     navigate(
@@ -186,11 +193,37 @@ const Hero = () => {
                   <input
                     type="text"
                     value={searchLocation}
-                    onChange={(e) => setSearchLocation(e.target.value)}
+                    onChange={(e) => {
+                      setSearchLocation(e.target.value);
+                      setShowSuggestions(true);
+                    }}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     onKeyPress={handleKeyPress}
                     className="w-full h-11 sm:h-12 rounded-xl border border-border pl-9 pr-3 text-sm text-black placeholder:text-black/50 bg-muted/60 hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
                     placeholder={userAddress || "Enter location..."}
                   />
+                  {showSuggestions && (searchLocation.length > 2) && (
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {locationLoading && (
+                        <div className="p-3 text-sm text-gray-500">Loading...</div>
+                      )}
+                      {!locationLoading && locationSuggestions.length === 0 && searchLocation.length > 2 && (
+                        <div className="p-3 text-sm text-gray-500">No results found.</div>
+                      )}
+                      {locationSuggestions.map((suggestion) => (
+                        <div
+                          key={suggestion.place_id}
+                          className="p-3 text-sm text-gray-800 cursor-pointer hover:bg-gray-100"
+                          onMouseDown={() => { // Use onMouseDown to fire before onBlur
+                            setSearchLocation(suggestion.display_name);
+                            setShowSuggestions(false);
+                          }}
+                        >
+                          {suggestion.display_name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="relative w-full">

@@ -38,6 +38,7 @@ import {
 } from "../../services/workerApi";
 import AuthContext from "../../context/AuthContext";
 import { requestNotificationPermission } from "../../utils/fcm";
+import { useGeocoding } from "../../hooks/useGeocoding.js";
 import { getFullImageUrl, reverseGeocode } from "../../utils/fileUrl.js";
 
 const CustomerHome = () => {
@@ -51,6 +52,11 @@ const CustomerHome = () => {
   const [searchLocation, setSearchLocation] = useState("");
   const [userLocation, setUserLocation] = useState(null);
   const [userAddress, setUserAddress] = useState(null);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+
+  // Geocoding hook
+  const { suggestions: locationSuggestions, isLoading: locationLoading } = useGeocoding(searchLocation);
+
   const [locationError, setLocationError] = useState(null);
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
@@ -261,18 +267,6 @@ const CustomerHome = () => {
     }
     if (selectedBudget) {
       params.set("budget", selectedBudget);
-      // Map budget to price ranges
-      if (selectedBudget.includes("Under 20,000")) {
-        params.set("maxPrice", "20000");
-      } else if (selectedBudget.includes("20,000 - 50,000")) {
-        params.set("minPrice", "20000");
-        params.set("maxPrice", "50000");
-      } else if (selectedBudget.includes("50,000 - 100,000")) {
-        params.set("minPrice", "50000");
-        params.set("maxPrice", "100000");
-      } else if (selectedBudget.includes("100,000")) {
-        params.set("minPrice", "100000");
-      }
     }
 
     // Navigate to AllServices with query parameters
@@ -349,10 +343,36 @@ const CustomerHome = () => {
                     <input
                       type="text"
                       value={searchLocation}
-                      onChange={(e) => setSearchLocation(e.target.value)}
+                      onChange={(e) => {
+                        setSearchLocation(e.target.value);
+                        setShowLocationSuggestions(true);
+                      }}
+                      onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 200)}
                       className="w-full h-10 rounded-lg border border-gray-300 pl-9 pr-3 text-sm text-gray-700 placeholder-gray-400 bg-white hover:border-[#74C7F2]/60 focus:outline-none focus:ring-2 focus:ring-[#74C7F2]/20 focus:border-[#74C7F2] transition-all"
                       placeholder={userAddress || "Enter location..."}
                     />
+                    {showLocationSuggestions && searchLocation.length > 2 && (
+                       <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto text-left">
+                         {locationLoading && (
+                           <div className="p-3 text-sm text-gray-500">Loading...</div>
+                         )}
+                         {!locationLoading && locationSuggestions.length === 0 && (
+                           <div className="p-3 text-sm text-gray-500">No results found.</div>
+                         )}
+                         {locationSuggestions.map((suggestion) => (
+                           <div
+                             key={suggestion.place_id}
+                             className="p-3 text-sm text-gray-800 cursor-pointer hover:bg-gray-100"
+                             onMouseDown={() => {
+                               setSearchLocation(suggestion.display_name);
+                               setShowLocationSuggestions(false);
+                             }}
+                           >
+                             {suggestion.display_name}
+                           </div>
+                         ))}
+                       </div>
+                    )}
                   </div>
 
                   {/* Category Filter */}
