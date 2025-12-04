@@ -8,7 +8,11 @@ import {
   FiChevronDown,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import { useGetCategoriesQuery, useGetSubcategoriesQuery } from "../../services/workerApi";
+import {
+  useGetCategoriesQuery,
+  useGetSubcategoriesQuery,
+} from "../../services/workerApi";
+import { reverseGeocode } from "../../utils/fileUrl.js";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -16,10 +20,11 @@ const Hero = () => {
   // Fetch categories from API
   const { data: categoriesData, isLoading: categoriesLoading } =
     useGetCategoriesQuery();
-  
+
   const [selectedCategory, setSelectedCategory] = useState("");
   // Fetch subcategories when a category is selected
-  const { data: subcategoriesData, isLoading: subcategoriesLoading } = useGetSubcategoriesQuery(selectedCategory, { skip: !selectedCategory });
+  const { data: subcategoriesData, isLoading: subcategoriesLoading } =
+    useGetSubcategoriesQuery(selectedCategory, { skip: !selectedCategory });
 
   // Extract categories from API response (array of category objects)
   const categories = categoriesData || [];
@@ -27,6 +32,8 @@ const Hero = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [userCoords, setUserCoords] = useState(null);
+  const [userAddress, setUserAddress] = useState(null);
+  const [searchLocation, setSearchLocation] = useState("");
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [sortBy, setSortBy] = useState("");
@@ -58,6 +65,11 @@ const Hero = () => {
       async (position) => {
         const { latitude, longitude } = position.coords;
         setUserCoords({ latitude, longitude });
+
+        // Convert coordinates to address
+        const address = await reverseGeocode(latitude, longitude);
+        setUserAddress(address);
+
         setIsGettingLocation(false);
       },
       (error) => {
@@ -90,10 +102,10 @@ const Hero = () => {
     if (sortBy) params.append("sortBy", sortBy);
     if (minRating) params.append("minRating", minRating);
 
-    // Pass coordinates if available for more accurate location-based search
-    if (userCoords) {
-      params.append("latitude", userCoords.latitude);
-      params.append("longitude", userCoords.longitude);
+    // Use searchLocation if provided, otherwise use userAddress
+    const locationToUse = searchLocation.trim() || userAddress;
+    if (locationToUse) {
+      params.append("address", locationToUse);
     }
 
     navigate(
@@ -166,7 +178,25 @@ const Hero = () => {
             </div>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 items-end">
               <div className="relative w-full">
-                <label className="text-xs font-semibold text-gray-600 mb-1 block">Category</label>
+                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                  Location
+                </label>
+                <div className="relative">
+                  <FiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60" />
+                  <input
+                    type="text"
+                    value={searchLocation}
+                    onChange={(e) => setSearchLocation(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    className="w-full h-11 sm:h-12 rounded-xl border border-border pl-9 pr-3 text-sm text-black placeholder:text-black/50 bg-muted/60 hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                    placeholder={userAddress || "Enter location..."}
+                  />
+                </div>
+              </div>
+              <div className="relative w-full">
+                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                  Category
+                </label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => {
@@ -183,12 +213,12 @@ const Hero = () => {
                     </option>
                   ))}
                 </select>
-                <FiChevronDown
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
-                />
+                <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none" />
               </div>
               <div className="relative w-full">
-                <label className="text-xs font-semibold text-gray-600 mb-1 block">Subcategory</label>
+                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                  Subcategory
+                </label>
                 <select
                   value={selectedSubcategory}
                   onChange={(e) => setSelectedSubcategory(e.target.value)}
@@ -202,14 +232,14 @@ const Hero = () => {
                     </option>
                   ))}
                 </select>
-                <FiChevronDown
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none"
-                />
+                <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none" />
               </div>
             </div>
             <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 items-end">
               <div className="relative w-full">
-                <label className="text-xs font-semibold text-gray-600 mb-1 block">Sort By</label>
+                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                  Sort By
+                </label>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
@@ -217,21 +247,27 @@ const Hero = () => {
                 >
                   <option value="">Relevance</option>
                   {Object.entries(sortOptions).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
                   ))}
                 </select>
                 <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none" />
               </div>
               <div className="relative w-full">
-                <label className="text-xs font-semibold text-gray-600 mb-1 block">Minimum Rating</label>
+                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                  Minimum Rating
+                </label>
                 <select
                   value={minRating}
                   onChange={(e) => setMinRating(e.target.value)}
                   className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm text-black bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
                 >
                   <option value="">Any Rating</option>
-                  {[4, 3, 2, 1].map(r => (
-                    <option key={r} value={r}>{r} star{r > 1 && 's'} & up</option>
+                  {[4, 3, 2, 1].map((r) => (
+                    <option key={r} value={r}>
+                      {r} star{r > 1 && "s"} & up
+                    </option>
                   ))}
                 </select>
                 <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none" />

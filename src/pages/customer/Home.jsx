@@ -3,7 +3,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
 
-import { Wrench, Clock, DollarSign } from "lucide-react";
+import { Wrench, Clock, DollarSign, ChevronDown, MapPin } from "lucide-react";
 
 import customerHome from "../../assets/images/customer-home.jpg";
 import customerHome2 from "../../assets/images/customer-home2.jpg";
@@ -32,6 +32,10 @@ import {
   useFindWorkersQuery,
   useUpdateFcmTokenMutation,
 } from "../../services/customerApi";
+import {
+  useGetCategoriesQuery,
+  useGetSubcategoriesQuery,
+} from "../../services/workerApi";
 import AuthContext from "../../context/AuthContext";
 import { requestNotificationPermission } from "../../utils/fcm";
 import { getFullImageUrl, reverseGeocode } from "../../utils/fileUrl.js";
@@ -40,12 +44,32 @@ const CustomerHome = () => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [selectedBudget, setSelectedBudget] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
+  const [selectedSortBy, setSelectedSortBy] = useState("");
+  const [selectedMinRating, setSelectedMinRating] = useState("");
+  const [searchLocation, setSearchLocation] = useState("");
   const [userLocation, setUserLocation] = useState(null);
   const [userAddress, setUserAddress] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const [updateFcmToken] = useUpdateFcmTokenMutation();
+
+  // Fetch categories and subcategories
+  const { data: categoriesData, isLoading: categoriesLoading } =
+    useGetCategoriesQuery();
+  const { data: subcategoriesData, isLoading: subcategoriesLoading } =
+    useGetSubcategoriesQuery(selectedCategory, {
+      skip: !selectedCategory,
+    });
+
+  const categories = categoriesData || [];
+  const subcategories = subcategoriesData || [];
+
+  // Helper function to format names
+  const formatName = (name) =>
+    name?.replace(/[-_]/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) || "";
 
   // Get user's current location on mount
   useEffect(() => {
@@ -211,19 +235,44 @@ const CustomerHome = () => {
   };
 
   // Handle search functionality
-  const handleSearch = () => {
+  const handleSearch = (e) => {
+    if (e) e.preventDefault();
     const params = new URLSearchParams();
 
     if (searchQuery.trim()) {
       params.set("search", searchQuery.trim());
     }
+    if (selectedCategory) {
+      params.set("category", selectedCategory);
+    }
+    if (selectedSubcategory) {
+      params.set("subcategory", selectedSubcategory);
+    }
+    if (selectedSortBy) {
+      params.set("sortBy", selectedSortBy);
+    }
+    if (selectedMinRating) {
+      params.set("minRating", selectedMinRating);
+    }
+    // Use searchLocation if provided, otherwise use userAddress
+    const locationToUse = searchLocation.trim() || userAddress;
+    if (locationToUse) {
+      params.set("address", locationToUse);
+    }
     if (selectedBudget) {
       params.set("budget", selectedBudget);
-    }
-    // Pass user location to the search page
-    if (userLocation) {
-      params.set("latitude", userLocation.latitude);
-      params.set("longitude", userLocation.longitude);
+      // Map budget to price ranges
+      if (selectedBudget.includes("Under 20,000")) {
+        params.set("maxPrice", "20000");
+      } else if (selectedBudget.includes("20,000 - 50,000")) {
+        params.set("minPrice", "20000");
+        params.set("maxPrice", "50000");
+      } else if (selectedBudget.includes("50,000 - 100,000")) {
+        params.set("minPrice", "50000");
+        params.set("maxPrice", "100000");
+      } else if (selectedBudget.includes("100,000")) {
+        params.set("minPrice", "100000");
+      }
     }
 
     // Navigate to AllServices with query parameters
@@ -276,44 +325,126 @@ const CustomerHome = () => {
           <span className="text-xs md:text-sm lg:text-xs mt-2 md:mt-3 lg:mt-4 font-light px-2">
             Book instantly or schedule later safe, simple, and reliable.
           </span>
-          <div className="w-full mt-4 md:mt-5 lg:mt-6 max-w-7xl px-3 md:px-6 lg:px-0">
-            <div className="bg-white w-full md:w-[90%] lg:w-[80%] mx-auto h-auto rounded-2xl shadow-lg p-4 md:p-6">
-              <div className="flex flex-col sm:flex-row gap-4 items-center">
-                {/* Search Input */}
-                <div className="flex-1 w-full">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full h-12 outline-none px-4 bg-[#f9fafb] rounded-lg border border-gray-300 text-black text-sm placeholder-gray-500 focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition-all"
-                    placeholder="Search for any service..."
-                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-                  />
-                </div>
+          <div className="w-full mt-4 md:mt-5 lg:mt-6 max-w-6xl px-3 md:px-6 lg:px-0">
+            <form onSubmit={handleSearch}>
+              <div className="bg-white/95 backdrop-blur-sm w-full mx-auto rounded-2xl shadow-lg border border-gray-200/50 p-4 md:p-5">
+                {/* Compact Filters Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {/* Search Input */}
+                  <div className="sm:col-span-2 lg:col-span-4">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full h-10 rounded-lg border border-gray-300 px-3 text-sm text-gray-700 placeholder-gray-400 bg-white hover:border-[#74C7F2]/60 focus:outline-none focus:ring-2 focus:ring-[#74C7F2]/20 focus:border-[#74C7F2] transition-all"
+                      placeholder="Search for any service..."
+                    />
+                  </div>
 
-                {/* Price/Budget Dropdown */}
-                <div className="w-full sm:w-auto sm:min-w-[220px]">
-                  <Dropdown
-                    placeholder="Select Price Range"
-                    options={budgetOptions}
-                    isOpen={openDropdown === "budget"}
-                    onToggle={() => handleDropdownToggle("budget")}
-                    onSelect={handleBudgetSelect}
-                    className="w-full font-light text-black text-sm h-12 px-4 border border-gray-300 rounded-lg bg-[#f9fafb] focus:ring-2 focus:ring-blue-200"
-                  />
+                  {/* Location Input */}
+                  <div className="sm:col-span-2 lg:col-span-2 relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                      <MapPin size={16} />
+                    </div>
+                    <input
+                      type="text"
+                      value={searchLocation}
+                      onChange={(e) => setSearchLocation(e.target.value)}
+                      className="w-full h-10 rounded-lg border border-gray-300 pl-9 pr-3 text-sm text-gray-700 placeholder-gray-400 bg-white hover:border-[#74C7F2]/60 focus:outline-none focus:ring-2 focus:ring-[#74C7F2]/20 focus:border-[#74C7F2] transition-all"
+                      placeholder={userAddress || "Enter location..."}
+                    />
+                  </div>
+
+                  {/* Category Filter */}
+                  <div className="relative">
+                    <select
+                      value={selectedCategory}
+                      onChange={(e) => {
+                        setSelectedCategory(e.target.value);
+                        setSelectedSubcategory("");
+                      }}
+                      disabled={categoriesLoading}
+                      className="appearance-none w-full h-10 rounded-lg border border-gray-300 pl-3 pr-8 text-sm text-gray-700 bg-white hover:border-[#74C7F2]/60 focus:outline-none focus:ring-2 focus:ring-[#74C7F2]/20 focus:border-[#74C7F2] transition-all disabled:bg-gray-50 disabled:text-gray-400"
+                    >
+                      <option value="">All Categories</option>
+                      {categories.map((cat) => (
+                        <option key={cat._id} value={cat._id}>
+                          {formatName(cat.name)}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500">
+                      <ChevronDown size={16} />
+                    </div>
+                  </div>
+
+                  {/* Subcategory Filter */}
+                  <div className="relative">
+                    <select
+                      value={selectedSubcategory}
+                      onChange={(e) => setSelectedSubcategory(e.target.value)}
+                      disabled={!selectedCategory || subcategoriesLoading}
+                      className="appearance-none w-full h-10 rounded-lg border border-gray-300 pl-3 pr-8 text-sm text-gray-700 bg-white hover:border-[#74C7F2]/60 focus:outline-none focus:ring-2 focus:ring-[#74C7F2]/20 focus:border-[#74C7F2] transition-all disabled:bg-gray-50 disabled:text-gray-400"
+                    >
+                      <option value="">Subcategory</option>
+                      {subcategories.map((sub) => (
+                        <option key={sub._id} value={sub._id}>
+                          {formatName(sub.name)}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500">
+                      <ChevronDown size={16} />
+                    </div>
+                  </div>
+
+                  {/* Sort By Filter */}
+                  <div className="relative">
+                    <select
+                      value={selectedSortBy}
+                      onChange={(e) => setSelectedSortBy(e.target.value)}
+                      className="appearance-none w-full h-10 rounded-lg border border-gray-300 pl-3 pr-8 text-sm text-gray-700 bg-white hover:border-[#74C7F2]/60 focus:outline-none focus:ring-2 focus:ring-[#74C7F2]/20 focus:border-[#74C7F2] transition-all"
+                    >
+                      <option value="">Sort By</option>
+                      <option value="rating">Top Rated</option>
+                      <option value="experience">Experienced</option>
+                      <option value="price_low">Price ↑</option>
+                      <option value="price_high">Price ↓</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500">
+                      <ChevronDown size={16} />
+                    </div>
+                  </div>
+
+                  {/* Minimum Rating Filter */}
+                  <div className="relative">
+                    <select
+                      value={selectedMinRating}
+                      onChange={(e) => setSelectedMinRating(e.target.value)}
+                      className="appearance-none w-full h-10 rounded-lg border border-gray-300 pl-3 pr-8 text-sm text-gray-700 bg-white hover:border-[#74C7F2]/60 focus:outline-none focus:ring-2 focus:ring-[#74C7F2]/20 focus:border-[#74C7F2] transition-all"
+                    >
+                      <option value="">Min Rating</option>
+                      <option value="4">4★ & up</option>
+                      <option value="3">3★ & up</option>
+                      <option value="2">2★ & up</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500">
+                      <ChevronDown size={16} />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Search Button */}
-                <div className="w-full sm:w-auto">
+                <div className="mt-3">
                   <button
-                    onClick={handleSearch}
-                    className="w-full sm:w-auto px-8 py-3 h-12 bg-gradient-to-r from-[#A7E3F2] to-[#74C7F2] text-white rounded-lg text-sm font-medium hover:from-[#96D9F0] hover:to-[#63B8E8] transition-all duration-200 shadow-sm whitespace-nowrap"
+                    type="submit"
+                    className="w-full h-10 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white rounded-lg text-sm font-medium hover:from-[#74C7F2] hover:to-[#B6E0FE] transition-all duration-200 shadow-md hover:shadow-lg"
                   >
                     Search Services
                   </button>
                 </div>
               </div>
-            </div>
+            </form>
           </div>
         </div>
       </div>

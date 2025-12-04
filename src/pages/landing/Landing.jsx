@@ -55,6 +55,7 @@ const AllServicesLanding = () => {
   const [localMinRating, setLocalMinRating] = useState(
     searchParams.get("minRating") || ""
   );
+  const [searchLocation, setSearchLocation] = useState("");
 
   // Fetch categories to resolve names from IDs
   const { data: categoriesData, isLoading: categoriesLoading } =
@@ -228,6 +229,12 @@ const AllServicesLanding = () => {
     if (localSubcategoryId) newParams.set("subcategory", localSubcategoryId);
     if (localSortBy) newParams.set("sortBy", localSortBy);
     if (localMinRating) newParams.set("minRating", localMinRating);
+
+    // Use searchLocation if provided, otherwise use userAddress
+    const locationToUse = searchLocation.trim() || userAddress;
+    if (locationToUse) {
+      newParams.set("address", locationToUse);
+    }
 
     // Handle budget and price mapping
     if (localBudget) {
@@ -431,6 +438,25 @@ const AllServicesLanding = () => {
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Location Input */}
+              <div className="relative">
+                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                  Location
+                </label>
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                    <MapPin size={18} />
+                  </div>
+                  <input
+                    type="text"
+                    value={searchLocation}
+                    onChange={(e) => setSearchLocation(e.target.value)}
+                    placeholder={userAddress || "Enter location..."}
+                    className="w-full h-11 sm:h-12 rounded-xl border border-border pl-11 pr-4 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                  />
+                </div>
+              </div>
+
               {/* Category Filter */}
               <div className="relative">
                 <label className="text-xs font-semibold text-gray-600 mb-1 block">
