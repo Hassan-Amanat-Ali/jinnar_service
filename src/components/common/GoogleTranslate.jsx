@@ -34,7 +34,8 @@ const GoogleTranslate = ({ containerId = "google_translate_element" }) => {
             new window.google.translate.TranslateElement(
               {
                 pageLanguage: "en",
-                includedLanguages: "en,sw,fr",
+                includedLanguages:
+                  "en,sw,fr,zu,xh,af,am,ha,ig,yo,so,sn,st,rw,ny,mg,zu",
                 autoDisplay: false,
               },
               targetId
@@ -77,11 +78,26 @@ const GoogleTranslate = ({ containerId = "google_translate_element" }) => {
         // Store current value before filtering
         const storedValue = select.dataset.forcedValue || select.value;
 
+        const allowedLanguages = [
+          "en",
+          "sw",
+          "fr",
+          "zu",
+          "xh",
+          "af",
+          "am",
+          "ha",
+          "ig",
+          "yo",
+          "so",
+          "sn",
+          "st",
+          "rw",
+          "ny",
+          "mg",
+        ];
         Array.from(select.options).forEach((option) => {
-          if (
-            !["en", "sw", "fr"].includes(option.value) &&
-            option.value !== ""
-          ) {
+          if (!allowedLanguages.includes(option.value) && option.value !== "") {
             option.remove();
           }
         });
