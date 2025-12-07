@@ -62,14 +62,18 @@ const Footer = () => {
           <div className="flex flex-col">
             <h1 className="font-semibold text-base">Pan-African Marketplace</h1>
             <p className="text-xs sm:text-sm mt-2 text-gray-400 leading-relaxed">
-              Connecting skilled informal workers with customers from East to West, North to South. Jinnar is building trust, opening opportunities, and uniting Africa's informal sector on one powerful platform.
+              Connecting skilled informal workers with customers from East to
+              West, North to South. Jinnar is building trust, opening
+              opportunities, and uniting Africa's informal sector on one
+              powerful platform.
             </p>
             <div className="text-xs sm:text-sm mt-6 space-y-1 font-light text-gray-400">
               <p className="flex items-center gap-2">
                 <Mail size={16} /> support@jinnar.com
               </p>
               <p className="flex items-center gap-2">
-                <MapPin size={16} /> 9550 Spring Green BLVD, STE 408-336, Katy, TX 77494
+                <MapPin size={16} /> 9550 Spring Green BLVD, STE 408-336, Katy,
+                TX 77494
               </p>
             </div>
           </div>
@@ -79,10 +83,7 @@ const Footer = () => {
             <h1 className="font-semibold text-base">Quick Links</h1>
             <ul className="text-xs sm:text-sm mt-3 space-y-2 font-light text-gray-400">
               <li>
-                <a
-                  className="hover:text-secondary transition-colors"
-                  href="/"
-                >
+                <a className="hover:text-secondary transition-colors" href="/">
                   Home
                 </a>
               </li>
@@ -171,7 +172,7 @@ const Footer = () => {
         </div>
         <div className="mt-10 pb-2 text-gray-400">
           <p className="text-xs text-center">
-            © 2024 TanzaniaMarketplace. All rights reserved.
+            © 2025 Pan-African Marketplace. All rights reserved.
           </p>
         </div>
       </div>

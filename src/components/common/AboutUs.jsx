@@ -148,7 +148,7 @@ const AboutUs = () => {
                 transition={{ delay: 0.05, duration: 0.5 }}
                 className="mt-3 text-base sm:text-lg text-white/90 max-w-2xl mx-auto lg:mx-0"
               >
-                Trusted Workers, Real Jobs.
+                Empowering Workers. Serving Africa.
               </motion.p>
               <motion.p
                 initial={{ opacity: 0, y: 10 }}
@@ -157,10 +157,11 @@ const AboutUs = () => {
                 transition={{ delay: 0.1, duration: 0.5 }}
                 className="mt-2 text-sm sm:text-base text-white/85 max-w-3xl mx-auto lg:mx-0"
               >
-                Welcome to Jinnar, the digital home of Tanzania's most
-                hardworking hands and trusted local talent. From plumbers to
-                tailors to mechanics, Jinnar connects you directly to skilled
-                informal workers—safely, fairly, and instantly.
+                Jinnar is a digital marketplace designed to spotlight the skill,
+                reliability, and dedication of informal-sector professionals
+                across Africa. From everyday repairs to major projects, Jinnar
+                connects you with verified workers quickly, safely, and
+                transparently.
               </motion.p>
 
               <motion.div
@@ -423,16 +424,16 @@ const AboutUs = () => {
       <section className="bg-muted py-12">
         <div className="section-container text-center max-w-4xl">
           <h2 className="text-2xl sm:text-3xl font-semibold text-center mb-3">
-            Born in Tanzania, Built for Africa
+            Built for Africa. Powered by People.
           </h2>
           <p className="text-base sm:text-lg text-gray-700 leading-relaxed mb-6">
-            Jinnar started with one goal: to help informal workers thrive in the
-            digital age. From Kariakoo to Kibaha, Ikungi to Mtwara, Kigoma to
-            Kilimanjaro—we believe that great work deserves recognition, and
-            every skilled hand deserves opportunity.
+            Jinnar was founded with a simple vision: to uplift informal workers
+            and bring their skills into the digital economy. From bustling urban
+            centers to rural communities, we believe every hardworking
+            professional deserves visibility, fairness, and opportunity.
           </p>
           <p className="text-lg sm:text-xl font-semibold text-gray-900">
-            Join us. Let's build a better future—one job at a time.
+            Come Aboard. Together, We Advance Africa — One Job At A Time.
           </p>
         </div>
       </section>

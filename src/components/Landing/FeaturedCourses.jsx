@@ -1,118 +1,44 @@
 import { useEffect, useState } from "react";
 import { FiClock, FiUsers } from "react-icons/fi";
-import { collection, getDocs, query, limit, orderBy } from "firebase/firestore";
-import { db } from "../../firebase/config";
 import { getFullImageUrl } from "../../utils/fileUrl.js";
+import { jinnarCoursesData } from "../../data/jinnarCourses.js";
 
 const FeaturedCourses = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchCourses = async () => {
+    const fetchCourses = () => {
       try {
-        const coursesRef = collection(db, "courses");
-        const q = query(coursesRef, orderBy("createdAt", "desc"), limit(6));
-        const querySnapshot = await getDocs(q);
+        setLoading(true);
 
-        if (!isMounted) return;
+        // Filter out employee-only courses and limit to 6 public courses
+        const publicCourses = jinnarCoursesData
+          .filter((course) => !course.employeeOnly)
+          .slice(0, 6);
 
-        const coursesData = [];
-        querySnapshot.forEach((doc) => {
-          const courseData = {
-            id: doc.id,
-            ...doc.data(),
-          };
-          coursesData.push(courseData);
-        });
+        // Transform courses to match the expected format
+        const transformedCourses = publicCourses.map((course) => ({
+          id: course.id,
+          title: course.title,
+          description: course.description,
+          duration: course.duration,
+          enrolled: 0,
+          image: course.thumbnail,
+          url: course.filePath,
+          totalEnrollments: 0,
+        }));
 
-        console.log("Fetched courses from Firebase:", coursesData); // Debug log
-        setCourses(coursesData);
+        setCourses(transformedCourses);
       } catch (error) {
-        console.error("Error fetching courses from Firebase:", error);
-        if (!isMounted) return;
-
-        // Fallback demo data
-        setCourses([
-          {
-            id: "sample-1",
-            title: "Professional Communication Basics",
-            description:
-              "Master essential communication skills for the modern workplace. Learn verbal, written, and digital communication techniques.",
-            duration: "2 weeks",
-            enrolled: 1250,
-            image:
-              "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=240&fit=crop",
-            url: "https://training.jinnar.com/courses/communication-basics",
-          },
-          {
-            id: "sample-2",
-            title: "Time Management Essentials",
-            description:
-              "Boost your productivity with proven time management strategies and tools for better work-life balance.",
-            duration: "1 week",
-            enrolled: 890,
-            image:
-              "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=240&fit=crop",
-            url: "https://training.jinnar.coms/time-management",
-          },
-          {
-            id: "sample-3",
-            title: "Tool Safety & Preparedness",
-            description:
-              "Essential safety protocols and best practices for using tools safely in various work environments.",
-            duration: "3 weeks",
-            enrolled: 2150,
-            image:
-              "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=240&fit=crop",
-            url: "https://training.jinnar.coms/tool-safety",
-          },
-          {
-            id: "sample-4",
-            title: "Digital Literacy Fundamentals",
-            description:
-              "Build essential digital skills for today's connected world. Learn computer basics, internet safety, and more.",
-            duration: "2 weeks",
-            enrolled: 1680,
-            image:
-              "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&h=240&fit=crop",
-            url: "https://training.jinnar.com/courses/digital-literacy",
-          },
-          {
-            id: "sample-5",
-            title: "Customer Service Excellence",
-            description:
-              "Deliver outstanding customer experiences with proven service techniques and communication strategies.",
-            duration: "1 week",
-            enrolled: 950,
-            image:
-              "https://images.unsplash.com/photo-1556745757-8d76bdb6984b?w=400&h=240&fit=crop",
-            url: "https://training.jinnar.com/courses/customer-service",
-          },
-          {
-            id: "sample-6",
-            title: "Financial Literacy Basics",
-            description:
-              "Learn fundamental financial concepts including budgeting, saving, and understanding basic financial products.",
-            duration: "2 weeks",
-            enrolled: 1420,
-            image:
-              "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=240&fit=crop",
-            url: "https://training.jinnar.com/courses/financial-literacy",
-          },
-        ]);
+        console.error("Error loading courses:", error);
+        setCourses([]);
       } finally {
-        if (isMounted) setLoading(false);
+        setLoading(false);
       }
     };
 
     fetchCourses();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   return (
@@ -158,14 +84,17 @@ const FeaturedCourses = () => {
           /* Course List */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {courses.map((course) => (
-              <div
+              <a
                 key={course.id}
-                className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden flex flex-col h-full"
+                href="https://training.jinnar.com/courses"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden flex flex-col h-full cursor-pointer"
               >
                 {/* Image */}
                 <div className="relative">
                   <img
-                    src={getFullImageUrl(course.thumbnail)}
+                    src={course.image}
                     alt={course.title || "Course Image"}
                     className="w-full h-48 object-cover"
                     onError={(e) => {
@@ -200,19 +129,8 @@ const FeaturedCourses = () => {
                       </span>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-3 mt-auto">
-                    <a
-                      href={course.url || "https://training.jinnar.com/courses"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full text-center btn-primary text-sm py-2 px-4"
-                    >
-                      View Details
-                    </a>
-                  </div>
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         )}

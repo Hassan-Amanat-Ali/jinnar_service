@@ -140,12 +140,12 @@ const Hero = () => {
             </span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tight">
-            Find Trusted Local Professionals In Minutes
+            Find Trusted Professionals Across Africa—In Minutes
           </h1>
           <div className="h-1 w-24 sm:w-40 md:w-56 lg:w-72 bg-white/80 my-2" />
           <p className="mt-1 max-w-2xl text-white/90 text-base sm:text-lg">
-            Discover verified workers across every service category, compare
-            options, and book confidently wherever you are in Tanzania.
+            Explore verified workers in every service category, compare choices
+            with ease, and book confidently wherever you are on the continent.
           </p>
 
           <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
@@ -197,24 +197,33 @@ const Hero = () => {
                       setSearchLocation(e.target.value);
                       setShowSuggestions(true);
                     }}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    onBlur={() =>
+                      setTimeout(() => setShowSuggestions(false), 200)
+                    }
                     onKeyPress={handleKeyPress}
                     className="w-full h-11 sm:h-12 rounded-xl border border-border pl-9 pr-3 text-sm text-black placeholder:text-black/50 bg-muted/60 hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
                     placeholder={userAddress || "Enter location..."}
                   />
-                  {showSuggestions && (searchLocation.length > 2) && (
+                  {showSuggestions && searchLocation.length > 2 && (
                     <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {locationLoading && (
-                        <div className="p-3 text-sm text-gray-500">Loading...</div>
+                        <div className="p-3 text-sm text-gray-500">
+                          Loading...
+                        </div>
                       )}
-                      {!locationLoading && locationSuggestions.length === 0 && searchLocation.length > 2 && (
-                        <div className="p-3 text-sm text-gray-500">No results found.</div>
-                      )}
+                      {!locationLoading &&
+                        locationSuggestions.length === 0 &&
+                        searchLocation.length > 2 && (
+                          <div className="p-3 text-sm text-gray-500">
+                            No results found.
+                          </div>
+                        )}
                       {locationSuggestions.map((suggestion) => (
                         <div
                           key={suggestion.place_id}
                           className="p-3 text-sm text-gray-800 cursor-pointer hover:bg-gray-100"
-                          onMouseDown={() => { // Use onMouseDown to fire before onBlur
+                          onMouseDown={() => {
+                            // Use onMouseDown to fire before onBlur
                             setSearchLocation(suggestion.display_name);
                             setShowSuggestions(false);
                           }}

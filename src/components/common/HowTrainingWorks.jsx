@@ -286,7 +286,7 @@ const HowTrainingWorks = () => {
 
             <Motion.div variants={fadeUp} className="text-center mt-8">
               <a
-                href="https://training.jinnar.coms"
+                href="https://training.jinnar.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-primary"

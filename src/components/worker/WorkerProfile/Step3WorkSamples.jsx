@@ -244,13 +244,17 @@ const Step3WorkSamples = forwardRef(
 
         // Add uploaded files to update data
         if (uploadedData.portfolioImages.length > 0) {
-          updateData.portfolioImages = uploadedData.portfolioImages;
+          updateData.portfolioImages = uploadedData.portfolioImages.map(
+            (file) => file.url
+          );
         }
         if (uploadedData.videos.length > 0) {
-          updateData.videos = uploadedData.videos;
+          updateData.videos = uploadedData.videos.map((file) => file.url);
         }
         if (uploadedData.certificates.length > 0) {
-          updateData.certificates = uploadedData.certificates;
+          updateData.certificates = uploadedData.certificates.map(
+            (file) => file.url
+          );
         }
 
         console.log("Sending update data:", updateData);
