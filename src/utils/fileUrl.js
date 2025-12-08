@@ -15,7 +15,7 @@ export const getFullImageUrl = (relativeUrl) => {
     return relativeUrl;
   }
 
-  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+  const baseUrl = import.meta.env.VITE_BASE_URL;
 
   if (!baseUrl) {
     console.error(

@@ -27,6 +27,10 @@ const Step4Location = forwardRef(({ profileData, isLoading, error }, ref) => {
   useEffect(() => {
     if (profileData) {
       if (profileData.selectedAreas && profileData.selectedAreas.length > 0) {
+        console.log(
+          "Retrieved `selectedAreas` from profileData:",
+          JSON.stringify(profileData.selectedAreas, null, 2)
+        );
         // Backend returns GeoJSON Point format: {type: "Point", coordinates: [lng, lat]} or legacy format: {lat, lng}
         const areasWithAddresses = profileData.selectedAreas.map(
           async (area) => {
@@ -101,8 +105,16 @@ const Step4Location = forwardRef(({ profileData, isLoading, error }, ref) => {
           }
         );
 
+          console.log(
+            "Processed areas with addresses (before geocoding):",
+            JSON.stringify(areasWithAddresses, null, 2)
+          )
         // Wait for all geocoding to complete
         Promise.all(areasWithAddresses).then((areas) => {
+          console.log(
+            "Processed areas with addresses (after geocoding):",
+            JSON.stringify(areas, null, 2)
+          );
           setSelectedAreas(areas);
           console.log("Step4Location - populated selectedAreas:", areas);
         });
@@ -123,13 +135,18 @@ const Step4Location = forwardRef(({ profileData, isLoading, error }, ref) => {
 
       loadingToast = toast.loading("Saving service locations...");
 
-      // Backend expects address strings - it will handle geocoding automatically
+      // Backend expects GeoJSON Point format for reliable location storage.
       const updateData = {
-        selectedAreas: selectedAreas.map(
-          (area) => area.address || "Location on map"
-        ),
+        selectedAreas: selectedAreas.map((area) => ({
+          type: "Point",
+          coordinates: [area.lng, area.lat],
+        })),
       };
 
+      console.log(
+        "Data being sent to backend in `handleSave`:",
+        JSON.stringify(updateData, null, 2)
+      );
       console.log("Sending update data:", updateData);
       const result = await updateProfile(updateData).unwrap();
       console.log("Update result:", result);
