@@ -112,6 +112,7 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
       // Step 3: Update profile data
       const updateData = {
         name: formData.fullName,
+        mobileNumber: formData.phoneNumber,
         bio: formData.shortBio,
         languages: formData.languages,
         yearsOfExperience: yearsExp,
@@ -122,7 +123,9 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
         updateData.profileImage = profileImageData;
       }
 
+      console.log("Sending update data:", updateData);
       const result = await updateProfile(updateData).unwrap();
+      console.log("Update result:", result);
 
       // Update Redux store
       dispatch(setProfile(result.user));
@@ -267,18 +270,18 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
               {/* Email Address */}
               <div>
                 <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                  Email Address (Optional)
+                  Email Address
                 </label>
                 <input
                   type="email"
                   name="emailAddress"
                   value={formData.emailAddress}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
+                  readOnly
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
                   placeholder="your.email@example.com"
                 />
                 <p className="text-[11px] md:text-xs text-gray-500 mt-1">
-                  Your login credentials connect you for detailed purposes
+                  Your login email address (cannot be changed here)
                 </p>
               </div>
             </div>
