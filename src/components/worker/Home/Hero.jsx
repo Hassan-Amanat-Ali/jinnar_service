@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle, Briefcase, Check, DollarSign, Star } from "lucide-react";
 import bag from "../../../assets/icons/worker-bag.png";
 import check from "../../../assets/icons/check.png";
 import { useGetMyProfileQuery, useGetMyOrdersQuery, useGetNewJobRequestsQuery, useGetWalletQuery } from "../../../services/workerApi";
+import { getFullImageUrl } from "../../../utils/fileUrl.js";
 
 const Hero = () => {
   // Fetch real-time profile data
@@ -33,52 +35,63 @@ const Hero = () => {
     })
     .reduce((total, order) => total + (order.price || 0), 0);
 
-  // Calculate profile completion percentage
+  // Log personal details for debugging completion status
+  useEffect(() => {
+    if (profile) {
+      const profilePicUrl = getFullImageUrl(profile.profilePicture);
+      console.group("🕵️ Personal Details Completion Check");
+      console.log("Name:", `'${profile.name}'`, `| Pass: ${!!profile.name}`);
+      console.log("Mobile Number:", `'${profile.mobileNumber}'`, `| Pass: ${!!profile.mobileNumber}`);
+      console.log("Years of Experience:", profile.yearsOfExperience, `| Type: ${typeof profile.yearsOfExperience}`, `| Pass: ${typeof profile.yearsOfExperience === 'number'}`);
+      console.log("Profile Picture URL:", `'${profilePicUrl}'`, `| Pass: ${!!profilePicUrl}`);
+      console.log("Bio:", `'${profile.bio}'`, `| Pass: ${!!profile.bio}`);
+      console.groupEnd();
+    } else {
+      console.log("🕵️ Personal Details Check: Profile data not available yet.");
+    }
+  }, [profile]);
+
+  // Check individual completion status
+  const hasPersonalDetails = profile?.name && profile?.mobileNumber && typeof profile?.yearsOfExperience === 'number' && !!getFullImageUrl(profile?.profilePicture) && profile?.bio;
+  const hasSkillsAndServices = profile?.categories?.length > 0 && profile?.subcategories?.length > 0;
+  const hasWorkSamples = profile?.portfolioImages?.length > 0 || profile?.videos?.length > 0;
+  const hasCertificates = profile?.certificates?.length > 0;
+  const hasLocation = profile?.selectedAreas?.length > 0;
+  const hasAvailability = profile?.availability?.length > 0;
+
+  // Get stats - use calculated values from orders
+  const jobsCompleted = completedOrders.length;
+  const rating = profile?.rating?.average || profile?.rating || 0;
+  
   const calculateProfileCompletion = () => {
     if (!profile) return 0;
 
     let completed = 0;
-    let total = 8; // Total steps to complete
+    let total = 6; // Total main sections to complete
 
-    // Basic info (25%)
-    if (profile.name) completed += 1;
-    if (profile.bio) completed += 1;
+    // 1. Personal Info (Name, Mobile, Years of Exp, Profile Picture, Bio)
+    if (hasPersonalDetails) completed += 1;
 
-    // Skills (12.5%)
-    if (profile.skills && profile.skills.length > 0) completed += 1;
+    // 2. Skills & Services (Categories and Subcategories)
+    if (hasSkillsAndServices) completed += 1;
 
-    // Work samples (25%)
-    if (profile.portfolioImages && profile.portfolioImages.length > 0)
-      completed += 1;
-    if (profile.videos && profile.videos.length > 0) completed += 1;
+    // 3. Work Samples (Portfolio Images or Videos)
+    if (hasWorkSamples) completed += 1;
 
-    // Certificates/Verification (12.5%)
-    if (profile.certificates && profile.certificates.length > 0) completed += 1;
+    // 4. Certificates
+    if (hasCertificates) completed += 1;
 
-    // Availability (12.5%)
-    if (profile.availability && profile.availability.length > 0) completed += 1;
+    // 5. Location & Address
+    if (hasLocation) completed += 1;
 
-    // Profile picture (12.5%)
-    if (profile.profileImage && profile.profileImage.url) completed += 1;
+    // 6. Availability
+    if (hasAvailability) completed += 1;
 
     return Math.round((completed / total) * 100);
   };
 
   const completionPercentage = calculateProfileCompletion();
 
-  // Check individual completion status
-  const hasWorkSamples =
-    profile?.portfolioImages?.length > 0 || profile?.videos?.length > 0;
-  const hasSkills = profile?.skills && profile?.skills.length > 0;
-  const hasVerification =
-    profile?.certificates && profile?.certificates.length > 0;
-  const hasAvailability =
-    profile?.availability && profile?.availability.length > 0;
-
-  // Get stats - use calculated values from orders
-  const jobsCompleted = completedOrders.length;
-  const rating = profile?.rating?.average || profile?.rating || 0;
-  
   // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -88,7 +101,6 @@ const Hero = () => {
       maximumFractionDigits: 0,
     }).format(amount);
   };
-
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-6 xl:px-5 my-8 space-y-6">
       {/* Hero Banner */}
@@ -159,19 +171,45 @@ const Hero = () => {
         </div>
 
         {/* Completion Steps - Mobile Responsive */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-3 gap-x-4">
           <div className="flex items-center gap-2">
             <img
               src={check}
               alt=""
               className={`h-3 w-3 flex-shrink-0 ${
-                !hasWorkSamples ? "grayscale-100" : ""
+                !hasPersonalDetails ? "grayscale-100" : ""
               }`}
             />
             <span
               className={`text-xs sm:text-sm ${
-                hasWorkSamples ? "text-gray-700" : "text-gray-400"
+                hasPersonalDetails ? "text-gray-700" : "text-gray-400"
               }`}
+            >
+              Complete Personal Info
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <img
+              src={check}
+              alt=""
+              className={`h-3 w-3 flex-shrink-0 ${!hasSkillsAndServices ? "grayscale-100" : ""}`}
+            />
+            <span
+              className={`text-xs sm:text-sm ${hasSkillsAndServices ? "text-gray-700" : "text-gray-400"}`}
+            >
+              Add Skills & Services
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <img
+              src={check}
+              alt=""
+              className={`h-3 w-3 flex-shrink-0 ${!hasWorkSamples ? "grayscale-100" : ""}`}
+            />
+            <span
+              className={`text-xs sm:text-sm ${hasWorkSamples ? "text-gray-700" : "text-gray-400"}`}
             >
               Add Work Samples
             </span>
@@ -181,16 +219,12 @@ const Hero = () => {
             <img
               src={check}
               alt=""
-              className={`h-3 w-3 flex-shrink-0 ${
-                !hasSkills ? "grayscale-100" : ""
-              }`}
+              className={`h-3 w-3 flex-shrink-0 ${!hasCertificates ? "grayscale-100" : ""}`}
             />
             <span
-              className={`text-xs sm:text-sm ${
-                hasSkills ? "text-gray-700" : "text-gray-400"
-              }`}
+              className={`text-xs sm:text-sm ${hasCertificates ? "text-gray-700" : "text-gray-400"}`}
             >
-              Complete Skills Assessment
+              Upload Certificates
             </span>
           </div>
 
@@ -198,16 +232,12 @@ const Hero = () => {
             <img
               src={check}
               alt=""
-              className={`h-3 w-3 flex-shrink-0 ${
-                !hasVerification ? "grayscale-100" : ""
-              }`}
+              className={`h-3 w-3 flex-shrink-0 ${!hasLocation ? "grayscale-100" : ""}`}
             />
             <span
-              className={`text-xs sm:text-sm ${
-                hasVerification ? "text-gray-700" : "text-gray-400"
-              }`}
+              className={`text-xs sm:text-sm ${hasLocation ? "text-gray-700" : "text-gray-400"}`}
             >
-              Upload ID Verification
+              Set Service Location
             </span>
           </div>
 
@@ -215,14 +245,10 @@ const Hero = () => {
             <img
               src={check}
               alt=""
-              className={`h-3 w-3 flex-shrink-0 ${
-                !hasAvailability ? "grayscale-100" : ""
-              }`}
+              className={`h-3 w-3 flex-shrink-0 ${!hasAvailability ? "grayscale-100" : ""}`}
             />
             <span
-              className={`text-xs sm:text-sm ${
-                hasAvailability ? "text-gray-700" : "text-gray-400"
-              }`}
+              className={`text-xs sm:text-sm ${hasAvailability ? "text-gray-700" : "text-gray-400"}`}
             >
               Set Availability Schedule
             </span>

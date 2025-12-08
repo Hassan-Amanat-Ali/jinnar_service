@@ -95,18 +95,18 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
       const loadingToast = toast.loading("Saving profile...");
 
       // Step 1: Upload profile picture if changed
-      let profileImageData = profileData?.profileImage;
+      let profileImageData = profileData?.profilePicture;
       if (formData.profileImage instanceof File) {
         const imageFormData = new FormData();
         imageFormData.append("profilePicture", formData.profileImage);
 
         const imageResult = await uploadProfilePicture(imageFormData).unwrap();
-        profileImageData = imageResult.file; // { url, publicId }
+        profileImageData = imageResult.file;
       }
 
       // Step 2: Extract years of experience number
       const yearsExp = formData.yearsOfExperience
-        ? parseInt(formData.yearsOfExperience.replace(/\D/g, "")) || 0
+        ? parseInt(formData.yearsOfExperience) ?? 0
         : 0;
 
       // Step 3: Update profile data
@@ -120,7 +120,7 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
 
       // Add profile image if available
       if (profileImageData) {
-        updateData.profileImage = profileImageData;
+        updateData.profilePicture = profileImageData;
       }
 
       console.log("Sending update data:", updateData);

@@ -94,11 +94,17 @@ const Step3WorkSamples = forwardRef(
     const [uploadVideos] = useUploadVideosMutation();
     const [uploadCertificates] = useUploadCertificatesMutation();
 
-    const inputRef = useRef(null);
-    const [files, setFiles] = useState([]);
-    const [existingFiles, setExistingFiles] = useState([]);
+    // Refs for file inputs
+    const portfolioInputRef = useRef(null);
+    const certificateInputRef = useRef(null);
+
+    // State for new files to be uploaded
+    const [portfolioFiles, setPortfolioFiles] = useState([]);
+    const [certificateFiles, setCertificateFiles] = useState([]);
+    // State for already existing files
+    const [existingPortfolio, setExistingPortfolio] = useState([]);
+    const [existingCertificates, setExistingCertificates] = useState([]);
     const [bio, setBio] = useState("");
-    const [dragOver, setDragOver] = useState(false);
 
     // Populate form data when profile data is loaded
     useEffect(() => {
@@ -110,13 +116,13 @@ const Step3WorkSamples = forwardRef(
           setBio(profileData.bio);
         }
 
-        // Load existing uploaded files
-        const existing = [];
+        // Load existing portfolio files (images and videos)
+        const existingPort = [];
         if (
           profileData.portfolioImages &&
           profileData.portfolioImages.length > 0
         ) {
-          existing.push(
+          existingPort.push(
             ...profileData.portfolioImages.map((img) => ({
               ...img,
               type: "portfolio",
@@ -124,19 +130,16 @@ const Step3WorkSamples = forwardRef(
           );
         }
         if (profileData.videos && profileData.videos.length > 0) {
-          existing.push(
+          existingPort.push(
             ...profileData.videos.map((vid) => ({ ...vid, type: "video" }))
           );
         }
+        setExistingPortfolio(existingPort);
+
+        // Load existing certificates
         if (profileData.certificates && profileData.certificates.length > 0) {
-          existing.push(
-            ...profileData.certificates.map((cert) => ({
-              ...cert,
-              type: "certificate",
-            }))
-          );
+          setExistingCertificates(profileData.certificates.map(cert => ({...cert, type: 'certificate'})));
         }
-        setExistingFiles(existing);
       }
     }, [profileData]);
 
@@ -154,9 +157,9 @@ const Step3WorkSamples = forwardRef(
         };
 
         // Categorize files by type
-        const imageFiles = files.filter((f) => f.type.startsWith("image/"));
-        const videoFiles = files.filter((f) => f.type.startsWith("video/"));
-        const pdfFiles = files.filter((f) => f.type === "application/pdf");
+        const imageFiles = portfolioFiles.filter((f) => f.type.startsWith("image/"));
+        const videoFiles = portfolioFiles.filter((f) => f.type.startsWith("video/"));
+        const pdfFiles = certificateFiles.filter((f) => f.type === "application/pdf");
 
         // Upload portfolio images
         if (imageFiles.length > 0) {
@@ -265,7 +268,8 @@ const Step3WorkSamples = forwardRef(
         dispatch(setProfile(result.user));
 
         // Clear files after successful upload
-        setFiles([]);
+        setPortfolioFiles([]);
+        setCertificateFiles([]);
 
         toast.dismiss(loadingToast);
         toast.success("Work samples saved successfully!");
@@ -314,51 +318,62 @@ const Step3WorkSamples = forwardRef(
       );
     }
 
-    const onPick = () => inputRef.current?.click();
-
-    const onFiles = (list) => {
+    const handleFileAdd = (list, currentFiles, setFiles, limit, acceptedTypes) => {
       const arr = Array.from(list || []);
       if (!arr.length) return;
-
-      // Validate file sizes (10MB limit)
-      const invalidFiles = arr.filter((file) => file.size > 10 * 1024 * 1024);
-      if (invalidFiles.length > 0) {
-        toast.error(
-          `Some files exceed 10MB limit: ${invalidFiles
-            .map((f) => f.name)
-            .join(", ")}`
-        );
+    
+      // Validate file types
+      const validFiles = arr.filter(file => acceptedTypes.some(type => file.type.startsWith(type) || file.type === type));
+      if (validFiles.length !== arr.length) {
+        toast.error("Some files have an unsupported format.");
+      }
+    
+      // Validate file sizes (10MB limit) for valid files
+      const oversizedFiles = validFiles.filter(file => file.size > 10 * 1024 * 1024);
+      if (oversizedFiles.length > 0) {
+        toast.error(`Some files exceed the 10MB limit: ${oversizedFiles.map(f => f.name).join(", ")}`);
+      }
+    
+      const finalFiles = validFiles.filter(file => file.size <= 10 * 1024 * 1024);
+      if (finalFiles.length === 0) return;
+    
+      // Limit total files
+      const totalAfterAdd = currentFiles.length + finalFiles.length;
+      if (totalAfterAdd > limit) {
+        toast.error(`You can upload a maximum of ${limit} files in this section.`);
+        const allowedToAdd = finalFiles.slice(0, limit - currentFiles.length);
+        setFiles([...currentFiles, ...allowedToAdd]);
         return;
       }
-
-      // Limit to 12 files total
-      const newFiles = [...files, ...arr].slice(0, 12);
-      setFiles(newFiles);
-
-      if (newFiles.length === 12 && arr.length + files.length > 12) {
-        toast.error("Maximum 12 files allowed");
-      } else if (arr.length > 0) {
-        toast.success(`${arr.length} file(s) added`);
-      }
+    
+      setFiles([...currentFiles, ...finalFiles]);
+      toast.success(`${finalFiles.length} file(s) added.`);
     };
 
-    const onDrop = (e) => {
+    const onPortfolioFiles = (list) => handleFileAdd(list, portfolioFiles, setPortfolioFiles, 10, ['image/', 'video/mp4']);
+    const onCertificateFiles = (list) => handleFileAdd(list, certificateFiles, setCertificateFiles, 5, ['application/pdf']);
+
+    const onPortfolioDrop = (e) => {
       e.preventDefault();
-      setDragOver(false);
-      onFiles(e.dataTransfer.files);
+      onPortfolioFiles(e.dataTransfer.files);
     };
 
-    const removeAt = (idx) =>
-      setFiles((prev) => prev.filter((_, i) => i !== idx));
+    const onCertificateDrop = (e) => {
+      e.preventDefault();
+      onCertificateFiles(e.dataTransfer.files);
+    };
 
-    const removeExisting = (idx) =>
-      setExistingFiles((prev) => prev.filter((_, i) => i !== idx));
+    const removePortfolioFile = (idx) => setPortfolioFiles((prev) => prev.filter((_, i) => i !== idx));
+    const removeCertificateFile = (idx) => setCertificateFiles((prev) => prev.filter((_, i) => i !== idx));
+    const removeExistingPortfolio = (idx) => setExistingPortfolio((prev) => prev.filter((_, i) => i !== idx));
+    const removeExistingCertificate = (idx) => setExistingCertificates((prev) => prev.filter((_, i) => i !== idx));
 
-    const totalFiles = existingFiles.length + files.length;
+    const totalPortfolioFiles = existingPortfolio.length + portfolioFiles.length;
+    const totalCertificateFiles = existingCertificates.length + certificateFiles.length;
 
     return (
       <div className="space-y-6 max-w-5xl mx-auto">
-        {/* Upload helper card */}
+        {/* Main helper card */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
           <div className="flex items-start gap-2 text-[#2E90FA] mb-4">
             <Info className="w-5 h-5" />
@@ -374,97 +389,90 @@ const Step3WorkSamples = forwardRef(
             </div>
           </div>
 
-          <div
-            className={`rounded-xl border-2 ${
-              dragOver
-                ? "border-[#74C7F2] bg-[#F0F7FF]"
-                : "border-dashed border-gray-300 bg-gray-50"
-            } p-8 text-center`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOver(true);
-            }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={onDrop}
-          >
-            <UploadCloud className="w-10 h-10 text-gray-400 mx-auto" />
-            <div className="mt-3 text-sm font-medium text-gray-900">
-              Upload Your Work Samples
-            </div>
-            <p className="text-xs text-gray-600 mt-1">
-              Drag & drop files here, or click to browse
-            </p>
-            <ul className="mt-3 text-xs text-gray-500 space-y-1">
-              <li>Images: JPG, PNG (max 10MB each)</li>
-              <li>Videos: MP4 (max 10MB each)</li>
-              <li>Certificates: PDF (max 10MB each)</li>
-            </ul>
-
-            <button
-              type="button"
-              onClick={onPick}
-              className="mt-4 inline-flex items-center justify-center h-9 px-4 rounded-md text-sm font-medium text-white"
-              style={{ background: "var(--gradient-main)" }}
+          {/* Portfolio Upload Area */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 mb-6">
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Portfolio (Images & Videos)</h3>
+            <p className="text-xs text-gray-500 mb-4">Showcase your best work with images (JPG, PNG) and short videos (MP4).</p>
+            
+            {/* Dropzone for portfolio */}
+            <div
+              className="rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={onPortfolioDrop}
             >
-              Choose Files
-            </button>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*,video/mp4,application/pdf"
-              multiple
-              className="hidden"
-              onChange={(e) => onFiles(e.target.files)}
-            />
-          </div>
-        </div>
-
-        {/* Files list */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
-          <div className="text-sm font-semibold text-gray-900 mb-3">
-            Your Work Samples ({totalFiles})
-          </div>
-          {totalFiles === 0 ? (
-            <p className="text-xs text-gray-500">
-              No files yet. Add images, short videos, or PDFs of certificates.
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-4">
-              {existingFiles.map((f, i) => (
-                <Thumb
-                  key={`existing-${f.publicId || i}`}
-                  file={f}
-                  onRemove={() => removeExisting(i)}
-                  isExisting={true}
-                />
-              ))}
-              {files.map((f, i) => (
-                <Thumb
-                  key={`new-${f.name}-${i}`}
-                  file={f}
-                  onRemove={() => removeAt(i)}
-                  isExisting={false}
-                />
-              ))}
+              <UploadCloud className="w-10 h-10 text-gray-400 mx-auto" />
+              <p className="mt-3 text-sm font-medium text-gray-900">Upload Images & Videos</p>
+              <p className="text-xs text-gray-600 mt-1">Drag & drop files here, or click to browse</p>
+              <button type="button" onClick={() => portfolioInputRef.current?.click()} className="mt-4 btn-secondary text-xs">Choose Files</button>
+              <input ref={portfolioInputRef} type="file" accept="image/*,video/mp4" multiple className="hidden" onChange={(e) => onPortfolioFiles(e.target.files)} />
             </div>
-          )}
+
+            {/* Portfolio Files List */}
+            {totalPortfolioFiles > 0 && (
+              <div className="mt-4">
+                <div className="text-sm font-semibold text-gray-900 mb-3">Your Portfolio ({totalPortfolioFiles})</div>
+                <div className="flex flex-wrap gap-4">
+                  {existingPortfolio.map((f, i) => (
+                    <Thumb key={`existing-port-${f.publicId || i}`} file={f} onRemove={() => removeExistingPortfolio(i)} isExisting={true} />
+                  ))}
+                  {portfolioFiles.map((f, i) => (
+                    <Thumb key={`new-port-${f.name}-${i}`} file={f} onRemove={() => removePortfolioFile(i)} isExisting={false} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Certificates Upload Area */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Certificates & Qualifications (PDF only)</h3>
+            <p className="text-xs text-gray-500 mb-4">Upload any relevant certificates or licenses as PDF documents.</p>
+
+            {/* Dropzone for certificates */}
+            <div
+              className="rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={onCertificateDrop}
+            >
+              <FileText className="w-10 h-10 text-gray-400 mx-auto" />
+              <p className="mt-3 text-sm font-medium text-gray-900">Upload PDF Documents</p>
+              <p className="text-xs text-gray-600 mt-1">Drag & drop PDF files here, or click to browse</p>
+              <button type="button" onClick={() => certificateInputRef.current?.click()} className="mt-4 btn-secondary text-xs">Choose Files</button>
+              <input ref={certificateInputRef} type="file" accept="application/pdf" multiple className="hidden" onChange={(e) => onCertificateFiles(e.target.files)} />
+            </div>
+
+            {/* Certificate Files List */}
+            {totalCertificateFiles > 0 && (
+              <div className="mt-4">
+                <div className="text-sm font-semibold text-gray-900 mb-3">Your Certificates ({totalCertificateFiles})</div>
+                <div className="flex flex-wrap gap-4">
+                  {existingCertificates.map((f, i) => (
+                    <Thumb key={`existing-cert-${f.publicId || i}`} file={f} onRemove={() => removeExistingCertificate(i)} isExisting={true} />
+                  ))}
+                  {certificateFiles.map((f, i) => (
+                    <Thumb key={`new-cert-${f.name}-${i}`} file={f} onRemove={() => removeCertificateFile(i)} isExisting={false} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Portfolio description */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
           <div className="text-sm font-semibold text-gray-900 mb-2">
-            Describe Your Portfolio (Optional)
+            Describe Your Work Experience (Optional)
           </div>
-          <input
-            type="text"
+          <textarea
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Tell customers about your work style, specialties, or anything that makes your work unique..."
-            className="w-full h-11 rounded-md border border-gray-300 px-3 text-sm focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent bg-gray-50"
+            rows={4}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent bg-gray-50 text-sm"
           />
           <p className="text-[11px] text-gray-500 mt-2">
             This description helps customers understand your work approach and
-            quality.
+            quality. It will appear on your public profile.
           </p>
         </div>
 
@@ -479,7 +487,7 @@ const Step3WorkSamples = forwardRef(
                 Stand Out From The Crowd
               </div>
               <p className="text-sm text-amber-800/80 mt-1">
-                Workers with work samples get 3x more bookings than those
+                Workers with strong portfolios get 3x more bookings than those
                 without. Your portfolio is one of the most important factors
                 customers consider when choosing a worker.
               </p>
