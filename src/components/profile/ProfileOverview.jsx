@@ -170,6 +170,8 @@ const ProfileOverview = () => {
       // Step 2: Update profile data
       const updateData = {
         name: formData.name,
+        email: formData.email,
+        mobileNumber: formData.mobileNumber,
       };
 
       // Add profile picture if available
@@ -365,20 +367,34 @@ const ProfileOverview = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email
                 </label>
-                <p className="text-gray-500 py-3 text-sm">
-                  {formData.email || "N/A"}
-                  <span className="text-xs ml-2">(Cannot be changed)</span>
-                </p>
+                {isEditMode ? (
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent bg-white"
+                  />
+                ) : (
+                  <p className="text-gray-900 py-3">{formData.email || "N/A"}</p>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Phone
                 </label>
-                <p className="text-gray-500 py-3 text-sm">
-                  {formData.mobileNumber || "N/A"}
-                  <span className="text-xs ml-2">(Cannot be changed)</span>
-                </p>
+                {isEditMode ? (
+                  <input
+                    type="tel"
+                    name="mobileNumber"
+                    value={formData.mobileNumber}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent bg-white"
+                  />
+                ) : (
+                  <p className="text-gray-900 py-3">{formData.mobileNumber || "N/A"}</p>
+                )}
               </div>
             </div>
           </div>

@@ -52,6 +52,7 @@ import AllServicesLanding from "../pages/landing/Landing.jsx";
 import SupportTicketDetail from "../components/profile/SupportTicketDetail.jsx";
 import AccountVerification from "../components/profile/AccountVerification.jsx";
 import Terms from "../pages/common/Terms.jsx";
+import NotFound from "../pages/common/NotFound.jsx";
 
 const router = createBrowserRouter([
   // Public landing pages - accessible to everyone
@@ -128,6 +129,7 @@ const router = createBrowserRouter([
           </RoleGuard>
         ),
       },
+      { path: "worker-profile/:id", element: <WorkerPublicProfile /> },
       {
         path: "customer-chat",
         element: (
@@ -231,17 +233,22 @@ const router = createBrowserRouter([
       { path: "payment-methods", element: <PaymentMethods /> },
       { path: "worker/profile", element: <Profile /> },
       { path: "worker-chat", element: <Chat1 /> },
-
+      { path: "customer-profile/:id", element: <CustomerProfile /> },
       { path: "worker/profile/verification", element: <AccountVerification /> },
     ],
   },
+  // {
+  //   element: <FooterOnlyLayout />,
+  //   children: [
+  //     // Profile pages - footer only, no navbar
+  //
+  //
+  //   ],
+  // },
+  // 404 Not Found - Catch all unmatched routes
   {
-    element: <FooterOnlyLayout />,
-    children: [
-      // Profile pages - footer only, no navbar
-      { path: "worker-profile/:id", element: <WorkerPublicProfile /> },
-      { path: "customer-profile/:id", element: <CustomerProfile /> },
-    ],
+    path: "*",
+    element: <NotFound />,
   },
 ]);
 

@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import { useRef } from "react";
 import Step1Form from "../../components/worker/WorkerProfile/Step1Form";
 import SetupProgress from "../../components/worker/WorkerProfile/SetupProgress";
@@ -26,43 +25,9 @@ const ProfileSetupBasic = () => {
     navigate(-1);
   };
 
-  const handleSaveAndExit = async () => {
-    // Save before exiting
-    if (step1FormRef.current?.handleSave) {
-      const saved = await step1FormRef.current.handleSave();
-      if (saved) {
-        navigate("/worker/profile");
-      }
-    } else {
-      navigate("/worker/profile");
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-          >
-            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="text-xs sm:text-sm font-medium">Back</span>
-          </button>
-
-          <h1 className="text-base sm:text-lg font-semibold text-gray-900">
-            Profile Setup
-          </h1>
-
-          <button
-            onClick={handleSaveAndExit}
-            className="flex items-center gap-2 text-[#74C7F2] text-xs sm:text-sm font-medium hover:text-[#5ba8e0] transition-colors"
-          >
-            <span>Save & Exit</span>
-          </button>
-        </div>
-      </div>
 
       {/* Progress Steps */}
       <SetupProgress current={1} />

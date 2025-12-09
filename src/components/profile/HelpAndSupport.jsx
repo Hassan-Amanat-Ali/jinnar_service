@@ -1,16 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  ArrowLeft,
   Mail,
-  Phone,
   MessageSquare,
   ChevronDown,
-  ChevronUp,
   CircleQuestionMark,
   Ticket,
   Loader2,
   X,
   Send,
+  AlertCircle,
+  Search,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGetHelpFaqsQuery } from "../../services/faqApi";
@@ -24,6 +23,8 @@ const HelpAndSupport = () => {
   const navigate = useNavigate();
   const [openFaqs, setOpenFaqs] = useState({});
   const [showTicketDialog, setShowTicketDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [ticketForm, setTicketForm] = useState({
     subject: "",
     message: "",
@@ -32,12 +33,19 @@ const HelpAndSupport = () => {
   const { user } = useAuth();
   const isLoggedIn = !!user; // User is logged in if the 'user' object exists
 
-  // Fetch FAQs from API
+  // Fetch FAQs from API - always fetch regardless of login status
   const {
     data: faqCategories = [],
     isLoading: isLoadingFaqs,
     isError: isErrorFaqs,
-  } = useGetHelpFaqsQuery(undefined, { skip: false || !isLoggedIn });
+  } = useGetHelpFaqsQuery();
+
+  // Set first category as selected by default when FAQs load
+  useEffect(() => {
+    if (faqCategories.length > 0 && selectedCategory === null) {
+      setSelectedCategory(faqCategories[0].id);
+    }
+  }, [faqCategories, selectedCategory]);
 
   // Fetch user's support tickets
   const {
@@ -60,18 +68,39 @@ const HelpAndSupport = () => {
       action: () => window.open("mailto:support@jinnar.com"),
     },
     {
-      title: "Phone Support",
-      description: "+255 123 456 789",
-      icon: Phone,
-      color: "text-[#0EA5E9]",
-      action: () => window.open("tel:+255123456789"),
-    },
-    {
       title: "Submit Request",
       description: "Send us a message",
       icon: MessageSquare,
       color: "text-[#0EA5E9]",
-      action: () => setShowTicketDialog(true),
+      action: () => {
+        if (!isLoggedIn) {
+          toast.custom((t) => (
+            <div className={`${
+              t.visible ? 'animate-enter' : 'animate-leave'
+            } max-w-md w-full bg-amber-50 shadow-lg rounded-lg pointer-events-auto flex items-start gap-3 p-4 border border-amber-300`}>
+              <div className="flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-900">
+                  Authentication Required
+                </p>
+                <p className="mt-1 text-sm text-amber-700">
+                  Please login to submit a support request
+                </p>
+              </div>
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="flex-shrink-0 inline-flex text-amber-600 hover:text-amber-800 focus:outline-none"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ), { duration: 4000 });
+          return;
+        }
+        setShowTicketDialog(true);
+      },
     },
   ];
 
@@ -123,33 +152,6 @@ const HelpAndSupport = () => {
     });
   };
 
-  const resources = [
-    {
-      title: "Getting Started Guide",
-      description:
-        "Learn how to create your profile and book your first service.",
-      category: "guide",
-    },
-    {
-      title: "Safety Guidelines",
-      description:
-        "Important safety tips for booking and working with service providers.",
-      category: "safety",
-    },
-    {
-      title: "Payment Guide",
-      description:
-        "Understanding our payment system and managing payment methods.",
-      category: "payment",
-    },
-    {
-      title: "Troubleshooting",
-      description:
-        "Common issues and how to resolve them quickly from our help center.",
-      category: "troubleshooting",
-    },
-  ];
-
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -171,16 +173,7 @@ const HelpAndSupport = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <ArrowLeft size={16} className="text-black" />
-          <CircleQuestionMark size={16} className="text-[#38BDF8]" />
-          <span className="text-lg text-black mt-1 font-bold ">
-            Help & Support
-          </span>
-        </div>
-        <p className="text-sm">
-          Find answers to common questions or contact our support team.
-        </p>
+
       </div>
 
       {/* Contact Support */}
@@ -192,7 +185,7 @@ const HelpAndSupport = () => {
           Get in touch with our support team for immediate assistance.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {contactOptions.map((option, index) => {
             const IconComponent = option.icon;
             return (
@@ -299,153 +292,282 @@ const HelpAndSupport = () => {
       )}
 
       {/* Frequently Asked Questions */}
-      <div className="mb-8 border border-gray-200 rounded-xl p-5 shadow-md">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">
-          Frequently Asked Questions
-        </h2>
-        <p className="text-sm text-gray-500 mb-6">
-          Find quick answers to common questions about our platform.
-        </p>
+      <div className="mb-8">
+        {/* FAQ Header */}
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-sm text-gray-600 max-w-2xl mx-auto">
+            Find quick answers to common questions. Can't find what you're looking for?{" "}
+            <button
+              onClick={() => {
+                if (!isLoggedIn) {
+                  toast.custom((t) => (
+                    <div className={`${
+                      t.visible ? 'animate-enter' : 'animate-leave'
+                    } max-w-md w-full bg-amber-50 shadow-lg rounded-lg pointer-events-auto flex items-start gap-3 p-4 border border-amber-300`}>
+                      <div className="shrink-0">
+                        <AlertCircle className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-amber-900">
+                          Authentication Required
+                        </p>
+                        <p className="mt-1 text-sm text-amber-700">
+                          Please login to submit a support request
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => toast.dismiss(t.id)}
+                        className="shrink-0 inline-flex text-amber-600 hover:text-amber-800 focus:outline-none"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ), { duration: 4000 });
+                  return;
+                }
+                setShowTicketDialog(true);
+              }}
+              className="text-[#0EA5E9] hover:text-[#74C7F2] font-medium text-sm"
+            >
+              Contact support
+            </button>
+          </p>
+        </div>
 
-        {isLoadingFaqs ? (
-          <div className="space-y-6">
-            {/* Category Pills Skeleton */}
-            <div className="flex flex-wrap gap-2">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div
-                  key={i}
-                  className="h-8 w-24 bg-gray-200 rounded-full animate-pulse"
-                />
+        {/* Category Tabs */}
+        {!isLoadingFaqs && !isErrorFaqs && faqCategories.length > 0 && (
+          <div className="max-w-7xl mx-auto mb-6">
+            <style>{`
+              .category-tabs-scroll::-webkit-scrollbar {
+                display: none;
+              }
+              .category-tabs-scroll {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+              }
+            `}</style>
+            <div className="flex gap-2 overflow-x-auto lg:flex-wrap lg:justify-center mb-5 category-tabs-scroll pb-2">
+              {faqCategories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => {
+                    setSelectedCategory(category.id);
+                    setSearchQuery("");
+                  }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
+                    selectedCategory === category.id
+                      ? "bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white shadow-md shadow-[#74C7F2]/20"
+                      : "bg-white border border-gray-300 text-gray-700 hover:border-[#74C7F2] hover:bg-blue-50"
+                  }`}
+                >
+                  {category.title}
+                </button>
               ))}
             </div>
 
-            {/* FAQ Items Skeleton */}
-            {[1, 2, 3].map((categoryIndex) => (
-              <div
-                key={categoryIndex}
-                className="border border-gray-200 rounded-xl overflow-hidden"
-              >
-                {/* Category Header Skeleton */}
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                  <div className="h-4 w-32 bg-gray-300 rounded animate-pulse" />
-                </div>
+            {/* Search Bar */}
+            <div className="relative max-w-2xl mx-auto">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="text"
+                placeholder="Search FAQs in selected category..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#74C7F2] focus:border-[#74C7F2] outline-none transition-all text-gray-900 placeholder:text-gray-400"
+              />
+            </div>
+          </div>
+        )}
 
-                {/* Questions Skeleton */}
-                <div className="divide-y divide-gray-200">
-                  {[1, 2, 3].map((questionIndex) => (
-                    <div key={questionIndex} className="px-4 py-3">
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex-1 space-y-2">
-                          <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-                        </div>
-                        <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+        {isLoadingFaqs ? (
+          <div className="max-w-7xl mx-auto space-y-2">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="bg-white border border-gray-200 rounded-lg p-4 animate-pulse"
+              >
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+                <div className="h-3 bg-gray-100 rounded w-1/2" />
               </div>
             ))}
           </div>
         ) : isErrorFaqs ? (
-          <div className="text-center py-12">
-            <p className="text-red-500 mb-4">
-              Failed to load FAQs. Please try again later.
+          <div className="max-w-2xl mx-auto text-center py-12 bg-red-50 rounded-lg border border-red-200">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mb-3">
+              <CircleQuestionMark size={24} className="text-red-500" />
+            </div>
+            <h3 className="text-base font-semibold text-red-900 mb-1">
+              Unable to Load FAQs
+            </h3>
+            <p className="text-red-600 text-sm">
+              Please try again later or contact support if the issue persists.
+            </p>
+          </div>
+        ) : faqCategories.length === 0 ? (
+          <div className="max-w-2xl mx-auto text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full mb-3">
+              <CircleQuestionMark size={24} className="text-gray-400" />
+            </div>
+            <h3 className="text-base font-semibold text-gray-900 mb-1">
+              No FAQs Available
+            </h3>
+            <p className="text-gray-600 text-sm">
+              Check back later for helpful answers to common questions.
             </p>
           </div>
         ) : (
-          <div className="space-y-6">
-            <div className="flex flex-wrap gap-2">
-              {faqCategories.map((category) => (
-                <a
-                  key={category.id}
-                  href={`#faq-${category.id}`}
-                  className="px-3 py-1.5 text-sm rounded-full border border-gray-300 hover:border-[#74C7F2] hover:bg-blue-50 transition-colors"
-                >
-                  {category.title}
-                </a>
-              ))}
-            </div>
+          <div className="max-w-7xl mx-auto">
+            {(() => {
+              // Find the selected category
+              const selectedCat = faqCategories.find(
+                (cat) => cat.id === selectedCategory
+              );
 
-            {faqCategories.map((category, categoryIndex) => (
-              <div
-                key={category.id}
-                id={`faq-${category.id}`}
-                className="border border-gray-200 rounded-xl overflow-hidden"
-              >
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
-                  <h3 className="text-sm font-semibold text-gray-800 uppercase tracking-wide">
-                    {category.title}
-                  </h3>
-                </div>
-                <div className="divide-y divide-gray-200">
-                  {category.items.map((faq, questionIndex) => {
-                    const isOpen = openFaqs[categoryIndex] === questionIndex;
-                    return (
-                      <div key={faq.question}>
-                        <button
-                          onClick={() =>
-                            handleToggleFaq(categoryIndex, questionIndex)
-                          }
-                          className="w-full flex items-center justify-between gap-4 px-4 py-3 text-left hover:bg-blue-50 transition-colors"
+              if (!selectedCat) return null;
+
+              const categoryIndex = faqCategories.findIndex(
+                (cat) => cat.id === selectedCategory
+              );
+
+              // Filter FAQs based on search query
+              const filteredItems = selectedCat.items.filter(
+                (faq) =>
+                  faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
+              );
+
+              // Show no results if search yields nothing
+              if (filteredItems.length === 0 && searchQuery) {
+                return (
+                  <div className="text-center py-12">
+                    <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-100 rounded-full mb-3">
+                      <Search size={24} className="text-gray-400" />
+                    </div>
+                    <h3 className="text-base font-semibold text-gray-900 mb-1">
+                      No Results Found
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-3">
+                      We couldn't find any FAQs matching "{searchQuery}" in {selectedCat.title}
+                    </p>
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="text-[#0EA5E9] hover:text-[#74C7F2] font-medium text-sm"
+                    >
+                      Clear search
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <div>
+                  {/* Category Title */}
+                  <div className="text-center mb-5">
+                    <h3 className="text-base font-semibold text-gray-900 mb-1">
+                      {selectedCat.title}
+                    </h3>
+                    <p className="text-gray-500 text-xs">
+                      {filteredItems.length} {filteredItems.length === 1 ? 'question' : 'questions'} available
+                    </p>
+                  </div>
+
+                  {/* FAQ Items - Two Column Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {filteredItems.map((faq) => {
+                      const actualIndex = selectedCat.items.findIndex(
+                        (item) => item.question === faq.question
+                      );
+                      const isOpen = openFaqs[categoryIndex] === actualIndex;
+
+                      // Helper function to format answer text with bullet points
+                      const formatAnswer = (text) => {
+                        // Split by bullet points (• or *)
+                        const parts = text.split(/[•*]\s+/);
+
+                        if (parts.length > 1) {
+                          // First part is usually introductory text
+                          const intro = parts[0].trim();
+                          const listItems = parts.slice(1).filter(item => item.trim());
+
+                          return (
+                            <div className="space-y-2">
+                              {intro && <p className="text-gray-700 text-sm leading-relaxed">{intro}</p>}
+                              {listItems.length > 0 && (
+                                <ul className="space-y-1.5 ml-1">
+                                  {listItems.map((item, idx) => (
+                                    <li key={idx} className="flex gap-2 text-gray-700 text-sm leading-relaxed">
+                                      <span className="text-[#0EA5E9] mt-1 shrink-0 text-xs">•</span>
+                                      <span>{item.trim()}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        return <p className="text-gray-700 text-sm leading-relaxed">{text}</p>;
+                      };
+
+                      return (
+                        <div
+                          key={faq.question}
+                          className={`group bg-white border rounded-lg overflow-hidden transition-all duration-200 ${
+                            isOpen
+                              ? "border-[#0EA5E9] shadow-md shadow-[#74C7F2]/10"
+                              : "border-gray-200 hover:border-[#74C7F2]/50 hover:shadow-sm"
+                          }`}
                         >
-                          <span className="text-gray-900 font-medium">
-                            {faq.question}
-                          </span>
-                          {isOpen ? (
-                            <ChevronUp size={16} className="text-[#0EA5E9]" />
-                          ) : (
-                            <ChevronDown size={16} className="text-gray-400" />
+                          <button
+                            onClick={() => handleToggleFaq(categoryIndex, actualIndex)}
+                            className="w-full flex items-center justify-between gap-3 p-4 text-left"
+                          >
+                            {/* Question Text */}
+                            <span
+                              className={`flex-1 font-medium text-sm transition-colors ${
+                                isOpen ? "text-[#0EA5E9]" : "text-gray-900 group-hover:text-[#0EA5E9]"
+                              }`}
+                            >
+                              {faq.question}
+                            </span>
+
+                            {/* Chevron Icon */}
+                            <div
+                              className={`shrink-0 transition-transform duration-200 ${
+                                isOpen ? "rotate-180" : ""
+                              }`}
+                            >
+                              <ChevronDown
+                                size={18}
+                                className={`transition-colors ${
+                                  isOpen ? "text-[#0EA5E9]" : "text-gray-400 group-hover:text-[#0EA5E9]"
+                                }`}
+                              />
+                            </div>
+                          </button>
+
+                          {/* Answer */}
+                          {isOpen && (
+                            <div className="px-4 pb-4 pt-0">
+                              <div className="pr-6">
+                                <div className="pt-3 border-t border-gray-100">
+                                  {formatAnswer(faq.answer)}
+                                </div>
+                              </div>
+                            </div>
                           )}
-                        </button>
-                        {isOpen && (
-                          <div className="px-4 pb-4 bg-white">
-                            <p className="text-sm text-gray-700 leading-relaxed">
-                              {faq.answer}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })()}
           </div>
         )}
-      </div>
-
-      {/* Resources & Guides */}
-      <div className="mb-8 border border-gray-200 rounded-xl p-5 shadow-md">
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">
-          Resources & Guides
-        </h2>
-        <p className="text-sm text-gray-500 mb-6">
-          Helpful guides and resources to get the most out of our platform.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {resources.map((resource, index) => (
-            <div
-              key={index}
-              className="p-4 border border-gray-200 rounded-xl hover:border-[#74C7F2] hover:bg-blue-50 transition-all cursor-pointer group"
-            >
-              <h3 className="font-medium text-gray-900 mb-2 group-hover:text-[#0EA5E9]">
-                {resource.title}
-              </h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                {resource.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Back to Settings */}
-      <div className="pt-6 border-t border-gray-200">
-        <button className="flex items-center gap-2 text-sm text-gray-600 hover:text-[#74C7F2] transition-colors">
-          <ArrowLeft size={16} />
-          Back to Settings
-        </button>
       </div>
 
       {/* Support Ticket Dialog */}
@@ -533,7 +655,7 @@ const HelpAndSupport = () => {
                 </p>
                 <p className="text-xs text-blue-600">
                   Our support team typically responds within 24 hours. For
-                  urgent matters, please call our phone support line.
+                  urgent matters, please email us directly at support@jinnar.com.
                 </p>
               </div>
 

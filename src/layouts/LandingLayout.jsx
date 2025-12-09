@@ -1,13 +1,17 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogOut, User } from "lucide-react";
 import ScrollToTop from "../components/common/ScrollToTop.jsx";
 import GoogleTranslate from "../components/common/GoogleTranslate.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+import { ROLES } from "../constants/roles.js";
 import logo from "../assets/logo-new.png";
 import Bot from "../components/chat-bot/Bot.jsx";
 
 const LandingHeader = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, role, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [translateKey, setTranslateKey] = useState(0);
 
@@ -22,18 +26,13 @@ const LandingHeader = () => {
   useEffect(() => {
     return () => {
       // Clean up any Google Translate elements
-      const gtDesktopContainer = document.getElementById("gt-landing-desktop");
-      if (gtDesktopContainer) {
-        gtDesktopContainer.innerHTML = "";
-      }
-      const gtMobileContainer = document.getElementById("gt-landing-mobile");
-      if (gtMobileContainer) {
-        gtMobileContainer.innerHTML = "";
+      const gtHeaderContainer = document.getElementById("gt-landing-header");
+      if (gtHeaderContainer) {
+        gtHeaderContainer.innerHTML = "";
       }
       // Remove from pending IDs
       if (window._gtPendingIds) {
-        window._gtPendingIds.delete("gt-landing-desktop");
-        window._gtPendingIds.delete("gt-landing-mobile");
+        window._gtPendingIds.delete("gt-landing-header");
       }
     };
   }, []);
@@ -71,6 +70,18 @@ const LandingHeader = () => {
     setIsMobileMenuOpen(false);
   };
 
+  const handleLogout = () => {
+    logout();
+    closeMobileMenu();
+    navigate("/");
+  };
+
+  const handleGoToDashboard = () => {
+    const dashboardPath = role === ROLES.WORKER ? "/worker-home" : "/customer-home";
+    navigate(dashboardPath);
+    closeMobileMenu();
+  };
+
   return (
     <>
       <header className="absolute left-1/2 -translate-x-1/2 top-0 z-30 w-[calc(100%-12px)] sm:w-[calc(100%-24px)] md:w-[calc(100%-48px)] lg:w-[calc(100%-80px)]">
@@ -84,7 +95,7 @@ const LandingHeader = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center justify-center gap-4 lg:gap-6 text-sm">
+          <nav className="hidden lg:flex items-center justify-center gap-4 lg:gap-6 text-sm">
             {navItems.map((item) => {
               const active = isNavActive(item.to);
               return (
@@ -105,35 +116,62 @@ const LandingHeader = () => {
 
           {/* Desktop Actions & Mobile Menu Button */}
           <div className="flex items-center justify-end gap-2 sm:gap-3">
-            {/* Desktop Login/Signup */}
-            <Link
-              to="/login"
-              state={{ next: "login" }}
-              className="hidden sm:flex text-xs lg:text-sm font-medium text-black hover:text-black/80 items-center gap-2"
-            >
-              Login
-            </Link>
-            <Link
-              to="/role"
-              state={{ next: "signup" }}
-              className="hidden sm:flex h-7 sm:h-8 lg:h-9 px-2 sm:px-3 lg:px-5 rounded-full text-xs lg:text-sm font-medium text-black shadow items-center justify-center"
-              style={{ background: "var(--gradient-main)" }}
-            >
-              Sign Up
-            </Link>
+            {/* Show Login/Signup or User Info based on auth status */}
+            {user ? (
+              <>
+                {/* Logged In - Show User Info & Logout */}
+                <button
+                  onClick={handleGoToDashboard}
+                  className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#B6E0FE] to-[#74C7F2] flex items-center justify-center text-white text-xs font-bold">
+                    {user.name?.charAt(0).toUpperCase() || "U"}
+                  </div>
+                  <span className="text-sm font-medium text-gray-900 max-w-[100px] truncate">
+                    {user.name || "User"}
+                  </span>
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut size={16} />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Not Logged In - Show Login/Signup */}
+                <Link
+                  to="/login"
+                  state={{ next: "login" }}
+                  className="hidden lg:flex text-sm font-medium text-black hover:text-black/80 items-center gap-2"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/role"
+                  state={{ next: "signup" }}
+                  className="hidden lg:flex h-9 px-5 rounded-full text-sm font-medium text-black shadow items-center justify-center"
+                  style={{ background: "var(--gradient-main)" }}
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
 
-            {/* Google Translate - Desktop only */}
+            {/* Google Translate - Always visible */}
             <div>
               <GoogleTranslate
                 key={`landing-translate-${translateKey}`}
-                containerId="gt-landing-desktop"
+                containerId="gt-landing-header"
               />
             </div>
 
-            {/* Mobile Hamburger Button */}
+            {/* Mobile/Tablet Hamburger Button */}
             <button
               onClick={toggleMobileMenu}
-              className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-white/70 hover:bg-white/90 transition-colors border border-gray-200"
+              className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-white/70 hover:bg-white/90 transition-colors border border-gray-200"
               aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
             >
               {isMobileMenuOpen ? (
@@ -146,10 +184,10 @@ const LandingHeader = () => {
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile/Tablet Menu Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="md:hidden fixed inset-0 z-[60]"
+          className="lg:hidden fixed inset-0 z-[60]"
           role="dialog"
           aria-modal="true"
         >
@@ -185,23 +223,56 @@ const LandingHeader = () => {
 
                   {/* Mobile Action Buttons */}
                   <div className="pt-4 mt-4 border-t border-gray-200 space-y-3">
-                    <Link
-                      to="/login"
-                      state={{ next: "login" }}
-                      onClick={closeMobileMenu}
-                      className="block px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all duration-200 text-center border border-gray-300"
-                    >
-                      Login
-                    </Link>
-                    <Link
-                      to="/role"
-                      state={{ next: "signup" }}
-                      onClick={closeMobileMenu}
-                      className="block px-4 py-3 rounded-lg text-sm font-medium text-white shadow transition-all duration-200 text-center"
-                      style={{ background: "var(--gradient-main)" }}
-                    >
-                      Sign Up
-                    </Link>
+                    {user ? (
+                      <>
+                        {/* Logged In - Show User Info & Actions */}
+                        <button
+                          onClick={handleGoToDashboard}
+                          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 hover:border-blue-300 transition-all duration-200"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#B6E0FE] to-[#74C7F2] flex items-center justify-center text-white text-sm font-bold">
+                            {user.name?.charAt(0).toUpperCase() || "U"}
+                          </div>
+                          <div className="flex-1 text-left">
+                            <p className="text-sm font-semibold text-gray-900 truncate">
+                              {user.name || "User"}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              Go to Dashboard
+                            </p>
+                          </div>
+                          <User size={18} className="text-blue-600" />
+                        </button>
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 hover:border-red-300 transition-all duration-200"
+                        >
+                          <LogOut size={16} />
+                          Logout
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {/* Not Logged In - Show Login/Signup */}
+                        <Link
+                          to="/login"
+                          state={{ next: "login" }}
+                          onClick={closeMobileMenu}
+                          className="block px-4 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all duration-200 text-center border border-gray-300"
+                        >
+                          Login
+                        </Link>
+                        <Link
+                          to="/role"
+                          state={{ next: "signup" }}
+                          onClick={closeMobileMenu}
+                          className="block px-4 py-3 rounded-lg text-sm font-medium text-white shadow transition-all duration-200 text-center"
+                          style={{ background: "var(--gradient-main)" }}
+                        >
+                          Sign Up
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

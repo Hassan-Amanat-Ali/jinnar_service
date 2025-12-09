@@ -17,6 +17,7 @@ export const getFullImageUrl = (relativeUrl) => {
 
   const baseUrl = import.meta.env.VITE_BASE_URL;
 
+  console.log(relativeUrl)
   if (!baseUrl) {
     console.error(
       "VITE_API_BASE_URL is not defined. Please add it to your .env file to ensure images load correctly."

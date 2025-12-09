@@ -63,14 +63,10 @@ const WorkerNavbar = () => {
       if (resultingRole) {
         setRole(resultingRole);
         dispatch(baseApi.util.resetApiState());
-        navigate(
-          resultingRole === "worker" ? "/worker-home" : "/customer-home",
-          {
-            replace: true,
-          }
-        );
+        // Use window.location.href for complete page reload
+        window.location.href = resultingRole === "worker" ? "/worker-home" : "/customer-home";
       }
-    } catch (error) {
+    } catch {
       // Error is already handled by toast in context
     }
   };
@@ -138,7 +134,7 @@ const WorkerNavbar = () => {
                 <IconButton
                   icon={<FiBell size={14} color="white" />}
                   className="bg-gradient-to-r from-[#DBF0FF] to-[#74C7F2] border-0 cursor-pointer"
-                  hasNotification={true}
+                  hasNotification={false}
                 />
               </div>
             </div>
