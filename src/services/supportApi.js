@@ -15,6 +15,10 @@ export const supportApi = baseApi.injectEndpoints({
     getMyTickets: builder.query({
       query: () => "/support/tickets",
       providesTags: ["SupportTickets"],
+      transformResponse: (response) => {
+        // Backend returns paginated response with tickets array
+        return response.tickets || [];
+      },
     }),
     // Get ticket by ID
     getTicketById: builder.query({

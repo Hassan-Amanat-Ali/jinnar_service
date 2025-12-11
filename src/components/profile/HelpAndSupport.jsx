@@ -8,7 +8,6 @@ import {
   Loader2,
   X,
   Send,
-  AlertCircle,
   Search,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -28,6 +27,11 @@ const HelpAndSupport = () => {
   const [ticketForm, setTicketForm] = useState({
     subject: "",
     message: "",
+  });
+  const [guestForm, setGuestForm] = useState({
+    email: "",
+    name: "",
+    phone: "",
   });
 
   const { user } = useAuth();
@@ -72,35 +76,7 @@ const HelpAndSupport = () => {
       description: "Send us a message",
       icon: MessageSquare,
       color: "text-[#0EA5E9]",
-      action: () => {
-        if (!isLoggedIn) {
-          toast.custom((t) => (
-            <div className={`${
-              t.visible ? 'animate-enter' : 'animate-leave'
-            } max-w-md w-full bg-amber-50 shadow-lg rounded-lg pointer-events-auto flex items-start gap-3 p-4 border border-amber-300`}>
-              <div className="flex-shrink-0">
-                <AlertCircle className="h-5 w-5 text-amber-600" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-amber-900">
-                  Authentication Required
-                </p>
-                <p className="mt-1 text-sm text-amber-700">
-                  Please login to submit a support request
-                </p>
-              </div>
-              <button
-                onClick={() => toast.dismiss(t.id)}
-                className="flex-shrink-0 inline-flex text-amber-600 hover:text-amber-800 focus:outline-none"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ), { duration: 4000 });
-          return;
-        }
-        setShowTicketDialog(true);
-      },
+      action: () => setShowTicketDialog(true),
     },
   ];
 
@@ -116,20 +92,52 @@ const HelpAndSupport = () => {
       return;
     }
 
+    // Validate guest info if user is not logged in
+    if (!isLoggedIn) {
+      if (!guestForm.email.trim()) {
+        toast.error("Email is required");
+        return;
+      }
+      if (!guestForm.name.trim()) {
+        toast.error("Name is required");
+        return;
+      }
+      // Basic email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(guestForm.email)) {
+        toast.error("Please enter a valid email address");
+        return;
+      }
+    }
+
     const loadingToast = toast.loading("Submitting your request...");
 
     try {
-      await createTicket({
+      const ticketData = {
         subject: ticketForm.subject,
         message: ticketForm.message,
-      }).unwrap();
+      };
+
+      // Add guestInfo if user is not logged in
+      if (!isLoggedIn) {
+        ticketData.guestInfo = {
+          email: guestForm.email,
+          name: guestForm.name,
+          phone: guestForm.phone || "", // Phone is optional
+        };
+      }
+
+      await createTicket(ticketData).unwrap();
 
       toast.success("Support ticket submitted successfully!", {
         id: loadingToast,
       });
-      setShowTicketDialog(false);
-      setTicketForm({ subject: "", message: "" });
-      refetchTickets();
+      handleCloseTicketDialog();
+
+      // Only refetch tickets if user is logged in
+      if (isLoggedIn) {
+        refetchTickets();
+      }
     } catch (err) {
       toast.error(err?.data?.message || "Failed to submit ticket", {
         id: loadingToast,
@@ -140,6 +148,12 @@ const HelpAndSupport = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setTicketForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCloseTicketDialog = () => {
+    setShowTicketDialog(false);
+    setTicketForm({ subject: "", message: "" });
+    setGuestForm({ email: "", name: "", phone: "" });
   };
 
   const handleToggleFaq = (categoryIndex, questionIndex) => {
@@ -301,35 +315,7 @@ const HelpAndSupport = () => {
           <p className="text-sm text-gray-600 max-w-2xl mx-auto">
             Find quick answers to common questions. Can't find what you're looking for?{" "}
             <button
-              onClick={() => {
-                if (!isLoggedIn) {
-                  toast.custom((t) => (
-                    <div className={`${
-                      t.visible ? 'animate-enter' : 'animate-leave'
-                    } max-w-md w-full bg-amber-50 shadow-lg rounded-lg pointer-events-auto flex items-start gap-3 p-4 border border-amber-300`}>
-                      <div className="shrink-0">
-                        <AlertCircle className="h-5 w-5 text-amber-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-amber-900">
-                          Authentication Required
-                        </p>
-                        <p className="mt-1 text-sm text-amber-700">
-                          Please login to submit a support request
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => toast.dismiss(t.id)}
-                        className="shrink-0 inline-flex text-amber-600 hover:text-amber-800 focus:outline-none"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ), { duration: 4000 });
-                  return;
-                }
-                setShowTicketDialog(true);
-              }}
+              onClick={() => setShowTicketDialog(true)}
               className="text-[#0EA5E9] hover:text-[#74C7F2] font-medium text-sm"
             >
               Contact support
@@ -599,7 +585,7 @@ const HelpAndSupport = () => {
                 </div>
               </div>
               <button
-                onClick={() => setShowTicketDialog(false)}
+                onClick={handleCloseTicketDialog}
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <X size={20} />
@@ -608,6 +594,59 @@ const HelpAndSupport = () => {
 
             {/* Dialog Body */}
             <form onSubmit={handleTicketSubmit} className="p-6 space-y-6">
+              {/* Guest Information - Only show when not logged in */}
+              {!isLoggedIn && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+                  <p className="text-sm font-medium text-blue-900 mb-2">
+                    📧 Contact Information
+                  </p>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={guestForm.email}
+                      onChange={(e) => setGuestForm({ ...guestForm, email: e.target.value })}
+                      placeholder="your.email@example.com"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                      required
+                    />
+                  </div>
+
+                  {/* Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={guestForm.name}
+                      onChange={(e) => setGuestForm({ ...guestForm, name: e.target.value })}
+                      placeholder="Your full name"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                      required
+                    />
+                  </div>
+
+                  {/* Phone (Optional) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Phone (Optional)
+                    </label>
+                    <input
+                      type="tel"
+                      value={guestForm.phone}
+                      onChange={(e) => setGuestForm({ ...guestForm, phone: e.target.value })}
+                      placeholder="+255 123 456 789"
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              )}
+
               {/* Subject */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -654,7 +693,7 @@ const HelpAndSupport = () => {
                   💡 Response Time
                 </p>
                 <p className="text-xs text-blue-600">
-                  Our support team typically responds within 24 hours. For
+                  Our support team typically responds within 24 hours{!isLoggedIn ? " to the email address you provide" : ""}. For
                   urgent matters, please email us directly at support@jinnar.com.
                 </p>
               </div>
@@ -663,7 +702,7 @@ const HelpAndSupport = () => {
               <div className="flex gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
-                  onClick={() => setShowTicketDialog(false)}
+                  onClick={handleCloseTicketDialog}
                   disabled={isSubmitting}
                   className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
