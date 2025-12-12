@@ -1,6 +1,4 @@
 import "./App.css";
-import "react-toastify/dist/ReactToastify.css";
-import { ToastContainer } from "react-toastify";
 import { Toaster } from "react-hot-toast";
 import AppRouter from "./routes/AppRouter.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
@@ -13,17 +11,6 @@ function App() {
       <AppRouter />
       <LanguagePopup />
       <Bot />
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
       <Toaster
         position="top-center"
         toastOptions={{
@@ -40,7 +27,7 @@ function App() {
             },
           },
           error: {
-            duration: 4000,
+            duration: 3000,
           },
         }}
       />

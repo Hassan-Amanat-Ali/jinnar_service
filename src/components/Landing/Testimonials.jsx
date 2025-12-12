@@ -6,6 +6,12 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 import testimonial1 from "../../assets/images/testimonial1.jpg";
+import testimonial2 from "../../assets/images/testimonial2.jpg";
+import testimonial3 from "../../assets/images/testimonial3.jpg";
+import testimonial4 from "../../assets/images/testimonial4.jpg";
+import testimonial5 from "../../assets/images/testimonial5.jpg";
+import testimonial6 from "../../assets/images/testimonial6.jpg";
+
 import prev from "../../assets/icons/prev.png";
 import next from "../../assets/icons/next.png";
 
@@ -55,45 +61,45 @@ const Testimonials = () => {
   const testimonials = [
     {
       id: 1,
-      name: "John Doe",
-      role: "Customer",
-      image: testimonial1, // Replace with actual image
-      text: "My vision came alive effortlessly. Their blend of casual and professional approach made the process a breeze. Creativity flowed, and the results were beyond my expectations.",
+      name: "Amina Juma",
+      role: "Customer from Dar es Salaam",
+      image: testimonial1,
+      text: "I needed a cleaner for my house and found one within minutes! She was professional, thorough, and trustworthy. This platform has made finding reliable workers so easy for our community.",
     },
     {
       id: 2,
-      name: "Sarah Johnson",
-      role: "Customer",
-      image: testimonial1, // Replace with actual image
-      text: "Outstanding service! The worker was punctual, professional, and exceeded my expectations. I couldn't be happier with the quality of work delivered.",
+      name: "Neema Mwangi",
+      role: "Customer from Arusha",
+      image: testimonial2,
+      text: "As a working mother, I often need help with home services. This platform connects me with skilled workers in my area quickly. The workers are verified and I feel safe having them in my home.",
     },
     {
       id: 3,
-      name: "Michael Chen",
-      role: "Customer",
-      image: testimonial1, // Replace with actual image
-      text: "Fantastic experience from start to finish. The platform made it so easy to find the right professional for my needs. Highly recommended!",
+      name: "Joseph Bakari",
+      role: "Worker from Mwanza",
+      image: testimonial3,
+      text: "This platform changed my life! I'm an electrician and now I get regular bookings every week. The payment system is secure and I can work with my own schedule. Asante sana!",
     },
     {
       id: 4,
-      name: "Emma Wilson",
-      role: "Customer",
-      image: testimonial1, // Replace with actual image
-      text: "Professional, reliable, and affordable. The worker completed the job perfectly and on time. Will definitely use this service again.",
+      name: "Emmanuel Lwanga",
+      role: "Worker from Dodoma",
+      image: testimonial4,
+      text: "Being a carpenter, I struggled to find consistent work. Since joining this platform, I have steady income and meet wonderful customers. This is the future of work in Tanzania!",
     },
     {
       id: 5,
-      name: "David Martinez",
-      role: "Customer",
-      image: testimonial1, // Replace with actual image
-      text: "Great platform with verified professionals. The booking process was smooth and the service quality was top-notch. Very satisfied!",
+      name: "Grace Kimani",
+      role: "Customer from Mbeya",
+      image: testimonial5,
+      text: "I found a wonderful tailor who made my daughter's graduation dress. The booking was simple, communication was clear, and the final result was beautiful. Highly recommend this service!",
     },
     {
       id: 6,
-      name: "Lisa Thompson",
-      role: "Customer",
-      image: testimonial1, // Replace with actual image
-      text: "Amazing experience! The worker was skilled, friendly, and completed the job beyond my expectations. Excellent value for money.",
+      name: "Fatuma Hassan",
+      role: "Customer from Zanzibar",
+      image: testimonial6,
+      text: "I hired a plumber through this platform and he was excellent! Very professional and the price was fair. I love that I can see ratings and reviews from other customers in my neighborhood.",
     },
   ];
 

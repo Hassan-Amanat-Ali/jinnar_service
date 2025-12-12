@@ -7,6 +7,10 @@ import {
   useUpdateProfileMutation,
   useUploadProfilePictureMutation,
 } from "../../../services/workerApi";
+import {
+  useInitiateContactChangeMutation,
+  useVerifyContactChangeMutation,
+} from "../../../services/authApi";
 import { setProfile } from "../../../features/worker/profileSlice";
 import { getFullImageUrl } from "../../../utils/fileUrl.js";
 
@@ -15,6 +19,8 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
   const [uploadProfilePicture, { isLoading: isUploading }] =
     useUploadProfilePictureMutation();
+  const [initiateContactChange] = useInitiateContactChangeMutation();
+  const [verifyContactChange] = useVerifyContactChangeMutation();
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -28,6 +34,14 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
   });
 
   const [profileImagePreview, setProfileImagePreview] = useState(null);
+
+  // Contact change state
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactChangeType, setContactChangeType] = useState(null); // 'email' or 'mobileNumber'
+  const [newContactValue, setNewContactValue] = useState("");
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
 
   // Populate form data when profile data is loaded
   useEffect(() => {
@@ -87,6 +101,123 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
         ? prev.languages.filter((lang) => lang !== language)
         : [...prev.languages, language],
     }));
+  };
+
+  // Contact change handlers
+  const handleChangeContact = (type) => {
+    setContactChangeType(type);
+    setNewContactValue(""); // Start with empty input for new value
+    setShowContactModal(true);
+  };
+
+  const handleInitiateChange = async () => {
+    const trimmedValue = newContactValue.trim();
+
+    if (!trimmedValue || trimmedValue.length === 0) {
+      toast.error(`Please enter your new ${contactChangeType === "email" ? "email address" : "phone number"}`);
+      return;
+    }
+
+    // Basic validation
+    if (contactChangeType === "email") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedValue)) {
+        toast.error("Please enter a valid email address");
+        return;
+      }
+    } else if (contactChangeType === "mobileNumber") {
+      // More flexible phone validation - check if it starts with + and has enough digits
+      const phoneRegex = /^\+[1-9]\d{10,14}$/;
+      if (!phoneRegex.test(trimmedValue)) {
+        toast.error("Phone number must be in E.164 format starting with + (e.g., +255712345678)");
+        return;
+      }
+    }
+
+    try {
+      const loadingToast = toast.loading("Sending verification code...");
+
+      await initiateContactChange({
+        newIdentifier: trimmedValue,
+        type: contactChangeType,
+      }).unwrap();
+
+      toast.dismiss(loadingToast);
+      toast.success(`Verification code sent to your new ${contactChangeType === "email" ? "email" : "phone number"}`);
+      setShowContactModal(false);
+      setShowOtpModal(true);
+    } catch (err) {
+      console.error("Initiate contact change error:", err);
+      const payload = err?.data || err;
+      toast.error(payload?.error || payload?.message || "Failed to send verification code");
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode || otpCode.trim().length === 0) {
+      toast.error("Please enter the verification code");
+      return;
+    }
+
+    setIsVerifyingOtp(true);
+    try {
+      const loadingToast = toast.loading("Verifying code...");
+
+      await verifyContactChange({ code: otpCode.trim() }).unwrap();
+
+      toast.dismiss(loadingToast);
+      toast.success(`${contactChangeType === "email" ? "Email" : "Phone number"} updated successfully`);
+
+      // Update form data with new value
+      if (contactChangeType === "email") {
+        setFormData((prev) => ({ ...prev, emailAddress: newContactValue }));
+      } else {
+        setFormData((prev) => ({ ...prev, phoneNumber: newContactValue }));
+      }
+
+      // Reset state
+      setShowOtpModal(false);
+      setOtpCode("");
+      setContactChangeType(null);
+      setNewContactValue("");
+    } catch (err) {
+      console.error("OTP verification error:", err);
+      const payload = err?.data || err;
+      toast.error(payload?.error || payload?.message || "Invalid verification code");
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      const loadingToast = toast.loading("Resending code...");
+
+      await initiateContactChange({
+        newIdentifier: newContactValue,
+        type: contactChangeType,
+      }).unwrap();
+
+      toast.dismiss(loadingToast);
+      toast.success("Verification code resent successfully");
+    } catch (err) {
+      console.error("Resend OTP error:", err);
+      const payload = err?.data || err;
+      toast.error(payload?.error || payload?.message || "Failed to resend code");
+    }
+  };
+
+  const handleCloseContactModal = () => {
+    setShowContactModal(false);
+    setContactChangeType(null);
+    setNewContactValue("");
+  };
+
+  const handleCloseOtpModal = () => {
+    setShowOtpModal(false);
+    setOtpCode("");
+    setContactChangeType(null);
+    setNewContactValue("");
   };
 
   // Save profile data
@@ -229,34 +360,40 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
 
           {/* Section 2: Personal Information Form */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6">
-            <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4 md:mb-6">
-              Personal Information
-            </h3>
+          <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4 md:mb-6">
+            Personal Information
+          </h3>
 
-            <div className="space-y-4">
-              {/* Full Name */}
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                  Full Name *
+          <div className="space-y-4">
+            {/* Full Name */}
+            <div>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                Full Name *
+              </label>
+              <input
+                type="text"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
+                placeholder="Michael Rodriguez"
+              />
+            </div>
+
+            {/* Phone Number */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-xs md:text-sm font-medium text-gray-700">
+                  Phone Number
                 </label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
-                  placeholder="Michael Rodriguez"
-                />
+                <button
+                  type="button"
+                  onClick={() => handleChangeContact("mobileNumber")}
+                  className="text-xs md:text-sm text-[#74C7F2] font-medium hover:underline"
+                >
+                  Change
+                </button>
               </div>
-
-              {/* Phone Number */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-xs md:text-sm font-medium text-gray-700">
-                    Phone Number
-                  </label>
-                  <button type="button" className="text-xs md:text-sm text-[#74C7F2] font-medium hover:underline">Change</button>
-                </div>
                 <div className="relative">
                   <input
                     type="tel"
@@ -276,7 +413,13 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
                   <label className="block text-xs md:text-sm font-medium text-gray-700">
                     Email Address
                   </label>
-                  <button type="button" className="text-xs md:text-sm text-[#74C7F2] font-medium hover:underline">Change</button>
+                  <button
+                    type="button"
+                    onClick={() => handleChangeContact("email")}
+                    className="text-xs md:text-sm text-[#74C7F2] font-medium hover:underline"
+                  >
+                    Change
+                  </button>
                 </div>
                 <div className="relative">
                   <input
@@ -398,16 +541,117 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
                     💡 Pro Tip
                   </h4>
                   <p className="text-xs md:text-sm text-gray-700">
-                    Profiles with photos get 40% more bookings. Make sure to
-                    upload a clear, professional photo!
+                    A complete profile with a professional photo increases your
+                    chances of getting hired by up to 80%!
                   </p>
                 </div>
               </div>
             </div>
           </div>
+
           {/* Section 2: Pro Tip */}
         </div>
       </div>
+
+      {/* Contact Change Modal */}
+      {showContactModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Change {contactChangeType === "email" ? "Email" : "Phone Number"}
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Enter your new {contactChangeType === "email" ? "email address" : "phone number"}.
+              We&apos;ll send you a verification code.
+            </p>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                New {contactChangeType === "email" ? "Email Address" : "Phone Number"}
+              </label>
+              <input
+                type={contactChangeType === "email" ? "email" : "tel"}
+                value={newContactValue}
+                onChange={(e) => setNewContactValue(e.target.value)}
+                placeholder={contactChangeType === "email" ? "your.email@example.com" : "+255712345678"}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
+              />
+              {contactChangeType === "mobileNumber" && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Use E.164 format (e.g., +255712345678)
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleInitiateChange}
+                className="flex-1 px-6 py-3 bg-linear-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium rounded-lg hover:from-[#74C7F2] hover:to-[#B6E0FE] transition-all duration-200"
+              >
+                Send Code
+              </button>
+              <button
+                onClick={handleCloseContactModal}
+                className="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OTP Verification Modal */}
+      {showOtpModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Verify {contactChangeType === "email" ? "Email" : "Phone Number"}
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              We&apos;ve sent a verification code to:{" "}
+              <span className="font-semibold">{newContactValue}</span>
+            </p>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Enter Verification Code
+              </label>
+              <input
+                type="text"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+                placeholder="Enter code"
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleVerifyOtp}
+                disabled={isVerifyingOtp}
+                className="flex-1 px-6 py-3 bg-linear-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium rounded-lg hover:from-[#74C7F2] hover:to-[#B6E0FE] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isVerifyingOtp ? "Verifying..." : "Verify"}
+              </button>
+              <button
+                onClick={handleCloseOtpModal}
+                disabled={isVerifyingOtp}
+                className="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+            </div>
+
+            <button
+              onClick={handleResendOtp}
+              className="w-full mt-4 text-sm text-[#74C7F2] hover:underline"
+            >
+              Resend Code
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 });
@@ -415,3 +659,4 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
 Step1Form.displayName = "Step1Form";
 
 export default Step1Form;
+

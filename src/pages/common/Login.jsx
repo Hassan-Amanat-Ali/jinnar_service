@@ -16,7 +16,7 @@ import {
 } from "../../services/authApi";
 import { useGetMyProfileQuery } from "../../services/customerApi";
 import { baseApi } from "../../services/baseApi";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useDispatch } from "react-redux";
 
@@ -54,6 +54,19 @@ const Login = () => {
   const loading =
     isCustomerLoading || isWorkerLoading || isProfileLoading || isResending;
 
+  // Prevent any accidental form submission globally on this page
+  useEffect(() => {
+    const preventFormSubmit = (e) => {
+      if (e.target && e.target.tagName === 'FORM') {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    };
+    document.addEventListener('submit', preventFormSubmit, true);
+    return () => document.removeEventListener('submit', preventFormSubmit, true);
+  }, []);
+
   // Handle profile data and errors using useEffect
   useEffect(() => {
     if (!shouldFetchProfile) return;
@@ -62,31 +75,35 @@ const Login = () => {
       const apiRole = profileData.profile.role;
       const appRole = mapApiRoleToAppRole(apiRole);
 
-      console.log("Login - API Role:", apiRole, "-> App Role:", appRole);
+      console.log("✅ Login - API Role:", apiRole, "-> App Role:", appRole);
 
       if (appRole) {
         // Store role in localStorage for persistence
         localStorage.setItem("userRole", appRole);
         setRole(appRole);
         setUser(profileData.profile);
-        toast.success("Welcome back! Login successful");
-        setShouldFetchProfile(false);
 
         // Navigate based on actual role from database
-        const targetRoute =
-          appRole === ROLES.CUSTOMER ? "/customer-home" : "/worker-home";
-        console.log("Navigating to:", targetRoute);
-        navigate(targetRoute);
-      } else {
-        console.error("Failed to map role:", apiRole);
+        const targetRoute = appRole === ROLES.CUSTOMER ? "/customer-home" : "/worker-home";
+        console.log("🚀 Navigating to:", targetRoute);
+
+        // Show success toast and navigate
+        toast.success("Welcome back!");
         setShouldFetchProfile(false);
-        toast.error("Unable to determine user role. Please try again");
+
+        // Navigate immediately
+        navigate(targetRoute, { replace: true });
+      } else {
+        console.error("❌ Failed to map role:", apiRole);
+        setShouldFetchProfile(false);
+        toast.error("Unable to determine user role");
       }
     }
 
     if (profileError) {
+      console.error("❌ Profile fetch error:", profileError);
       setShouldFetchProfile(false);
-      toast.error("Failed to load user profile. Please try again");
+      toast.error("Failed to load profile");
     }
   }, [
     profileData,
@@ -97,35 +114,33 @@ const Login = () => {
     navigate,
   ]);
 
-  const handleLogin = async (e) => {
-    e?.preventDefault();
-    setShowResendVerification(false);
-
-    // Validation
-    if (!identifier.trim()) {
-      toast.error("Please enter your email or phone number");
-      return;
-    }
-
-    // Basic validation: if it has '@', it's an email, otherwise it could be a phone.
-    const isEmail = identifier.includes("@");
-    const isPhone = /^\+?\d{10,15}$/.test(identifier);
-    if (!isEmail && !isPhone) {
-      toast.error("Please enter a valid email or phone number.");
-      return;
-    }
-
-    if (!password.trim()) {
-      toast.error("Please enter your password");
-      return;
-    }
-
+  const handleLogin = async () => {
     try {
+      setShowResendVerification(false);
+
+      // Validation
+      if (!identifier.trim()) {
+        toast.error("Email or phone required");
+        return false;
+      }
+
+      // Basic validation: if it has '@', it's an email, otherwise it could be a phone.
+      const isEmail = identifier.includes("@");
+      const isPhone = /^\+?\d{10,15}$/.test(identifier);
+      if (!isEmail && !isPhone) {
+        toast.error("Invalid email or phone format");
+        return false;
+      }
+
+      if (!password.trim()) {
+        toast.error("Password required");
+        return false;
+      }
       // Call RTK Query mutation based on role
       const loginMutation =
         role === ROLES.CUSTOMER ? customerLogin : workerLogin;
       const result = await loginMutation({
-        identifier: identifier,
+        identifier: identifier.trim(),
         password: password,
       }).unwrap();
 
@@ -147,54 +162,98 @@ const Login = () => {
       setShouldFetchProfile(false);
 
       const payload = err?.data || err;
-
       const errorMessage = payload?.error || payload?.message || "";
 
-      if (errorMessage.toLowerCase().includes("verify your email")) {
+      // Check for email verification error first
+      if (errorMessage.toLowerCase().includes("verify your email") ||
+          errorMessage.toLowerCase().includes("not verified")) {
         setShowResendVerification(true);
-        toast.error(errorMessage);
-        return;
+        toast.error("Please verify your email", {
+          duration: 4000,
+        });
+        return false;
       }
 
-      // Handle different error formats
+      // Handle specific error status codes
+      if (err?.status === 401 || err?.originalStatus === 401) {
+        toast.error("Invalid credentials", {
+          duration: 3000,
+        });
+        // Clear password field for security
+        setPassword("");
+        return false;
+      }
+
+      if (err?.status === 404 || err?.originalStatus === 404) {
+        toast.error("Account not found", {
+          duration: 3000,
+        });
+        return false;
+      }
+
+      if (err?.status === "FETCH_ERROR") {
+        toast.error("Connection error", {
+          duration: 3000,
+        });
+        return false;
+      }
+
+      // Handle different error message formats
       if (payload?.error) {
-        toast.error(payload.error);
-      } else if (Array.isArray(payload?.errors) && payload.errors.length) {
-        payload.errors.forEach((e) => {
-          const message = e.msg || e.message || JSON.stringify(e);
-          toast.error(message);
+        // Shorten long error messages
+        const errorMsg = payload.error.length > 50
+          ? payload.error.substring(0, 50) + "..."
+          : payload.error;
+        toast.error(errorMsg, {
+          duration: 3000,
+        });
+      } else if (Array.isArray(payload?.errors) && payload.errors.length > 0) {
+        const firstError = payload.errors[0];
+        const message = firstError.msg || firstError.message || "Invalid input";
+        toast.error(message, {
+          duration: 3000,
         });
       } else if (payload?.message) {
-        toast.error(payload.message);
+        const errorMsg = payload.message.length > 50
+          ? payload.message.substring(0, 50) + "..."
+          : payload.message;
+        toast.error(errorMsg, {
+          duration: 3000,
+        });
       } else if (typeof payload === "string") {
-        toast.error(payload);
-      } else if (err?.status === "FETCH_ERROR") {
-        toast.error("Network error. Please check your connection");
-      } else if (err?.status === 404) {
-        toast.error("User not found. Please sign up first");
-      } else if (err?.status === 401) {
-        toast.error("Invalid identifier or password");
+        const errorMsg = payload.length > 50
+          ? payload.substring(0, 50) + "..."
+          : payload;
+        toast.error(errorMsg, {
+          duration: 3000,
+        });
       } else {
-        toast.error("Login failed. Please try again");
+        toast.error("Login failed", {
+          duration: 3000,
+        });
       }
+      return false;
     }
   };
 
   const handleResendVerification = async () => {
     if (!identifier.trim()) {
-      toast.error("Please enter your email or phone number first.");
+      toast.error("Email or phone required");
       return;
     }
 
     try {
-      const isEmail = identifier.includes("@");
-      const result = await resendCode({ identifier }).unwrap();
-      toast.success(result.message || "Verification code sent!");
+      const result = await resendCode({ identifier: identifier.trim() }).unwrap();
+      toast.success("Code sent!");
       setShowResendVerification(false);
-      navigate("/verify", { state: { identifier } });
+      navigate("/verify", { state: { identifier: identifier.trim() } });
     } catch (err) {
+      console.error("Resend verification error:", err);
       const payload = err?.data || err;
-      toast.error(payload?.error || "Failed to resend verification code.");
+      const errorMessage = payload?.error || payload?.message || "Failed to resend code";
+      toast.error(errorMessage, {
+        duration: 3000,
+      });
     }
   };
 
@@ -277,7 +336,7 @@ const Login = () => {
           </p>
 
           <div className="mt-6 rounded-2xl border border-gray-200 shadow-sm p-6">
-            <form onSubmit={handleLogin}>
+            <div>
               {/* Email address */}
               <label className="block text-sm font-medium text-[#141414]">
                 Email or Phone Number
@@ -288,6 +347,17 @@ const Login = () => {
                 className="mt-2 w-full h-11 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.nativeEvent.preventDefault();
+                    e.nativeEvent.stopImmediatePropagation();
+                    handleLogin().catch((err) => {
+                      console.error("Login error caught:", err);
+                    });
+                  }
+                }}
               />
 
               {/* Password */}
@@ -300,32 +370,56 @@ const Login = () => {
                 className="mt-2 w-full h-11 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.nativeEvent.preventDefault();
+                    e.nativeEvent.stopImmediatePropagation();
+                    handleLogin().catch((err) => {
+                      console.error("Login error caught:", err);
+                    });
+                  }
+                }}
               />
 
               {/* Forgot password link */}
               <div className="mt-2 text-right">
-                <a
-                  href="/forgot-password"
+                <button
+                  type="button"
+                  onClick={() => navigate("/forgot-password")}
                   className="text-sm text-[#74C7F2] hover:text-[#5ba8e0] font-medium cursor-pointer transition-colors"
                 >
                   Forgot Password?
-                </a>
+                </button>
               </div>
 
               {/* Login button */}
               <button
-                type="submit"
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.nativeEvent.preventDefault();
+                  e.nativeEvent.stopImmediatePropagation();
+                  // Call handleLogin without await to prevent any Promise rejection from bubbling
+                  handleLogin().catch((err) => {
+                    console.error("Login error caught:", err);
+                  });
+                  return false;
+                }}
                 disabled={loading}
                 className="mt-5 h-11 w-full rounded-full text-white text-sm font-medium shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity"
                 style={{ background: "var(--gradient-main)" }}
               >
                 {loading ? "Logging in..." : "Login"}
               </button>
-            </form>
+            </div>
 
             {showResendVerification && (
               <div className="mt-4 text-center">
                 <button
+                  type="button"
                   onClick={handleResendVerification}
                   disabled={isResending}
                   className="text-sm text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50 disabled:cursor-wait"
@@ -340,12 +434,13 @@ const Login = () => {
             {/* Signup prompt */}
             <p className="mt-6 text-center text-sm text-[#141414]/80">
               Don't have an account?{" "}
-              <a
-                href="/signup"
+              <button
+                type="button"
+                onClick={() => navigate("/signup")}
                 className="text-[#74C7F2] hover:text-[#5ba8e0] font-medium cursor-pointer transition-colors"
               >
                 Sign Up
-              </a>
+              </button>
             </p>
           </div>
         </div>

@@ -47,14 +47,14 @@ export const authApi = baseApi.injectEndpoints({
     }),
     initiateContactChange: builder.mutation({
       query: (data) => ({
-        url: "/auth/initiate-contact-change",
+        url: "/auth/change-contact/initiate",
         method: "POST",
         body: data,
       }),
     }),
     verifyContactChange: builder.mutation({
       query: (data) => ({
-        url: "/auth/verify-contact-change",
+        url: "/auth/change-contact/verify",
         method: "POST",
         body: data,
       }),

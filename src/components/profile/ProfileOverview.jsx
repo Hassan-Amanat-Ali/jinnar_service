@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { User, Mail, Phone, MapPin, Edit, Plus, Camera } from "lucide-react";
+import { User, MapPin, Edit, Plus, Camera } from "lucide-react";
+import { toast } from "react-hot-toast";
+import LocationPicker from "../common/LocationPicker";
 import {
   useGetMyProfileQuery as useGetCustomerProfileQuery,
   useUpdateProfileMutation as useUpdateCustomerProfileMutation,
@@ -10,11 +12,12 @@ import {
   useUpdateProfileMutation as useUpdateWorkerProfileMutation,
   useUploadProfilePictureMutation as useUploadWorkerProfilePictureMutation,
 } from "../../services/workerApi";
-import { ProfileSkeleton } from "../common/SkeletonLoader";
-import { ROLES } from "../../constants/roles";
-import { toast } from "react-toastify";
-import LocationPicker from "../common/LocationPicker";
+import {
+  useInitiateContactChangeMutation,
+  useVerifyContactChangeMutation,
+} from "../../services/authApi";
 import { getFullImageUrl } from "../../utils/fileUrl";
+import { ROLES } from "../../constants/roles";
 
 const ProfileOverview = () => {
   const [isEditMode, setIsEditMode] = useState(false);
@@ -32,6 +35,15 @@ const ProfileOverview = () => {
   });
   const [profileImagePreview, setProfileImagePreview] = useState(null);
 
+  // Contact change verification state
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [contactChangeType, setContactChangeType] = useState(null); // 'email' or 'mobileNumber'
+  const [newContactValue, setNewContactValue] = useState("");
+  const [pendingUpdateData, setPendingUpdateData] = useState(null);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+
   const role = localStorage.getItem("role");
   const isCustomer = role === ROLES.CUSTOMER;
 
@@ -47,6 +59,9 @@ const ProfileOverview = () => {
   const [uploadCustomerProfilePicture] =
     useUploadCustomerProfilePictureMutation();
   const [uploadWorkerProfilePicture] = useUploadWorkerProfilePictureMutation();
+
+  const [initiateContactChange] = useInitiateContactChangeMutation();
+  const [verifyContactChange] = useVerifyContactChangeMutation();
 
   const {
     data: profileData,
@@ -83,6 +98,16 @@ const ProfileOverview = () => {
       }
     }
   }, [profileData]);
+
+  const getInitials = (name) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -155,52 +180,111 @@ const ProfileOverview = () => {
     }));
   };
 
-  const handleSave = async () => {
+  // Contact change handlers
+  const handleChangeContact = (type) => {
+    setContactChangeType(type);
+    setNewContactValue(""); // Start with empty input for new value
+    setShowContactModal(true);
+  };
+
+  const handleInitiateChange = async () => {
+    const trimmedValue = newContactValue.trim();
+
+    if (!trimmedValue || trimmedValue.length === 0) {
+      toast.error(`Please enter your new ${contactChangeType === "email" ? "email address" : "phone number"}`);
+      return;
+    }
+
+    // Basic validation
+    if (contactChangeType === "email") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(trimmedValue)) {
+        toast.error("Please enter a valid email address");
+        return;
+      }
+    } else if (contactChangeType === "mobileNumber") {
+      // More flexible phone validation - check if it starts with + and has enough digits
+      const phoneRegex = /^\+[1-9]\d{10,14}$/;
+      if (!phoneRegex.test(trimmedValue)) {
+        toast.error("Phone number must be in E.164 format starting with + (e.g., +255712345678)");
+        return;
+      }
+    }
+
     try {
-      // Step 1: Upload profile picture if changed
-      let profileImageData = profileData?.profile?.profileImage;
-      if (formData.profilePicture instanceof File) {
-        const imageFormData = new FormData();
-        imageFormData.append("profilePicture", formData.profilePicture);
+      const loadingToast = toast.loading("Sending verification code...");
 
-        const imageResult = await uploadProfilePicture(imageFormData).unwrap();
-        profileImageData = imageResult.file?.url || imageResult.url;
+      await initiateContactChange({
+        newIdentifier: trimmedValue,
+        type: contactChangeType,
+      }).unwrap();
+
+      toast.dismiss(loadingToast);
+      toast.success(`Verification code sent to your new ${contactChangeType === "email" ? "email" : "phone number"}`);
+      setShowContactModal(false);
+      setShowOtpModal(true);
+    } catch (err) {
+      console.error("Initiate contact change error:", err);
+      const payload = err?.data || err;
+      toast.error(payload?.error || payload?.message || "Failed to send verification code");
+    }
+  };
+
+  const handleCloseContactModal = () => {
+    setShowContactModal(false);
+    setContactChangeType(null);
+    setNewContactValue("");
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otpCode || otpCode.trim().length === 0) {
+      toast.error("Please enter the verification code");
+      return;
+    }
+
+    setIsVerifyingOtp(true);
+    try {
+      // Verify the OTP
+      await verifyContactChange({ code: otpCode.trim() }).unwrap();
+
+      toast.success(
+        `${contactChangeType === "email" ? "Email" : "Phone number"} updated successfully`
+      );
+
+      // Update form data with new value
+      if (contactChangeType === "email") {
+        setFormData((prev) => ({ ...prev, email: newContactValue }));
+      } else {
+        setFormData((prev) => ({ ...prev, mobileNumber: newContactValue }));
       }
 
-      // Step 2: Update profile data
-      const updateData = {
-        name: formData.name,
-        email: formData.email,
-        mobileNumber: formData.mobileNumber,
-      };
-
-      // Add profile picture if available
-      if (profileImageData) {
-        updateData.profilePicture = profileImageData;
-      }
-
-      if (isCustomer) {
-        if (formData.preferredAreas.length > 0) {
-          // Send address strings to backend - backend will handle geocoding
-          updateData.preferredAreas = formData.preferredAreas.map(
-            (area) => area.address || "Location on map"
+      // Now proceed with the rest of the profile update if there's pending data
+      if (pendingUpdateData) {
+        try {
+          const result = await updateProfile(pendingUpdateData).unwrap();
+          toast.success(result.message || "Profile updated successfully");
+          setIsEditMode(false);
+          refetch();
+        } catch (updateErr) {
+          console.error(
+            "Profile update error after contact change:",
+            updateErr
           );
+          toast.error("Contact updated but failed to update other fields");
         }
       } else {
-        if (formData.selectedAreas.length > 0) {
-          // Send address strings to backend - backend will handle geocoding
-          updateData.selectedAreas = formData.selectedAreas.map(
-            (area) => area.address || "Location on map"
-          );
-        }
+        // If no pending update, just refetch to sync with backend
+        refetch();
       }
 
-      const result = await updateProfile(updateData).unwrap();
-      toast.success(result.message || "Profile updated successfully");
-      setIsEditMode(false);
-      refetch();
+      // Reset state
+      setShowOtpModal(false);
+      setOtpCode("");
+      setContactChangeType(null);
+      setNewContactValue("");
+      setPendingUpdateData(null);
     } catch (err) {
-      console.error("Update profile error:", err);
+      console.error("OTP verification error:", err);
       const payload = err?.data || err;
 
       if (payload?.error) {
@@ -208,42 +292,80 @@ const ProfileOverview = () => {
       } else if (payload?.message) {
         toast.error(payload.message);
       } else {
-        toast.error("Failed to update profile. Please try again");
+        toast.error("Invalid verification code");
+      }
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
+  const handleCloseOtpModal = () => {
+    setShowOtpModal(false);
+    setOtpCode("");
+    setContactChangeType(null);
+    setNewContactValue("");
+    setPendingUpdateData(null);
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      await initiateContactChange({
+        newIdentifier: newContactValue,
+        type: contactChangeType,
+      }).unwrap();
+
+      toast.success("Verification code resent successfully");
+    } catch (err) {
+      console.error("Resend OTP error:", err);
+      const payload = err?.data || err;
+      toast.error(
+        payload?.error || payload?.message || "Failed to resend code"
+      );
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      // Step 1: Upload profile picture if changed
+      if (formData.profilePicture instanceof File) {
+        const imageFormData = new FormData();
+        imageFormData.append("profilePicture", formData.profilePicture);
+
+        await uploadProfilePicture(imageFormData).unwrap();
+      }
+
+      // Step 2: Prepare update data
+      const updateData = {
+        name: formData.name,
+      };
+
+      // Add areas based on role
+      if (isCustomer) {
+        updateData.preferredAreas = formData.preferredAreas;
+      } else {
+        updateData.selectedAreas = formData.selectedAreas;
+      }
+
+      // Step 3: Update profile (email/phone changes are handled separately via "Change" button)
+      const result = await updateProfile(updateData).unwrap();
+      toast.success(result.message || "Profile updated successfully");
+      setIsEditMode(false);
+      refetch();
+    } catch (err) {
+      console.error("Profile update error:", err);
+      const payload = err?.data || err;
+
+      if (payload?.error) {
+        toast.error(payload.error);
+      } else if (payload?.message) {
+        toast.error(payload.message);
+      } else {
+        toast.error("Failed to update profile");
       }
     }
   };
 
-  if (isLoading) {
-    return <ProfileSkeleton />;
-  }
-
-  if (error) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:p-8">
-        <div className="text-center py-12">
-          <p className="text-red-600 mb-4">Failed to load profile</p>
-          <button
-            onClick={() => refetch()}
-            className="px-4 py-2 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white text-sm font-medium rounded-lg hover:from-[#74C7F2] hover:to-[#B6E0FE] transition-all duration-200"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const getInitials = (name) => {
-    if (!name) return "U";
-    const parts = name.trim().split(" ");
-    if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
-
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
@@ -252,9 +374,29 @@ const ProfileOverview = () => {
     });
   };
 
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:p-8">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#74C7F2]"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:p-8">
+        <div className="text-center py-12">
+          <p className="text-red-600">Failed to load profile</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:p-8">
-      {}
+      {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">My Profile</h1>
         <p className="text-sm text-gray-500">
@@ -262,7 +404,7 @@ const ProfileOverview = () => {
         </p>
       </div>
 
-      {}
+      {/* Profile Header Card */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 mb-8 p-6 rounded-2xl border border-neutral-100 shadow-sm">
         <div className="relative">
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#B6E0FE] to-[#74C7F2] rounded-full flex items-center justify-center overflow-hidden">
@@ -284,39 +426,26 @@ const ProfileOverview = () => {
                 onClick={() =>
                   document.getElementById("profile-image-upload").click()
                 }
-                className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#74C7F2] rounded-full flex items-center justify-center hover:bg-[#5BAEE6] transition-colors"
+                className="absolute bottom-0 right-0 bg-[#74C7F2] text-white p-2 rounded-full hover:bg-[#5bb3e0] transition-colors"
               >
-                <Camera size={12} className="text-white" />
+                <Camera size={16} />
               </button>
               <input
-                type="file"
                 id="profile-image-upload"
-                accept="image/*"
+                type="file"
+                accept="image/jpeg,image/jpg,image/png"
                 onChange={handleImageChange}
                 className="hidden"
               />
             </>
           )}
         </div>
+
         <div className="flex-1">
-          <h3 className="text-xl font-bold text-gray-900 mb-1">
-            {formData.name || "User"}
-          </h3>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-600">
-            {formData.email && (
-              <span className="flex items-center gap-1">
-                <Mail size={14} />
-                {formData.email}
-              </span>
-            )}
-            {formData.mobileNumber && (
-              <span className="flex items-center gap-1">
-                <Phone size={14} />
-                {formData.mobileNumber}
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-black mt-1 border border-neutral-300 w-fit px-2 py-1 rounded-md bg-neutral-50 shadow-sm">
+          <h2 className="text-xl font-bold text-gray-900 mb-1">
+            {formData.name || "Your Name"}
+          </h2>
+          <p className="text-sm text-gray-500">
             Member since{" "}
             {profileData?.profile?.createdAt
               ? formatDate(profileData.profile.createdAt)
@@ -332,11 +461,11 @@ const ProfileOverview = () => {
         </button>
       </div>
 
-      {}
+      {/* Profile Content */}
       <div className="grid grid-cols-1 gap-8">
-        {}
-        <div className="border-neutral-100 shadow-sm p-6 rounded-2xl">
-          {}
+        {/* Personal Info and Address Section */}
+        <div className="border border-neutral-100 shadow-sm p-6 rounded-2xl">
+          {/* Personal Info */}
           <div className="mb-8">
             <div className="flex items-center gap-2 mb-4">
               <User size={20} className="text-[#74C7F2]" />
@@ -364,45 +493,81 @@ const ProfileOverview = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Email
+                  </label>
+                  {isEditMode && (
+                    <button
+                      type="button"
+                      onClick={() => handleChangeContact("email")}
+                      className="text-sm text-[#74C7F2] font-medium hover:underline"
+                    >
+                      Change
+                    </button>
+                  )}
+                </div>
                 {isEditMode ? (
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent bg-white"
-                  />
+                  <>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      readOnly
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Used for login and notifications. Click "Change" to update.
+                    </p>
+                  </>
                 ) : (
-                  <p className="text-gray-900 py-3">{formData.email || "N/A"}</p>
+                  <p className="text-gray-900 py-3">
+                    {formData.email || "N/A"}
+                  </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone
-                </label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Phone
+                  </label>
+                  {isEditMode && (
+                    <button
+                      type="button"
+                      onClick={() => handleChangeContact("mobileNumber")}
+                      className="text-sm text-[#74C7F2] font-medium hover:underline"
+                    >
+                      Change
+                    </button>
+                  )}
+                </div>
                 {isEditMode ? (
-                  <input
-                    type="tel"
-                    name="mobileNumber"
-                    value={formData.mobileNumber}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent bg-white"
-                  />
+                  <>
+                    <input
+                      type="tel"
+                      name="mobileNumber"
+                      value={formData.mobileNumber}
+                      readOnly
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Used for login and notifications. Click "Change" to update.
+                    </p>
+                  </>
                 ) : (
-                  <p className="text-gray-900 py-3">{formData.mobileNumber || "N/A"}</p>
+                  <p className="text-gray-900 py-3">
+                    {formData.mobileNumber || "N/A"}
+                  </p>
                 )}
               </div>
             </div>
           </div>
 
-          {}
+          {/* Divider */}
           <div className="border-t border-gray-200 my-6"></div>
 
-          {}
+          {/* Address Section */}
           <div>
             <div className="flex items-center gap-2 mb-4">
               <MapPin size={20} className="text-[#74C7F2]" />
@@ -512,8 +677,8 @@ const ProfileOverview = () => {
                           }
                           return (
                             <p>
-                              No addresses saved. Click "Edit Profile" to add
-                              locations.
+                              No addresses saved. Click &quot;Edit
+                              Profile&quot; to add locations.
                             </p>
                           );
                         })()}
@@ -557,7 +722,7 @@ const ProfileOverview = () => {
         </div>
       </div>
 
-      {}
+      {/* Save/Cancel Buttons */}
       {isEditMode && (
         <div className="mt-8 pt-6 border-t border-gray-200">
           <div className="flex gap-4">
@@ -576,8 +741,110 @@ const ProfileOverview = () => {
           </div>
         </div>
       )}
+
+      {/* Contact Change Modal */}
+      {showContactModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Change {contactChangeType === "email" ? "Email" : "Phone Number"}
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Enter your new {contactChangeType === "email" ? "email address" : "phone number"}.
+              We&apos;ll send you a verification code.
+            </p>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                New {contactChangeType === "email" ? "Email Address" : "Phone Number"}
+              </label>
+              <input
+                type={contactChangeType === "email" ? "email" : "tel"}
+                value={newContactValue}
+                onChange={(e) => setNewContactValue(e.target.value)}
+                placeholder={contactChangeType === "email" ? "your.email@example.com" : "+255712345678"}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
+              />
+              {contactChangeType === "mobileNumber" && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Use E.164 format (e.g., +255712345678)
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleInitiateChange}
+                className="flex-1 px-6 py-3 bg-linear-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium rounded-lg hover:from-[#74C7F2] hover:to-[#B6E0FE] transition-all duration-200"
+              >
+                Send Code
+              </button>
+              <button
+                onClick={handleCloseContactModal}
+                className="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OTP Verification Modal */}
+      {showOtpModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              Verify {contactChangeType === "email" ? "Email" : "Phone Number"}
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              We&apos;ve sent a verification code to your new{" "}
+              {contactChangeType === "email" ? "email" : "phone number"}:{" "}
+              <span className="font-semibold">{newContactValue}</span>
+            </p>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Enter Verification Code
+              </label>
+              <input
+                type="text"
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+                placeholder="Enter code"
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleVerifyOtp}
+                disabled={isVerifyingOtp}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium rounded-lg hover:from-[#74C7F2] hover:to-[#B6E0FE] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isVerifyingOtp ? "Verifying..." : "Verify"}
+              </button>
+              <button
+                onClick={handleCloseOtpModal}
+                disabled={isVerifyingOtp}
+                className="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+            </div>
+
+            <button
+              onClick={handleResendOtp}
+              className="w-full mt-4 text-sm text-[#74C7F2] hover:underline"
+            >
+              Resend Code
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default ProfileOverview;
+

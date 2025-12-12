@@ -20,11 +20,21 @@ const baseQuery = fetchBaseQuery({
 const baseQueryWithErrorHandling = async (args, api, extraOptions) => {
   const result = await baseQuery(args, api, extraOptions);
 
-  // Handle 401 errors globally
+  // Handle 401 errors globally - but NOT for login/signup/verify endpoints
   if (result.error && result.error.status === 401) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    window.location.href = "/login";
+    const endpoint = typeof args === 'string' ? args : args.url;
+
+    // Exclude auth endpoints from global 401 handling (they handle their own errors)
+    const authEndpoints = ['/auth/login', '/auth/signup', '/auth/verify', '/auth/resend-verification'];
+    const isAuthEndpoint = authEndpoints.some(authEndpoint => endpoint?.includes(authEndpoint));
+
+    if (!isAuthEndpoint) {
+      // Only redirect to login for protected endpoints (not auth endpoints)
+      localStorage.removeItem("token");
+      localStorage.removeItem("role");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
+    }
   }
 
   return result;
