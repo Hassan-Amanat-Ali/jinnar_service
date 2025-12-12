@@ -24,7 +24,7 @@ const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { setRole, setUser } = useAuth();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [role, setLocalRole] = useState(
     localStorage.getItem("userRole") || ROLES.CUSTOMER
@@ -102,13 +102,16 @@ const Login = () => {
     setShowResendVerification(false);
 
     // Validation
-    if (!email.trim()) {
-      toast.error("Please enter your email address");
+    if (!identifier.trim()) {
+      toast.error("Please enter your email or phone number");
       return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error("Please enter a valid email address");
+    // Basic validation: if it has '@', it's an email, otherwise it could be a phone.
+    const isEmail = identifier.includes("@");
+    const isPhone = /^\+?\d{10,15}$/.test(identifier);
+    if (!isEmail && !isPhone) {
+      toast.error("Please enter a valid email or phone number.");
       return;
     }
 
@@ -122,7 +125,7 @@ const Login = () => {
       const loginMutation =
         role === ROLES.CUSTOMER ? customerLogin : workerLogin;
       const result = await loginMutation({
-        email: email,
+        identifier: identifier,
         password: password,
       }).unwrap();
 
@@ -168,9 +171,9 @@ const Login = () => {
       } else if (err?.status === "FETCH_ERROR") {
         toast.error("Network error. Please check your connection");
       } else if (err?.status === 404) {
-        toast.error("Email not found. Please sign up first");
+        toast.error("User not found. Please sign up first");
       } else if (err?.status === 401) {
-        toast.error("Invalid email or password");
+        toast.error("Invalid identifier or password");
       } else {
         toast.error("Login failed. Please try again");
       }
@@ -178,16 +181,17 @@ const Login = () => {
   };
 
   const handleResendVerification = async () => {
-    if (!email.trim()) {
-      toast.error("Please enter your email address first.");
+    if (!identifier.trim()) {
+      toast.error("Please enter your email or phone number first.");
       return;
     }
 
     try {
-      const result = await resendCode({ email }).unwrap();
+      const isEmail = identifier.includes("@");
+      const result = await resendCode({ identifier }).unwrap();
       toast.success(result.message || "Verification code sent!");
       setShowResendVerification(false);
-      navigate("/verify", { state: { email } });
+      navigate("/verify", { state: { identifier } });
     } catch (err) {
       const payload = err?.data || err;
       toast.error(payload?.error || "Failed to resend verification code.");
@@ -276,14 +280,14 @@ const Login = () => {
             <form onSubmit={handleLogin}>
               {/* Email address */}
               <label className="block text-sm font-medium text-[#141414]">
-                Email address
+                Email or Phone Number
               </label>
               <input
-                type="email"
-                placeholder="Enter your email address"
+                type="text"
+                placeholder="Enter your email or phone number"
                 className="mt-2 w-full h-11 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
               />
 
               {/* Password */}
@@ -328,7 +332,7 @@ const Login = () => {
                 >
                   {isResending
                     ? "Sending code..."
-                    : "Resend Verification Email"}
+                    : "Resend Verification Code"}
                 </button>
               </div>
             )}

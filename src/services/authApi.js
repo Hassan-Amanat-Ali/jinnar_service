@@ -33,7 +33,7 @@ export const authApi = baseApi.injectEndpoints({
     }),
     resendVerificationCode: builder.mutation({
       query: (data) => ({
-        url: "/auth/resend-verification",
+        url: "/auth/resend-code",
         method: "POST",
         body: data,
       }),
@@ -41,6 +41,20 @@ export const authApi = baseApi.injectEndpoints({
     switchRole: builder.mutation({
       query: (data) => ({
         url: "/auth/switch-role",
+        method: "POST",
+        body: data,
+      }),
+    }),
+    initiateContactChange: builder.mutation({
+      query: (data) => ({
+        url: "/auth/initiate-contact-change",
+        method: "POST",
+        body: data,
+      }),
+    }),
+    verifyContactChange: builder.mutation({
+      query: (data) => ({
+        url: "/auth/verify-contact-change",
         method: "POST",
         body: data,
       }),
@@ -59,4 +73,6 @@ export const {
   useResetPasswordMutation,
   useResendVerificationCodeMutation,
   useSwitchRoleMutation,
+  useInitiateContactChangeMutation,
+  useVerifyContactChangeMutation,
 } = authApi;

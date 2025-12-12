@@ -251,37 +251,45 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
 
               {/* Phone Number */}
               <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                  Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
-                  placeholder="+1 (555) 234-5678"
-                />
-                <p className="text-[11px] md:text-xs text-gray-500 mt-1">
-                  We'll send you call for verification purposes
-                </p>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700">
+                    Phone Number
+                  </label>
+                  <button type="button" className="text-xs md:text-sm text-[#74C7F2] font-medium hover:underline">Change</button>
+                </div>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    readOnly
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                    placeholder="+1 (555) 234-5678"
+                  />
+                </div>
+                <p className="text-[11px] md:text-xs text-gray-500 mt-1">Used for login and notifications. Requires verification to change.</p>
               </div>
 
               {/* Email Address */}
               <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="emailAddress"
-                  value={formData.emailAddress}
-                  readOnly
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
-                  placeholder="your.email@example.com"
-                />
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700">
+                    Email Address
+                  </label>
+                  <button type="button" className="text-xs md:text-sm text-[#74C7F2] font-medium hover:underline">Change</button>
+                </div>
+                <div className="relative">
+                  <input
+                    type="email"
+                    name="emailAddress"
+                    value={formData.emailAddress}
+                    readOnly
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                    placeholder="your.email@example.com"
+                  />
+                </div>
                 <p className="text-[11px] md:text-xs text-gray-500 mt-1">
-                  Your login email address (cannot be changed here)
+                  Used for login and notifications. Requires verification to change.
                 </p>
               </div>
             </div>

@@ -11,7 +11,7 @@ import auth3 from "../../assets/images/auth3.jpg";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
 
   // RTK Query hooks
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
@@ -20,24 +20,27 @@ const ForgotPassword = () => {
     e?.preventDefault();
 
     // Validation
-    if (!email.trim()) {
-      toast.error("Please enter your email address");
+    if (!identifier.trim()) {
+      toast.error("Please enter your email or phone number");
       return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error("Please enter a valid email address");
+    const isEmail = identifier.includes("@");
+    const isPhone = /^\+?\d{10,15}$/.test(identifier);
+
+    if (!isEmail && !isPhone) {
+      toast.error("Please enter a valid email or phone number.");
       return;
     }
 
     try {
-      const result = await forgotPassword({ email: email.trim() }).unwrap();
+      const result = await forgotPassword({ identifier: identifier.trim() }).unwrap();
 
-      toast.success("Password reset code sent to your email");
+      toast.success(`Password reset code sent to your ${isEmail ? "email" : "phone"}`);
       
       navigate("/reset-password", { 
         state: { 
-          email: email.trim()
+          identifier: identifier.trim()
         } 
       });
     } catch (err) {
@@ -59,7 +62,7 @@ const ForgotPassword = () => {
       } else if (err?.status === "FETCH_ERROR") {
         toast.error("Network error. Please check your connection");
       } else if (err?.status === 404) {
-        toast.error("User with this email address does not exist");
+        toast.error("User with this email or phone number does not exist");
       } else {
         toast.error("Failed to send reset code. Please try again");
       }
@@ -70,8 +73,7 @@ const ForgotPassword = () => {
     {
       image: sideImg,
       title: "Reset Your Password",
-      description:
-        "Enter your mobile number and we'll send you a verification code to reset your password securely.",
+      description: "Enter your email or phone number and we'll send you a verification code to reset your password securely.",
     },
     {
       image: auth2,
@@ -140,7 +142,7 @@ const ForgotPassword = () => {
             Forgot Password?
           </h1>
           <p className="text-sm text-[#141414]/70 mt-2">
-            Enter your mobile number and we'll send you a verification code to
+            Enter your email or phone number and we'll send you a verification code to
             reset your password.
           </p>
 
@@ -148,14 +150,14 @@ const ForgotPassword = () => {
             <form onSubmit={handleSubmit}>
               {/* Email address */}
               <label className="block text-sm font-medium text-[#141414]">
-                Email address
+                Email or Phone Number
               </label>
               <input
-                type="email"
-                placeholder="Enter your email address"
+                type="text"
+                placeholder="Enter your email or phone number"
                 className="mt-2 w-full h-11 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
               />
 
               {/* Submit button */}

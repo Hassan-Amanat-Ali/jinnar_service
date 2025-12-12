@@ -16,7 +16,7 @@ const ResetPassword = () => {
   const navigate = useNavigate();
   const loc = useLocation();
   const state = loc.state || {};
-  const email = state.email || "";
+  const identifier = state.identifier || "";
 
   const { setRole, setUser } = useAuth();
   const [code, setCode] = useState("");
@@ -84,7 +84,7 @@ const ResetPassword = () => {
 
     try {
       const result = await resetPassword({
-        email: email,
+        identifier: identifier,
         code,
         newPassword,
       }).unwrap();
@@ -129,8 +129,7 @@ const ResetPassword = () => {
     {
       image: sideImg,
       title: "Create New Password",
-      description:
-        "Enter the verification code sent to your mobile and create a new secure password for your account.",
+      description: "Enter the verification code sent to you and create a new secure password for your account.",
     },
     {
       image: auth2,
@@ -199,7 +198,7 @@ const ResetPassword = () => {
             Reset Your Password
           </h1>
           <p className="text-sm text-[#141414]/70 mt-2">
-            Enter the verification code sent to <strong>{email}</strong> and
+            Enter the verification code sent to <strong>{identifier}</strong> and
             create a new password.
           </p>
 

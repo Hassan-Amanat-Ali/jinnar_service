@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 const Verify = () => {
   const loc = useLocation();
   const state = loc.state || {};
-  const email = state.email || "";
+  const identifier = state.identifier || "";
 
   const [code, setCode] = useState("");
 
@@ -31,12 +31,13 @@ const Verify = () => {
 
     try {
       await verifyCode({
-        email: email,
+        identifier: identifier,
         code,
       }).unwrap();
 
       // Verification successful, navigate to login
-      toast.success("Email verified successfully! You can now log in.");
+      const verificationTarget = identifier.includes("@") ? "Email" : "Account";
+      toast.success(`${verificationTarget} verified successfully! You can now log in.`);
       window.location.href = "/login";
     } catch (err) {
       console.error("Verification error:", err);
@@ -70,8 +71,9 @@ const Verify = () => {
     <div className="min-h-dvh flex items-center justify-center pt-24">
       <div className="w-full max-w-md p-6 rounded-2xl border border-gray-200 shadow-sm">
         <h2 className="text-xl font-semibold mb-3">Enter verification code</h2>
+        
         <p className="text-sm text-gray-600 mb-4">
-          A verification code was sent to <strong>{email}</strong>. Enter the code from your email below.
+          A verification code was sent to <strong>{identifier}</strong>. Enter the code below.
         </p>
 
         <form onSubmit={handleVerify}>

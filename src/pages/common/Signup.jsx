@@ -16,7 +16,7 @@ import { toast } from "react-toastify";
 const Signup = () => {
   const navigate = useNavigate();
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [role] = useState(
@@ -40,13 +40,16 @@ const Signup = () => {
       return;
     }
 
-    if (!email.trim()) {
-      toast.error("Please enter your email address");
+    if (!identifier.trim()) {
+      toast.error("Please enter your email or phone number");
       return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error("Please enter a valid email address");
+    // Basic validation: if it has '@', it's an email, otherwise it could be a phone.
+    const isEmail = identifier.includes("@");
+    const isPhone = /^\+?\d{10,15}$/.test(identifier);
+    if (!isEmail && !isPhone) {
+      toast.error("Please enter a valid email or phone number.");
       return;
     }
 
@@ -72,23 +75,22 @@ const Signup = () => {
 
       const result = await signupMutation({
         name: name.trim(),
-        email: email.trim(),
+        identifier: identifier.trim(),
         password: password,
         role: backendRole,
       }).unwrap();
 
       // Backend sends verification code via email, navigate to verify page
-      toast.info("Verification code sent to your email");
+      toast.info(`Verification code sent to your ${isEmail ? "email" : "phone"}`);
       navigate("/verify", {
         state: { 
-          name: name.trim(), 
-          email: email.trim(), 
+          identifier: identifier.trim(),
           role, 
           action: "signup"
         },
       });
     } catch (err) {
-      console.error("Signup error:", err);
+      console.error("Signup error:", err );
       const payload = err?.data || err;
 
       // Handle different error formats
@@ -106,7 +108,7 @@ const Signup = () => {
       } else if (err?.status === "FETCH_ERROR") {
         toast.error("Network error. Please check your connection");
       } else if (err?.status === 409) {
-        toast.error("Email already registered. Please login");
+        toast.error("Identifier (email or phone) already registered. Please login");
       } else if (err?.status === 400) {
         toast.error("Invalid input. Please check your details");
       } else {
@@ -212,14 +214,14 @@ const Signup = () => {
 
               {/* Email */}
               <label className="block text-sm font-medium text-[#141414] mt-4">
-                Email address
+                Email or Phone Number
               </label>
               <input
-                type="email"
-                placeholder="Enter your email address"
+                type="text"
+                placeholder="Enter your email or phone number"
                 className="mt-2 w-full h-11 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
               />
 
               {/* Password */}
