@@ -11,6 +11,7 @@ import {
   CreditCard,
   Smartphone,
   AlertCircle,
+  RefreshCw,
 } from "lucide-react";
 import {
   useGetWalletQuery,
@@ -20,10 +21,7 @@ import {
 
 // Tanzania Mobile Money Providers with correct API format
 const providers = [
-  { id: "MPESA_TZA", name: "M-Pesa", color: "green" },
   { id: "AIRTEL_TZA", name: "Airtel Money", color: "red" },
-  { id: "TIGO_TZA", name: "Tigo Pesa", color: "blue" },
-  { id: "VODACOM_TZA", name: "Vodacom M-Pesa", color: "red" },
   { id: "HALOTEL_TZA", name: "Halotel Money", color: "purple" },
 ];
 
@@ -400,7 +398,12 @@ const Wallet = () => {
   const [filter, setFilter] = useState("All");
 
   // API Queries and Mutations
-  const { data: walletData, isLoading, error: walletError, refetch } = useGetWalletQuery();
+  // Using RTK Query's automatic cache invalidation - refetches when mutations complete
+  const { data: walletData, isLoading, error: walletError, refetch } = useGetWalletQuery(undefined, {
+    refetchOnMountOrArgChange: true,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
   const [depositMoney] = useDepositMoneyMutation();
   const [withdrawWallet] = useWithdrawWalletMutation();
 
@@ -528,8 +531,20 @@ const Wallet = () => {
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-gray-900">Transaction History</h2>
-                <div className="text-sm text-gray-500">
-                  {transactions.length} total transactions
+                <div className="flex items-center gap-3">
+                  <div className="text-sm text-gray-500">
+                    {transactions.length} total transactions
+                  </div>
+                  <button
+                    onClick={() => refetch()}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+                    title="Refresh transactions"
+                  >
+                    <RefreshCw
+                      size={18}
+                      className="text-gray-600 group-hover:text-blue-600 group-active:animate-spin"
+                    />
+                  </button>
                 </div>
               </div>
 

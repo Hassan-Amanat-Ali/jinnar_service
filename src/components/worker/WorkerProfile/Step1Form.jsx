@@ -228,11 +228,31 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
       // Step 1: Upload profile picture if changed
       let profileImageData = profileData?.profilePicture;
       if (formData.profileImage instanceof File) {
-        const imageFormData = new FormData();
-        imageFormData.append("profilePicture", formData.profileImage);
+        try {
+          const imageFormData = new FormData();
+          imageFormData.append("profilePicture", formData.profileImage);
 
-        const imageResult = await uploadProfilePicture(imageFormData).unwrap();
-        profileImageData = imageResult.file;
+          const imageResult = await uploadProfilePicture(imageFormData).unwrap();
+          console.log("Upload image result:", imageResult);
+
+          // Extract the URL string from the response - handle multiple possible response formats
+          if (typeof imageResult.file === 'string') {
+            profileImageData = imageResult.file;
+          } else if (imageResult.file?.url) {
+            profileImageData = imageResult.file.url;
+          } else if (imageResult.url) {
+            profileImageData = imageResult.url;
+          } else if (imageResult.profilePicture) {
+            profileImageData = imageResult.profilePicture;
+          }
+
+          console.log("Extracted profile image URL:", profileImageData);
+        } catch (uploadErr) {
+          console.error("Failed to upload profile picture:", uploadErr);
+          toast.dismiss(loadingToast);
+          toast.error("Failed to upload profile picture. Please try again.");
+          return false;
+        }
       }
 
       // Step 2: Extract years of experience number
@@ -249,9 +269,16 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
         yearsOfExperience: yearsExp,
       };
 
-      // Add profile image if available
+      // Add profile image if available and it's a valid string URL
       if (profileImageData) {
-        updateData.profilePicture = profileImageData;
+        // Ensure it's a string before adding
+        const imageUrl = typeof profileImageData === 'string'
+          ? profileImageData
+          : String(profileImageData);
+
+        if (imageUrl && imageUrl.trim().length > 0) {
+          updateData.profilePicture = imageUrl;
+        }
       }
 
       console.log("Sending update data:", updateData);

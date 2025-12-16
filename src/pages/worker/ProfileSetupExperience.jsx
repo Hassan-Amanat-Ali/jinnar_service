@@ -27,6 +27,18 @@ const ProfileSetupExperience = () => {
     navigate("/worker-setup-services");
   };
 
+  const handleSaveAndExit = async () => {
+    // Save data before exiting
+    if (step3FormRef.current) {
+      const saved = await step3FormRef.current.handleSave();
+      if (saved) {
+        navigate("/worker-home");
+      }
+    } else {
+      navigate("/worker-home");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
 
@@ -59,6 +71,12 @@ const ProfileSetupExperience = () => {
               className="w-full sm:w-auto px-6 py-2.5 sm:py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm sm:text-xs"
             >
               Back: Skills and Services
+            </button>
+            <button
+              onClick={handleSaveAndExit}
+              className="w-full sm:w-auto px-6 py-2.5 sm:py-2 border border-[#74C7F2] text-[#74C7F2] rounded-lg font-medium hover:bg-sky-50 transition-colors text-sm sm:text-xs"
+            >
+              Save & Exit
             </button>
             <button
               onClick={handleNext}

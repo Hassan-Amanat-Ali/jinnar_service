@@ -117,10 +117,16 @@ const Charts = ({ walletData }) => {
 
           {/* Action Buttons */}
           <div className="space-y-3">
-            <button className="w-full bg-gradient-to-r from-[#A8D8F0] to-[#74C7F2] text-white py-3 rounded-lg font-medium hover:opacity-90 transition-opacity">
+            <button
+              onClick={() => navigate('/wallet')}
+              className="w-full bg-gradient-to-r from-[#A8D8F0] to-[#74C7F2] text-white py-3 rounded-lg font-medium hover:opacity-90 transition-opacity"
+            >
               Withdraw Now
             </button>
-            <button className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+            <button
+              onClick={() => navigate('/wallet')}
+              className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
               View Wallet
             </button>
           </div>
