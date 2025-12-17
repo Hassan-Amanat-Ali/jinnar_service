@@ -3,6 +3,7 @@ import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { useDispatch } from "react-redux";
 import { toast } from "react-hot-toast";
 import Dropdown from "../../common/DropDown.jsx";
+import LanguageSelector from "./LanguageSelector.jsx";
 import {
   useUpdateProfileMutation,
   useUploadProfilePictureMutation,
@@ -92,15 +93,6 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
       };
       reader.readAsDataURL(file);
     }
-  };
-
-  const handleLanguageToggle = (language) => {
-    setFormData((prev) => ({
-      ...prev,
-      languages: prev.languages.includes(language)
-        ? prev.languages.filter((lang) => lang !== language)
-        : [...prev.languages, language],
-    }));
   };
 
   // Contact change handlers
@@ -468,38 +460,14 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
               <label className="block text-xs md:text-sm font-medium text-gray-700 mb-3">
                 Languages Spoken *
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                {[
-                  "English",
-                  "Spanish",
-                  "French",
-                  "Portuguese",
-                  "Arabic",
-                  "Swahili",
-                  "Mandarin",
-                  "Japanese",
-                  "Korean",
-                  "Russian",
-                  "German",
-                  "Italian",
-                ].map((language) => (
-                  <button
-                    key={language}
-                    type="button"
-                    onClick={() => handleLanguageToggle(language)}
-                    className={`px-3 py-2 rounded-md text-[11px] md:text-xs font-medium border transition-colors ${
-                      formData.languages.includes(language)
-                        ? "bg-linear-to-r from-[#B6E0FE] to-[#74C7F2] text-white border-[#74C7F2]"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-[#74C7F2]"
-                    }`}
-                  >
-                    {language}
-                  </button>
-                ))}
-              </div>
+              <LanguageSelector
+                selectedLanguages={formData.languages}
+                onChange={(languages) =>
+                  setFormData((prev) => ({ ...prev, languages }))
+                }
+              />
               <p className="text-[11px] md:text-xs text-gray-500 mt-2">
-                Select any 1 language that customize communicate with clients
-                and locals
+                Select all languages you can communicate with clients and locals
               </p>
             </div>
 

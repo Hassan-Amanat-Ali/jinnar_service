@@ -218,11 +218,14 @@ const Signup = () => {
               </label>
               <input
                 type="text"
-                placeholder="Enter your email or phone number"
+                placeholder="email@example.com or +255712345678"
                 className="mt-2 w-full h-11 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                For phone numbers, include country code (e.g., +255712345678 for Tanzania)
+              </p>
 
               {/* Password */}
               <label className="block text-sm font-medium text-[#141414] mt-4">
