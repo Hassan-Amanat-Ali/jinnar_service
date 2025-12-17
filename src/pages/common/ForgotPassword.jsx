@@ -5,42 +5,49 @@ import { toast } from "react-toastify";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
+import PhoneInput from "react-phone-input-2";
+import "react-phone-input-2/lib/style.css";
 import sideImg from "../../assets/images/auth.jpg";
 import auth2 from "../../assets/images/auth2.jpg";
 import auth3 from "../../assets/images/auth3.jpg";
 
 const ForgotPassword = () => {
   const navigate = useNavigate();
-  const [identifier, setIdentifier] = useState("");
+  const [method, setMethod] = useState("email");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
 
   // RTK Query hooks
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
+    let submitIdentifier = "";
+    const isEmail = method === "email";
 
     // Validation
-    if (!identifier.trim()) {
-      toast.error("Please enter your email or phone number");
-      return;
-    }
-
-    const isEmail = identifier.includes("@");
-    const isPhone = /^\+?\d{10,15}$/.test(identifier);
-
-    if (!isEmail && !isPhone) {
-      toast.error("Please enter a valid email or phone number.");
-      return;
+    if (isEmail) {
+      if (!email.trim() || !email.includes("@")) {
+        toast.error("Please enter a valid email address");
+        return;
+      }
+      submitIdentifier = email.trim();
+    } else {
+      if (!phone || phone.length < 8) {
+        toast.error("Please enter a valid phone number");
+        return;
+      }
+      submitIdentifier = `+${phone}`;
     }
 
     try {
-      const result = await forgotPassword({ identifier: identifier.trim() }).unwrap();
+      await forgotPassword({ identifier: submitIdentifier }).unwrap();
 
       toast.success(`Password reset code sent to your ${isEmail ? "email" : "phone"}`);
       
       navigate("/reset-password", { 
         state: { 
-          identifier: identifier.trim()
+          identifier: submitIdentifier
         } 
       });
     } catch (err) {
@@ -148,20 +155,69 @@ const ForgotPassword = () => {
 
           <div className="mt-6 rounded-2xl border border-gray-200 shadow-sm p-6">
             <form onSubmit={handleSubmit}>
-              {/* Email address */}
-              <label className="block text-sm font-medium text-[#141414]">
-                Email or Phone Number
-              </label>
-              <input
-                type="text"
-                placeholder="email@example.com or +255712345678"
-                className="mt-2 w-full h-11 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                For phone numbers, include country code (e.g., +255712345678 for Tanzania)
-              </p>
+              {/* Toggle Method */}
+              <div className="flex items-center gap-6 mb-6 border-b border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setMethod("email")}
+                  className={`pb-2 text-sm font-medium transition-colors relative ${
+                    method === "email"
+                      ? "text-[#74C7F2]"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Email Address
+                  {method === "email" && (
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#74C7F2]" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMethod("phone")}
+                  className={`pb-2 text-sm font-medium transition-colors relative ${
+                    method === "phone"
+                      ? "text-[#74C7F2]"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Phone Number
+                  {method === "phone" && (
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#74C7F2]" />
+                  )}
+                </button>
+              </div>
+
+              {method === "email" ? (
+                <div>
+                  <label className="block text-sm font-medium text-[#141414]">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    className="mt-2 w-full h-11 rounded-lg border border-gray-300 px-3 text-sm outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium text-[#141414]">
+                    Phone Number
+                  </label>
+                  <div className="mt-2">
+                    <PhoneInput
+                      country={"pk"}
+                      enableSearch={true}
+                      value={phone}
+                      onChange={(phone) => setPhone(phone)}
+                      inputClass="!w-full !h-11 !rounded-lg !border !border-gray-300 !text-sm !outline-none focus:!ring-2 focus:!ring-[#74C7F2] focus:!border-transparent"
+                      containerClass="!w-full"
+                      buttonClass="!rounded-l-lg !border-gray-300"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Submit button */}
               <button

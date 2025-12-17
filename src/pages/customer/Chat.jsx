@@ -2,16 +2,14 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Search,
-  Phone,
-  Video,
   CheckCheck,
-  Paperclip,
   Smile,
   Send,
   ArrowLeft,
   MoreVertical,
   Circle,
   Loader2,
+  Flag,
 } from "lucide-react";
 import Hero from "../../components/common/Hero";
 import Avatar from "../../components/common/Avatar";
@@ -23,6 +21,7 @@ import {
   useSendMessageMutation,
   useMarkAsReadMutation,
 } from "../../services/chatApi";
+import { useGetPublicProfileQuery } from "../../services/workerApi";
 import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 // Contact Item Component
@@ -257,6 +256,36 @@ const Chat = () => {
     { userId: otherParticipantId },
     { skip: !otherParticipantId }
   );
+
+  // Fetch public profile for the target user to get their name/image if not available
+  const { data: publicProfile } = useGetPublicProfileQuery(targetUserId, {
+    skip: !targetUserId || (selectedConversation && !selectedConversation._id.startsWith("temp-")),
+  });
+
+  // Update temporary conversation with fetched profile data
+  useEffect(() => {
+    if (selectedConversation?._id.startsWith("temp-") && publicProfile?.profile) {
+      const targetParticipant = selectedConversation.participants.find((p) => p._id === targetUserId);
+
+      // Only update if name is "User" or missing profile picture
+      if (targetParticipant && (targetParticipant.name === "User" || !targetParticipant.profilePicture)) {
+        console.log("👤 Updating temporary conversation with profile data:", publicProfile.profile);
+        setSelectedConversation((prev) => ({
+          ...prev,
+          participants: prev.participants.map((p) =>
+            p._id === targetUserId
+              ? {
+                  ...p,
+                  name: publicProfile.profile.name || "User",
+                  profilePicture: publicProfile.profile.profilePicture,
+                  role: publicProfile.profile.role || "worker",
+                }
+              : p
+          ),
+        }));
+      }
+    }
+  }, [publicProfile, targetUserId, selectedConversation]);
 
   console.log("📡 API Status:", {
     otherParticipantId,
@@ -693,16 +722,17 @@ const Chat = () => {
                 </div>
                 <div className="flex items-center gap-1 md:gap-2">
                   <button
-                    className="p-1.5 md:p-2 text-gray-500 hover:text-gray-700"
-                    aria-label="Voice call"
+                    className="p-1.5 md:p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
+                    aria-label="Report user"
+                    title="Report User"
+                    onClick={() => {
+                      if (window.confirm("Are you sure you want to report this user?")) {
+                        // TODO: Implement report user functionality
+                        alert("User reported. Our team will review this conversation.");
+                      }
+                    }}
                   >
-                    <Phone size={16} className="md:w-[18px] md:h-[18px]" />
-                  </button>
-                  <button
-                    className="p-1.5 md:p-2 text-gray-500 hover:text-gray-700"
-                    aria-label="Video call"
-                  >
-                    <Video size={16} className="md:w-[18px] md:h-[18px]" />
+                    <Flag size={16} className="md:w-[18px] md:h-[18px]" />
                   </button>
                   <button
                     className="p-1.5 md:p-2 text-gray-500 hover:text-gray-700"
@@ -774,16 +804,6 @@ const Chat = () => {
               <footer className="border-t border-gray-100 p-2 md:p-3">
                 <form onSubmit={handleSendMessage}>
                   <div className="flex items-center gap-1 md:gap-2 rounded-full border border-gray-200 bg-white px-2 md:px-3 py-1.5 md:py-2 shadow-sm">
-                    <button
-                      type="button"
-                      className="p-1.5 md:p-2 text-gray-500 hover:text-gray-700"
-                      aria-label="Attach file"
-                    >
-                      <Paperclip
-                        size={16}
-                        className="md:w-[18px] md:h-[18px]"
-                      />
-                    </button>
                     <input
                       type="text"
                       placeholder={selectedConversation?.isNewChat 
