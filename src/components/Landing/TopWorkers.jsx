@@ -63,15 +63,17 @@ const TopWorkers = () => {
   const workersToShow =
     displayWorkers.length > 0
       ? displayWorkers.map((worker) => ({
-          id: worker._id,
+          id: worker._id || worker.id,
           name: worker.name || "Unknown Worker",
-          profession: worker.skills?.[0] || "Professional",
-          rating: worker.rating?.average || 4.5,
+          profession: worker.categories?.[0]?.name || worker.skills?.[0] || worker.profession || "Professional",
+          rating: (typeof worker.rating === 'number' ? worker.rating : worker.rating?.average) || 4.5,
           image:
             getFullImageUrl(worker.profilePicture) ||
             getFullImageUrl(worker.profileImage?.url) ||
+            (worker.image && typeof worker.image === 'string' && worker.image.startsWith('/') ? worker.image : null) ||
+            worker.image ||
             fallbackWorkers[0].image, // Fallback to a local image
-          skills: worker.skills?.slice(0, 2) || ["Professional"],
+          skills: worker.skills?.slice(0, 2) || [],
         }))
       : fallbackWorkers;
 
@@ -166,6 +168,7 @@ const TopWorkers = () => {
                   <button
                     className="border-1 border-[#74C7F2] text-[#74C7F2] hover:bg-[#74C7F2] hover:text-black transition-colors duration-300 text-xs px-4 sm:px-6 lg:px-8 py-1 rounded-md font-medium w-full sm:w-auto cursor-pointer"
                     onClick={() => {
+                      console.log(worker);
                       navigate(`/worker-profile/${worker.id}`);
                     }}
                   >
