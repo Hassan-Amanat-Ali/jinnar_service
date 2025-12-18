@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFindWorkersQuery } from "../services/workerApi";
 import { getFullImageUrl } from "../utils/fileUrl.js";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, X } from "lucide-react";
 import star from "../assets/icons/star.png";
 import worker from "../assets/images/worker.jpg";
 import worker2 from "../assets/images/worker2.jpg";
@@ -26,7 +26,6 @@ const Workers = () => {
     sortOrder: "desc",
     page,
     limit: itemsPerPage,
-    searchTerm,
   });
 
   // Fallback data
@@ -67,21 +66,32 @@ const Workers = () => {
 
   // Transform API workers data for display
   const displayWorkers = apiData?.data || [];
-  const shouldUseFallback = !isLoading && !error && displayWorkers.length === 0 && !searchTerm;
+  const shouldUseFallback = !isLoading && !error && displayWorkers.length === 0;
   const workersList = shouldUseFallback ? fallbackWorkers : displayWorkers;
 
-  const workersToShow =
+  const mappedWorkers =
     workersList.map((worker) => ({
-          id: worker._id,
+          id: worker._id || worker.id,
           name: worker.name || "Unknown Worker",
-          profession: worker.skills?.[0] || "Professional",
-          rating: worker.rating?.average || 4.5,
+          profession: worker.categories?.[0]?.name || worker.skills?.[0] || worker.profession || "Professional",
+          rating: (typeof worker.rating === 'number' ? worker.rating : worker.rating?.average) || 4.5,
           image:
             getFullImageUrl(worker.profilePicture) ||
             getFullImageUrl(worker.profileImage?.url) ||
+            (worker.image && typeof worker.image === 'string' && worker.image.startsWith('/') ? worker.image : null) ||
+            worker.image ||
             fallbackWorkers[0].image,
-          skills: worker.skills?.slice(0, 2) || ["Professional"],
+          skills: worker.skills?.slice(0, 2) || [],
         }));
+
+  const workersToShow = mappedWorkers.filter((worker) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      worker.name.toLowerCase().includes(term) ||
+      worker.profession.toLowerCase().includes(term)
+    );
+  });
 
   return (
     <div className="mt-[60px] min-h-screen bg-gray-50 py-8 md:py-12 ">
@@ -101,13 +111,18 @@ const Workers = () => {
                 type="text"
                 placeholder="Search by name or profession..."
                 value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setPage(1);
-                }}
-                className="w-full pl-12 pr-4 py-3 rounded-full border border-gray-300 focus:border-[#74C7F2] focus:ring-2 focus:ring-[#B6E0FE] outline-none transition-all shadow-sm"
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-10 py-3 rounded-full border border-gray-300 focus:border-[#74C7F2] focus:ring-2 focus:ring-[#B6E0FE] outline-none transition-all shadow-sm"
               />
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -216,7 +231,7 @@ const Workers = () => {
         </div>
 
         {/* Pagination */}
-        {!isLoading && !error && !shouldUseFallback && workersToShow.length > 0 && (
+        {!isLoading && !error && !shouldUseFallback && displayWorkers.length > 0 && (
           <div className="mt-12 flex justify-center items-center gap-4">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
