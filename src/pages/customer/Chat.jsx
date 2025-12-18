@@ -10,6 +10,7 @@ import {
   Circle,
   Loader2,
   Flag,
+  X,
 } from "lucide-react";
 import Hero from "../../components/common/Hero";
 import Avatar from "../../components/common/Avatar";
@@ -189,6 +190,67 @@ const MessageBubble = ({ message, currentUserId, otherParticipant }) => {
   );
 };
 
+// Report Modal Component
+const ReportModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
+  const [reason, setReason] = useState("Spam");
+  const [description, setDescription] = useState("");
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit({ reason, description });
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-md p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900">Report User</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X size={20} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+            <select
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#74C7F2] outline-none"
+            >
+              <option value="Spam">Spam</option>
+              <option value="Inappropriate Content">Inappropriate Content</option>
+              <option value="Harassment">Harassment</option>
+              <option value="Scam/Fraud">Scam/Fraud</option>
+              <option value="Poor Service">Poor Service</option>
+              <option value="Did Not Pay">Did Not Pay</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Please provide more details..."
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#74C7F2] outline-none resize-none h-32"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
+          >
+            {isSubmitting ? "Submitting..." : "Submit Report"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 // Main Chat Component
 const Chat = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -197,6 +259,8 @@ const Chat = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
 
   // Get current user from AuthContext (not Redux!)
   const { user: currentUser } = useAuth();
@@ -492,6 +556,41 @@ const Chat = () => {
     [setSearchParams, markAsRead]
   );
 
+  // Handle report submission
+  const handleReportSubmit = async ({ reason, description }) => {
+    if (!otherParticipantId) return;
+    
+    setIsReporting(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("https://api.jinnar.com/api/user/reports/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          reportedUserId: otherParticipantId,
+          reason,
+          description,
+        }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert("Report submitted successfully. Our support team will review it.");
+        setShowReportModal(false);
+      } else {
+        alert(data.error || "Failed to submit report");
+      }
+    } catch (error) {
+      console.error("Report error:", error);
+      alert("An error occurred while submitting the report");
+    } finally {
+      setIsReporting(false);
+    }
+  };
+
   // Handle send message
   const handleSendMessage = useCallback(
     async (e) => {
@@ -726,10 +825,7 @@ const Chat = () => {
                     aria-label="Report user"
                     title="Report User"
                     onClick={() => {
-                      if (window.confirm("Are you sure you want to report this user?")) {
-                        // TODO: Implement report user functionality
-                        alert("User reported. Our team will review this conversation.");
-                      }
+                      setShowReportModal(true);
                     }}
                   >
                     <Flag size={16} className="md:w-[18px] md:h-[18px]" />
@@ -880,6 +976,13 @@ const Chat = () => {
           )}
         </section>
       </div>
+
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        onSubmit={handleReportSubmit}
+        isSubmitting={isReporting}
+      />
     </main>
   );
 };

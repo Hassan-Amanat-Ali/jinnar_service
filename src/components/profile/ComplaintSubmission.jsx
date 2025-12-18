@@ -1,25 +1,58 @@
-import { useState } from "react";
-import { AlertTriangle, Upload, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { AlertTriangle, Upload, AlertCircle, Loader2, FileText, User } from "lucide-react";
 import DropDown from "../common/DropDown";
+import { toast } from "react-toastify";
+import { useGetOrderByIdQuery } from "../../services/customerApi";
+import { useGetPublicProfileQuery } from "../../services/workerApi";
 
 const ComplaintSubmission = () => {
+  const [searchParams] = useSearchParams();
+  const bookingId = searchParams.get("bookingId");
+  const workerId = searchParams.get("workerId");
+
+  const { data: orderData } = useGetOrderByIdQuery(bookingId, { skip: !bookingId });
+  const { data: workerData } = useGetPublicProfileQuery(workerId, { skip: !workerId });
+
   const [formData, setFormData] = useState({
     category: "",
-    relatedBooking: "",
+    relatedBooking: bookingId || "",
     workerName: "",
     description: "",
     files: null,
   });
 
   const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Auto-fill form when data is loaded
+  useEffect(() => {
+    if (orderData) {
+      const order = orderData.order || orderData;
+      setFormData(prev => ({
+        ...prev,
+        relatedBooking: order._id,
+        workerName: order.sellerId?.name || prev.workerName
+      }));
+    }
+  }, [orderData]);
+
+  useEffect(() => {
+    if (workerData?.profile) {
+      setFormData(prev => ({
+        ...prev,
+        workerName: workerData.profile.name || prev.workerName
+      }));
+    }
+  }, [workerData]);
 
   const complaintCategories = [
-    "Service Quality",
-    "Worker Behavior",
-    "Billing Issues",
-    "Safety Concerns",
-    "Worker No-Show",
-    "Property Damage",
+    "Spam",
+    "Inappropriate Content",
+    "Harassment",
+    "Scam/Fraud",
+    "Poor Service",
+    "Did Not Pay",
     "Other",
   ];
 
@@ -45,20 +78,81 @@ const ComplaintSubmission = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const uploadFiles = async (files) => {
+    // Placeholder for file upload logic
+    // In a real implementation, this would upload to /api/upload and return URLs
+    // For now, we'll return an empty array or mock URLs if needed
+    console.log("Uploading files:", files);
+    return []; 
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission logic
-    console.log("Complaint submitted:", formData);
+    
+    if (!formData.category || !formData.description) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // 1. Upload files first (if any)
+      const attachmentUrls = formData.files ? await uploadFiles(formData.files) : [];
+
+      // 2. Prepare payload
+      const payload = {
+        reason: formData.category,
+        description: formData.description,
+        attachments: attachmentUrls,
+      };
+
+      // Add IDs if available
+      // Note: The API requires at least one ID. 
+      // We assume relatedBooking is the Order ID.
+      if (formData.relatedBooking) {
+        payload.orderId = formData.relatedBooking;
+      }
+      if (workerId) {
+        payload.reportedUserId = workerId;
+      }
+      
+      // If we don't have an ID, the API might reject it based on documentation.
+      // For this form, we'll send what we have.
+
+      const token = localStorage.getItem("token");
+      const response = await fetch("https://api.jinnar.com/api/user/reports/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("Report submitted successfully. Our support team will review it.");
+        handleCancel(); // Reset form
+      } else {
+        toast.error(data.error || "Failed to submit report. Please ensure you provide a valid Booking ID.");
+      }
+    } catch (error) {
+      console.error("Submission error:", error);
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCancel = () => {
-    setFormData({
+    setFormData(prev => ({
+      ...prev,
       category: "",
-      relatedBooking: "",
-      workerName: "",
       description: "",
       files: null,
-    });
+    }));
   };
 
   return (
@@ -102,7 +196,7 @@ const ComplaintSubmission = () => {
           </label>
           <DropDown
             icon={<AlertCircle size={16} className="text-gray-400 mr-2" />}
-            placeholder="Select the type of issue you're reporting"
+            placeholder="Select reason"
             options={complaintCategories}
             isOpen={isCategoryDropdownOpen}
             onToggle={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
@@ -111,7 +205,26 @@ const ComplaintSubmission = () => {
           />
         </div>
 
-        {/* Form Row with Related Booking and Worker Name */}
+        {/* Context Info (if available) */}
+        {(bookingId || workerId) && (
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 flex flex-col gap-2 mb-6">
+            {bookingId && (
+              <div className="flex items-center gap-2 text-sm text-blue-800">
+                <FileText size={16} />
+                <span className="font-medium">Related to Booking:</span>
+                <span>#{bookingId.slice(-6).toUpperCase()}</span>
+              </div>
+            )}
+            {formData.workerName && (
+              <div className="flex items-center gap-2 text-sm text-blue-800">
+                <User size={16} />
+                <span className="font-medium">Worker:</span>
+                <span>{formData.workerName}</span>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Related Booking ID */}
           <div>
@@ -126,10 +239,6 @@ const ComplaintSubmission = () => {
               placeholder="e.g. BK-123456"
               className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent bg-white placeholder:text-gray-400"
             />
-            <p className="text-xs text-gray-500 mt-1">
-              If your complaint relates to a specific booking, enter the booking
-              ID here
-            </p>
           </div>
 
           {/* Worker Name */}
@@ -145,7 +254,7 @@ const ComplaintSubmission = () => {
               placeholder="Enter the worker's name"
               className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent bg-white placeholder:text-gray-400"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-1 text-blue-600">
               If your complaint involves a specific worker
             </p>
           </div>
@@ -196,8 +305,12 @@ const ComplaintSubmission = () => {
         <div className="flex flex-col sm:flex-row gap-4 pt-6">
           <button
             type="submit"
-            className="flex-1 sm:flex-none px-8 py-3 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium rounded-lg hover:from-[#74C7F2] hover:to-[#B6E0FE] transition-all duration-200"
+            disabled={isSubmitting}
+            className="flex-1 sm:flex-none px-8 py-3 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white font-medium rounded-lg hover:from-[#74C7F2] hover:to-[#B6E0FE] transition-all duration-200 disabled:opacity-70 flex items-center justify-center gap-2"
           >
+            {isSubmitting && (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            )}
             Submit Complaint
           </button>
           <button
