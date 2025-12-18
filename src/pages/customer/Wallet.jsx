@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Hero from "../../components/common/Hero";
 import {
   Wallet as WalletIcon,
@@ -13,6 +13,8 @@ import {
   CreditCard,
   Smartphone,
   Building,
+  ChevronRight,
+  Globe,
 } from "lucide-react";
 import {
   useGetWalletQuery,
@@ -89,92 +91,153 @@ const TransactionItem = ({ type, amount, createdAt, status, paymentMethod, descr
 
 // Deposit Modal Component
 const DepositModal = ({ isOpen, onClose }) => {
-  const [step, setStep] = useState(1); // 1: amount, 2: providers, 3: phone, 4: processing
-  const [amount, setAmount] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [step, setStep] = useState(1); // 1: amount, 2: countries, 3: providers, 4: phone, 5: processing
+  const [amount, setAmount] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState(null);
   const [selectedProvider, setSelectedProvider] = useState(null);
+  const [selectedCurrency, setSelectedCurrency] = useState(null);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [countries, setCountries] = useState([]);
+  const [providers, setProviders] = useState([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
 
-  // Static providers with correspondent mapping
-  const providers = [
-    { id: 'airtel', name: 'Airtel', correspondent: 'AIRTEL_TZA', description: 'Airtel Money' },
-    { id: 'vodacom', name: 'Vodacom', correspondent: 'VODACOM_TZA', description: 'M-Pesa' },
-    { id: 'tigo', name: 'Tigo', correspondent: 'TIGO_TZA', description: 'Tigo Pesa' },
-    { id: 'halotel', name: 'Halotel', correspondent: 'HALOTEL_TZA', description: 'HaloPesa' },
-  ];
+  const [depositMoney] = useDepositMoneyMutation();
 
-  const [depositMoney, { isLoading: isDepositing }] = useDepositMoneyMutation();
+  // Fetch countries and providers on modal open
+  useEffect(() => {
+    if (isOpen && step === 2) {
+      fetchCountriesAndProviders();
+    }
+  }, [isOpen, step]);
+
+  const fetchCountriesAndProviders = async () => {
+    setLoadingCountries(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `http://api.jinnar.com/api/wallet/countries-providers?operationType=DEPOSIT`,
+       
+      );
+      if (!response.ok) throw new Error("Failed to fetch countries");
+      const data = await response.json();
+      if (data.success && data.countries) {
+        setCountries(data.countries);
+      }
+    } catch (err) {
+      console.error("Error fetching countries:", err);
+      setError("Failed to load payment methods. Please try again.");
+    } finally {
+      setLoadingCountries(false);
+    }
+  };
 
   const handleAmountNext = () => {
-    if (amount && parseFloat(amount) > 0) {
-      setStep(2);
+    if (!amount || parseFloat(amount) <= 0) {
+      setError("Please enter a valid amount");
+      return;
     }
+    setError("");
+    setStep(2);
+  };
+
+  const handleCountrySelect = (country) => {
+    setSelectedCountry(country);
+    setSelectedProvider(null);
+    setProviders(country.providers || []);
+    setStep(3);
   };
 
   const handleProviderSelect = (provider) => {
     setSelectedProvider(provider);
-  };
-
-  const handleProviderNext = () => {
-    if (selectedProvider) {
-      setStep(3);
+    // Use first available currency code from provider
+    if (provider.currencies && provider.currencies.length > 0) {
+      setSelectedCurrency(provider.currencies[0].code || provider.currencies[0]);
     }
+    setStep(4);
   };
 
-  const handlePhoneNext = () => {
-    if (phoneNumber) {
-      setStep(4);
-      handleDeposit();
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
+    if (!amount || !selectedCountry || !selectedProvider || !phoneNumber) {
+      setError("Please fill all fields");
+      return;
     }
-  };
 
-  const handleDeposit = async () => {
-    if (!selectedProvider || !phoneNumber) return;
-    
+    setIsLoading(true);
+    setError("");
+
     try {
-      const result = await depositMoney({
-        provider: selectedProvider.correspondent,
+      await depositMoney({
+        provider: selectedProvider.providerId,
+        country: selectedCountry.countryCode,
         amount: parseFloat(amount),
-        currency: "TZS",
-        country: "TZA",
-        phoneNumber: phoneNumber.startsWith("255") ? phoneNumber : `255${phoneNumber.replace(/^0+/, "")}`,
+        phoneNumber: phoneNumber,
+        currency: selectedCurrency,
       }).unwrap();
       
-      // Success - close modal
+      setStep(5);
+      
       setTimeout(() => {
         onClose();
-        setStep(1);
-        setAmount('');
-        setPhoneNumber('');
-        setSelectedProvider(null);
+        resetModal();
       }, 2000);
     } catch (error) {
       console.error("Deposit error:", error);
-      alert(error?.data?.message || error?.message || 'Deposit failed. Please try again.');
-      setStep(3);
+      setError(
+        error?.data?.message || error?.message || "Failed to deposit money. Please try again."
+      );
+      setStep(4);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const resetModal = () => {
     setStep(1);
-    setAmount('');
-    setPhoneNumber('');
+    setAmount("");
+    setSelectedCountry(null);
     setSelectedProvider(null);
-    onClose();
+    setSelectedCurrency(null);
+    setPhoneNumber("");
+    setError("");
+    setCountries([]);
+    setProviders([]);
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md">
+      <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <h3 className="text-lg font-bold text-gray-900">Deposit Money</h3>
-          <button onClick={resetModal} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={() => {
+              onClose();
+              resetModal();
+            }}
+            className="text-gray-400 hover:text-gray-600"
+          >
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-6">
+        {/* Step Indicator */}
+        <div className="px-6 pt-6 flex gap-2">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <div
+              key={s}
+              className={`h-2 flex-1 rounded-full ${
+                s <= step ? "bg-[#74C7F2]" : "bg-gray-200"
+              }`}
+            />
+          ))}
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* Step 1: Amount */}
           {step === 1 && (
             <div className="space-y-4">
               <div>
@@ -189,75 +252,95 @@ const DepositModal = ({ isOpen, onClose }) => {
                   className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
                 />
               </div>
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
               <button
                 onClick={handleAmountNext}
                 disabled={!amount || parseFloat(amount) <= 0}
-                className="w-full py-3 bg-gradient-to-r from-[#74C7F2] to-[#5bb3e8] text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 bg-linear-to-r from-[#74C7F2] to-[#5bb3e8] text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue
               </button>
             </div>
           )}
 
+          {/* Step 2: Countries */}
           {step === 2 && (
             <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Select Provider</h4>
+              <h4 className="text-sm font-medium text-gray-700">Select Country</h4>
+              {loadingCountries ? (
+                <div className="text-center py-8 text-gray-500">Loading countries...</div>
+              ) : countries.length > 0 ? (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {providers.map((provider) => (
+                  {countries.map((country) => (
                     <button
-                      key={provider.id}
-                      onClick={() => handleProviderSelect(provider)}
-                      className={`w-full p-3 border rounded-xl text-left transition-colors ${
-                        selectedProvider?.id === provider.id
-                          ? 'border-[#74C7F2] bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      key={country.countryCode}
+                      onClick={() => handleCountrySelect(country)}
+                      className="w-full p-3 border border-gray-200 rounded-xl hover:border-[#74C7F2] hover:bg-blue-50 transition-colors text-left flex items-center gap-3"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                          <CreditCard size={20} className="text-gray-600" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900">{provider.name}</div>
-                          <div className="text-sm text-gray-500">{provider.description}</div>
+                      <img
+                        src={country.flag}
+                        alt={country.countryName}
+                        className="w-6 h-6 rounded"
+                      />
+                      <div>
+                        <div className="font-medium text-gray-900">{country.countryName}</div>
+                        <div className="text-xs text-gray-500">
+                          {country.providers?.length || 0} methods
                         </div>
                       </div>
+                      <ChevronRight className="ml-auto" size={16} />
                     </button>
                   ))}
                 </div>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setStep(1)}
-                  className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => setStep(3)}
-                  disabled={!selectedProvider}
-                  className="flex-1 py-3 bg-gradient-to-r from-[#74C7F2] to-[#5bb3e8] text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Continue
-                </button>
-              </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">No countries available</div>
+              )}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+              <button
+                onClick={() => setStep(1)}
+                className="w-full py-3 border border-gray-300 text-gray-700 rounded-xl font-medium"
+              >
+                Back
+              </button>
             </div>
           )}
 
+          {/* Step 3: Providers */}
           {step === 3 && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="Enter your phone number"
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
-                />
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Select Payment Method</h4>
+                <div className="text-sm text-gray-600 mb-3">{selectedCountry?.countryName}</div>
+              </div>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {providers.map((provider) => (
+                  <button
+                    key={provider.providerId}
+                    onClick={() => handleProviderSelect(provider)}
+                    className="w-full p-3 border border-gray-200 rounded-xl hover:border-[#74C7F2] hover:bg-blue-50 transition-colors text-left flex items-center gap-3"
+                  >
+                    <img
+                      src={provider.logo}
+                      alt={provider.displayName}
+                      className="w-8 h-8 rounded"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">{provider.displayName}</div>
+                      <div className="text-xs text-gray-500">
+                        {provider.currencies?.length || 0} currencies
+                      </div>
+                    </div>
+                    <ChevronRight className="ml-auto" size={16} />
+                  </button>
+                ))}
               </div>
               <div className="flex gap-3">
                 <button
@@ -267,31 +350,73 @@ const DepositModal = ({ isOpen, onClose }) => {
                   Back
                 </button>
                 <button
-                  onClick={handlePhoneNext}
-                  disabled={!phoneNumber}
-                  className="flex-1 py-3 bg-gradient-to-r from-[#74C7F2] to-[#5bb3e8] text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setStep(4)}
+                  disabled={!selectedProvider}
+                  className="flex-1 py-3 bg-linear-to-r from-[#74C7F2] to-[#5bb3e8] text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Deposit TZS {amount}
+                  Continue
                 </button>
               </div>
             </div>
           )}
 
+          {/* Step 4: Phone Number */}
           {step === 4 && (
-            <div className="text-center py-8">
-              {isDepositing ? (
-                <div className="space-y-4">
-                  <Clock className="w-12 h-12 text-[#74C7F2] mx-auto animate-spin" />
-                  <h4 className="text-lg font-semibold text-gray-900">Processing Deposit</h4>
-                  <p className="text-gray-600">Please wait while we process your deposit...</p>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                <div className="text-sm text-gray-600 mb-3 space-y-1">
+                  <div>
+                    <span className="font-medium">Country:</span> {selectedCountry?.countryName}
+                  </div>
+                  <div>
+                    <span className="font-medium">Provider:</span> {selectedProvider?.displayName}
+                  </div>
+                  <div>
+                    <span className="font-medium">Amount:</span> TZS {parseFloat(amount).toLocaleString()}
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
-                  <h4 className="text-lg font-semibold text-gray-900">Deposit Successful</h4>
-                  <p className="text-gray-600">TZS {amount} has been deposited to your wallet.</p>
+              </div>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder={`+${selectedCountry?.prefix} XXXXXXXXXX`}
+                className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
+                required
+              />
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {error}
                 </div>
               )}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading || !phoneNumber}
+                  className="flex-1 py-3 bg-linear-to-r from-[#74C7F2] to-[#5bb3e8] text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? "Processing..." : `Deposit TZS ${amount}`}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Step 5: Success */}
+          {step === 5 && (
+            <div className="text-center py-8">
+              <CheckCircle size={48} className="text-green-500 mx-auto mb-4" />
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">Deposit Successful</h4>
+              <p className="text-gray-600">
+                TZS {parseFloat(amount).toLocaleString()} has been deposited to your wallet.
+              </p>
             </div>
           )}
         </div>
@@ -302,88 +427,166 @@ const DepositModal = ({ isOpen, onClose }) => {
 
 // Withdraw Modal Component
 const WithdrawModal = ({ isOpen, onClose, walletBalance }) => {
-  const [step, setStep] = useState(1); // 1: amount, 2: providers, 3: phone, 4: processing
-  const [amount, setAmount] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [step, setStep] = useState(1); // 1: amount, 2: countries, 3: providers, 4: phone, 5: processing
+  const [amount, setAmount] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState(null);
   const [selectedProvider, setSelectedProvider] = useState(null);
+  const [selectedCurrency, setSelectedCurrency] = useState(null);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [countries, setCountries] = useState([]);
+  const [providers, setProviders] = useState([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
 
-  // Static providers with correspondent mapping
-  const providers = [
-    { id: 'airtel', name: 'Airtel', correspondent: 'AIRTEL_TZA', description: 'Airtel Money' },
-    { id: 'vodacom', name: 'Vodacom', correspondent: 'VODACOM_TZA', description: 'M-Pesa' },
-    { id: 'tigo', name: 'Tigo', correspondent: 'TIGO_TZA', description: 'Tigo Pesa' },
-    { id: 'halotel', name: 'Halotel', correspondent: 'HALOTEL_TZA', description: 'HaloPesa' },
-  ];
+  const [withdrawMoney] = useWithdrawWalletMutation();
 
-  const [withdrawMoney, { isLoading: isWithdrawing }] = useWithdrawWalletMutation();
+  // Fetch countries and providers on modal open
+  useEffect(() => {
+    if (isOpen && step === 2) {
+      fetchCountriesAndProviders();
+    }
+  }, [isOpen, step]);
+
+  const fetchCountriesAndProviders = async () => {
+    setLoadingCountries(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `http://api.jinnar.com/api/wallet/countries-providers?operationType=PAYOUT`,
+       
+      );
+      if (!response.ok) throw new Error("Failed to fetch countries");
+      const data = await response.json();
+      if (data.success && data.countries) {
+        setCountries(data.countries);
+      }
+    } catch (err) {
+      console.error("Error fetching countries:", err);
+      setError("Failed to load payment methods. Please try again.");
+    } finally {
+      setLoadingCountries(false);
+    }
+  };
 
   const handleAmountNext = () => {
-    if (amount && parseFloat(amount) > 0 && parseFloat(amount) <= walletBalance) {
-      setStep(2);
+    const withdrawAmount = parseFloat(amount);
+    if (!amount || withdrawAmount <= 0) {
+      setError("Please enter a valid amount");
+      return;
     }
+    if (withdrawAmount > walletBalance) {
+      setError("Insufficient balance");
+      return;
+    }
+    setError("");
+    setStep(2);
+  };
+
+  const handleCountrySelect = (country) => {
+    setSelectedCountry(country);
+    setSelectedProvider(null);
+    setProviders(country.providers || []);
+    setStep(3);
   };
 
   const handleProviderSelect = (provider) => {
     setSelectedProvider(provider);
-  };
-
-  const handlePhoneNext = () => {
-    if (phoneNumber) {
-      setStep(4);
-      handleWithdraw();
+    // Use first available currency code from provider
+    if (provider.currencies && provider.currencies.length > 0) {
+      setSelectedCurrency(provider.currencies[0].code || provider.currencies[0]);
     }
+    setStep(4);
   };
 
-  const handleWithdraw = async () => {
-    if (!selectedProvider || !phoneNumber) return;
-    
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
+    if (!amount || !selectedCountry || !selectedProvider || !phoneNumber) {
+      setError("Please fill all fields");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
     try {
       await withdrawMoney({
-        provider: selectedProvider.correspondent,
+        provider: selectedProvider.providerId,
+        country: selectedCountry.countryCode,
         amount: parseFloat(amount),
-        currency: "TZS",
-        country: "TZA",
-        phoneNumber: phoneNumber.startsWith("255") ? phoneNumber : `255${phoneNumber.replace(/^0+/, "")}`,
+        phoneNumber: phoneNumber,
+        currency: selectedCurrency,
       }).unwrap();
       
-      // Success - close modal
+      setStep(5);
+      
       setTimeout(() => {
         onClose();
-        setStep(1);
-        setAmount('');
-        setPhoneNumber('');
-        setSelectedProvider(null);
+        resetModal();
       }, 2000);
     } catch (error) {
       console.error("Withdraw error:", error);
-      alert(error?.data?.message || error?.message || 'Withdrawal failed. Please try again.');
-      setStep(3);
+      setError(
+        error?.data?.message || error?.message || "Failed to withdraw money. Please try again."
+      );
+      setStep(4);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const resetModal = () => {
     setStep(1);
-    setAmount('');
-    setPhoneNumber('');
+    setAmount("");
+    setSelectedCountry(null);
     setSelectedProvider(null);
-    onClose();
+    setSelectedCurrency(null);
+    setPhoneNumber("");
+    setError("");
+    setCountries([]);
+    setProviders([]);
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md">
+      <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <h3 className="text-lg font-bold text-gray-900">Withdraw Money</h3>
-          <button onClick={resetModal} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={() => {
+              onClose();
+              resetModal();
+            }}
+            className="text-gray-400 hover:text-gray-600"
+          >
             <X size={20} />
           </button>
         </div>
 
-        <div className="p-6">
+        {/* Step Indicator */}
+        <div className="px-6 pt-6 flex gap-2">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <div
+              key={s}
+              className={`h-2 flex-1 rounded-full ${
+                s <= step ? "bg-[#74C7F2]" : "bg-gray-200"
+              }`}
+            />
+          ))}
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* Step 1: Amount */}
           {step === 1 && (
             <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="text-sm text-blue-600 mb-1">Available Balance</div>
+                <div className="text-xl font-bold text-blue-900">
+                  TZS {walletBalance?.toLocaleString() || "0"}
+                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Enter Amount (TZS)
@@ -396,79 +599,96 @@ const WithdrawModal = ({ isOpen, onClose, walletBalance }) => {
                   max={walletBalance}
                   className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
                 />
-                <div className="mt-1 text-xs text-gray-500">
-                  Available balance: TZS {walletBalance?.toLocaleString() || '0'}
-                </div>
               </div>
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
               <button
                 onClick={handleAmountNext}
-                disabled={!amount || parseFloat(amount) <= 0 || parseFloat(amount) > walletBalance}
-                className="w-full py-3 bg-gradient-to-r from-[#74C7F2] to-[#5bb3e8] text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!amount || parseFloat(amount) <= 0}
+                className="w-full py-3 bg-linear-to-r from-[#74C7F2] to-[#5bb3e8] text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue
               </button>
             </div>
           )}
 
+          {/* Step 2: Countries */}
           {step === 2 && (
             <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-3">Select Provider</h4>
+              <h4 className="text-sm font-medium text-gray-700">Select Country</h4>
+              {loadingCountries ? (
+                <div className="text-center py-8 text-gray-500">Loading countries...</div>
+              ) : countries.length > 0 ? (
                 <div className="space-y-2 max-h-60 overflow-y-auto">
-                  {providers.map((provider) => (
+                  {countries.map((country) => (
                     <button
-                      key={provider.id}
-                      onClick={() => handleProviderSelect(provider)}
-                      className={`w-full p-3 border rounded-xl text-left transition-colors ${
-                        selectedProvider?.id === provider.id
-                          ? 'border-[#74C7F2] bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      key={country.countryCode}
+                      onClick={() => handleCountrySelect(country)}
+                      className="w-full p-3 border border-gray-200 rounded-xl hover:border-[#74C7F2] hover:bg-blue-50 transition-colors text-left flex items-center gap-3"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                          <Smartphone size={20} className="text-gray-600" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900">{provider.name}</div>
-                          <div className="text-sm text-gray-500">{provider.description}</div>
+                      <img
+                        src={country.flag}
+                        alt={country.countryName}
+                        className="w-6 h-6 rounded"
+                      />
+                      <div>
+                        <div className="font-medium text-gray-900">{country.countryName}</div>
+                        <div className="text-xs text-gray-500">
+                          {country.providers?.length || 0} methods
                         </div>
                       </div>
+                      <ChevronRight className="ml-auto" size={16} />
                     </button>
                   ))}
                 </div>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setStep(1)}
-                  className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={() => setStep(3)}
-                  disabled={!selectedProvider}
-                  className="flex-1 py-3 bg-gradient-to-r from-[#74C7F2] to-[#5bb3e8] text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Continue
-                </button>
-              </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">No countries available</div>
+              )}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+              <button
+                onClick={() => setStep(1)}
+                className="w-full py-3 border border-gray-300 text-gray-700 rounded-xl font-medium"
+              >
+                Back
+              </button>
             </div>
           )}
 
+          {/* Step 3: Providers */}
           {step === 3 && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="Enter your phone number"
-                  className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
-                />
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Select Payment Method</h4>
+                <div className="text-sm text-gray-600 mb-3">{selectedCountry?.countryName}</div>
+              </div>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {providers.map((provider) => (
+                  <button
+                    key={provider.providerId}
+                    onClick={() => handleProviderSelect(provider)}
+                    className="w-full p-3 border border-gray-200 rounded-xl hover:border-[#74C7F2] hover:bg-blue-50 transition-colors text-left flex items-center gap-3"
+                  >
+                    <img
+                      src={provider.logo}
+                      alt={provider.displayName}
+                      className="w-8 h-8 rounded"
+                    />
+                    <div>
+                      <div className="font-medium text-gray-900">{provider.displayName}</div>
+                      <div className="text-xs text-gray-500">
+                        {provider.currencies?.length || 0} currencies
+                      </div>
+                    </div>
+                    <ChevronRight className="ml-auto" size={16} />
+                  </button>
+                ))}
               </div>
               <div className="flex gap-3">
                 <button
@@ -478,31 +698,73 @@ const WithdrawModal = ({ isOpen, onClose, walletBalance }) => {
                   Back
                 </button>
                 <button
-                  onClick={handlePhoneNext}
-                  disabled={!phoneNumber}
-                  className="flex-1 py-3 bg-gradient-to-r from-[#74C7F2] to-[#5bb3e8] text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setStep(4)}
+                  disabled={!selectedProvider}
+                  className="flex-1 py-3 bg-linear-to-r from-[#74C7F2] to-[#5bb3e8] text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Withdraw TZS {amount}
+                  Continue
                 </button>
               </div>
             </div>
           )}
 
+          {/* Step 4: Phone Number */}
           {step === 4 && (
-            <div className="text-center py-8">
-              {isWithdrawing ? (
-                <div className="space-y-4">
-                  <Clock className="w-12 h-12 text-[#74C7F2] mx-auto animate-spin" />
-                  <h4 className="text-lg font-semibold text-gray-900">Processing Withdrawal</h4>
-                  <p className="text-gray-600">Please wait while we process your withdrawal...</p>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                <div className="text-sm text-gray-600 mb-3 space-y-1">
+                  <div>
+                    <span className="font-medium">Country:</span> {selectedCountry?.countryName}
+                  </div>
+                  <div>
+                    <span className="font-medium">Provider:</span> {selectedProvider?.displayName}
+                  </div>
+                  <div>
+                    <span className="font-medium">Amount:</span> TZS {parseFloat(amount).toLocaleString()}
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <CheckCircle className="w-12 h-12 text-green-500 mx-auto" />
-                  <h4 className="text-lg font-semibold text-gray-900">Withdrawal Successful</h4>
-                  <p className="text-gray-600">TZS {amount} has been withdrawn from your wallet.</p>
+              </div>
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder={`+${selectedCountry?.prefix} XXXXXXXXXX`}
+                className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#74C7F2] focus:border-transparent"
+                required
+              />
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {error}
                 </div>
               )}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl font-medium"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading || !phoneNumber}
+                  className="flex-1 py-3 bg-linear-to-r from-[#74C7F2] to-[#5bb3e8] text-white rounded-xl font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? "Processing..." : `Withdraw TZS ${amount}`}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Step 5: Success */}
+          {step === 5 && (
+            <div className="text-center py-8">
+              <CheckCircle size={48} className="text-green-500 mx-auto mb-4" />
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">Withdrawal Successful</h4>
+              <p className="text-gray-600">
+                TZS {parseFloat(amount).toLocaleString()} has been withdrawn from your wallet.
+              </p>
             </div>
           )}
         </div>
