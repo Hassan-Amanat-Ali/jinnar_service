@@ -52,6 +52,7 @@ import AllServicesLanding from "../pages/landing/Landing.jsx";
 import SupportTicketDetail from "../components/profile/SupportTicketDetail.jsx";
 import AccountVerification from "../components/profile/AccountVerification.jsx";
 import Terms from "../pages/common/Terms.jsx";
+import Workers from "../pages/Workers.jsx";
 import NotFound from "../pages/common/NotFound.jsx";
 
 const router = createBrowserRouter([
@@ -70,6 +71,8 @@ const router = createBrowserRouter([
         { path: "privacy-policy", element: <PrivacyPolicies /> },
         { path: "terms-condition", element: <Terms /> },
         { path: "about-us", element: <AboutUs /> },
+        {path : "workers", element: <Workers />},
+      
       ],
     }],
   },
@@ -107,6 +110,7 @@ const router = createBrowserRouter([
           </RoleGuard>
         ),
       },
+      
       {
         path: "complaint",
         element: (
@@ -237,6 +241,7 @@ const router = createBrowserRouter([
       { path: "worker/profile/verification", element: <AccountVerification /> },
     ],
   },
+
   // {
   //   element: <FooterOnlyLayout />,
   //   children: [

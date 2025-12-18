@@ -1,15 +1,20 @@
-import worker from "../../assets/images/worker.jpg";
-import worker2 from "../../assets/images/worker2.jpg";
-import worker3 from "../../assets/images/worker3.jpg";
-import worker4 from "../../assets/images/worker4.jpg";
-import star from "../../assets/icons/star.png";
-import Button from "../common/Button";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useFindWorkersQuery } from "../../services/workerApi";
-import { getFullImageUrl } from "../../utils/fileUrl.js";
+import { useFindWorkersQuery } from "../services/workerApi";
+import { getFullImageUrl } from "../utils/fileUrl.js";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import star from "../assets/icons/star.png";
+import worker from "../assets/images/worker.jpg";
+import worker2 from "../assets/images/worker2.jpg";
+import worker3 from "../assets/images/worker3.jpg";
+import worker4 from "../assets/images/worker4.jpg";
+import SiteFooter from "../components/Landing/SiteFooter.jsx"
 
-const TopWorkers = () => {
+const Workers = () => {
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 12;
 
   // Fetch workers using the API
   const {
@@ -19,10 +24,12 @@ const TopWorkers = () => {
   } = useFindWorkersQuery({
     sortBy: "rating.average",
     sortOrder: "desc",
-    limit: 4,
+    page,
+    limit: itemsPerPage,
+    searchTerm,
   });
 
-  // Fallback data for when no workers are provided
+  // Fallback data
   const fallbackWorkers = [
     {
       id: 1,
@@ -60,9 +67,11 @@ const TopWorkers = () => {
 
   // Transform API workers data for display
   const displayWorkers = apiData?.data || [];
+  const shouldUseFallback = !isLoading && !error && displayWorkers.length === 0 && !searchTerm;
+  const workersList = shouldUseFallback ? fallbackWorkers : displayWorkers;
+
   const workersToShow =
-    displayWorkers.length > 0
-      ? displayWorkers.map((worker) => ({
+    workersList.map((worker) => ({
           id: worker._id,
           name: worker.name || "Unknown Worker",
           profession: worker.skills?.[0] || "Professional",
@@ -70,24 +79,43 @@ const TopWorkers = () => {
           image:
             getFullImageUrl(worker.profilePicture) ||
             getFullImageUrl(worker.profileImage?.url) ||
-            fallbackWorkers[0].image, // Fallback to a local image
+            fallbackWorkers[0].image,
           skills: worker.skills?.slice(0, 2) || ["Professional"],
-        }))
-      : fallbackWorkers;
+        }));
 
   return (
-    <section id="top-workers" className="py-8 md:py-10 lg:py-12 ">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 ">
-        <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-center mb-2">
-          Meet Our Top Rated Workers
-        </h2>
-        <p className="text-center mb-6 md:mb-8 text-sm sm:text-base text-gray-600">
-          Verified professionals with proven skills and excellent ratings.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 ">
+    <div className="mt-[60px] min-h-screen bg-gray-50 py-8 md:py-12 ">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-8 md:mb-12">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            Find Skilled Workers
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Browse our community of verified professionals ready to help with your next project.
+          </p>
+
+          {/* Search Bar */}
+          <div className="mt-8 max-w-xl mx-auto relative">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by name or profession..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full pl-12 pr-4 py-3 rounded-full border border-gray-300 focus:border-[#74C7F2] focus:ring-2 focus:ring-[#B6E0FE] outline-none transition-all shadow-sm"
+              />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {isLoading ? (
             // Loading skeletons
-            [...Array(4)].map((_, i) => (
+            [...Array(8)].map((_, i) => (
               <div
                 key={i}
                 className="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6 border border-neutral-200 animate-pulse"
@@ -104,13 +132,15 @@ const TopWorkers = () => {
               </div>
             ))
           ) : error ? (
-            <div className="col-span-full text-center py-8">
-              <p className="text-gray-500">
-                Failed to load workers. Using sample data.
+            <div className="col-span-full text-center py-12">
+              <p className="text-red-500">
+                Failed to load workers. Please try again later.
               </p>
             </div>
           ) : (
-            workersToShow.map((worker) => (
+            <>
+              {workersToShow.length > 0 ? (
+                workersToShow.map((worker) => (
               <div
                 key={worker.id}
                 className="bg-white rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-4 sm:p-6 border border-neutral-200"
@@ -173,22 +203,43 @@ const TopWorkers = () => {
                   </button>
                 </div>
               </div>
-            ))
+                ))
+              ) : (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-gray-500 text-lg">
+                    No workers found matching "{searchTerm}"
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        {/* View All Workers Button */}
-        <div
-          className="text-center mt-8"
-          onClick={() => {
-            window.location.href = "/workers";
-          }}
-        >
-          <Button title="View All Workers" />
-        </div>
+        {/* Pagination */}
+        {!isLoading && !error && !shouldUseFallback && workersToShow.length > 0 && (
+          <div className="mt-12 flex justify-center items-center gap-4">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="p-2 rounded-full border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft size={20} />
+            </button>
+            <span className="text-gray-600 font-medium">Page {page}</span>
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={displayWorkers.length < itemsPerPage}
+              className="p-2 rounded-full border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>
+        )}
       </div>
-    </section>
+       <SiteFooter />
+    </div>
+    
   );
 };
 
-export default TopWorkers;
+export default Workers;

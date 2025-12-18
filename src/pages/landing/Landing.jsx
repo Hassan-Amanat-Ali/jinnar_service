@@ -127,11 +127,11 @@ const AllServicesLanding = () => {
       limit: 50,
     };
 
-    const locationToUse = searchLocation.trim() || userAddress;
+    const locationToUse = searchLocation.trim() ;
     if (locationToUse) {
       params.address = locationToUse;
       // Only add radius if we have an address
-      params.radius = 50;
+      params.radius = 5000000;
     }
 
     // Add category filter
