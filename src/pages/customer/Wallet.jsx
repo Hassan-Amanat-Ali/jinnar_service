@@ -117,7 +117,7 @@ const DepositModal = ({ isOpen, onClose }) => {
     setError("");
     try {
       const response = await fetch(
-        `https://api.jinnar.com/api/wallet/countries-providers?operationType=DEPOSIT`,
+        `http://localhost:3000/api/wallet/countries-providers?operationType=DEPOSIT`,
        
       );
       if (!response.ok) throw new Error("Failed to fetch countries");
@@ -453,7 +453,7 @@ const WithdrawModal = ({ isOpen, onClose, walletBalance }) => {
     setError("");
     try {
       const response = await fetch(
-        `https://api.jinnar.com/api/wallet/countries-providers?operationType=PAYOUT`,
+        `http://localhost:3000/api/wallet/countries-providers?operationType=PAYOUT`,
        
       );
       if (!response.ok) throw new Error("Failed to fetch countries");

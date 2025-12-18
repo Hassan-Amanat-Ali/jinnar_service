@@ -91,7 +91,7 @@ const BookingDetail = () => {
     }));
 
     const token = localStorage.getItem("token");
-    fetch(`https://api.jinnar.com/api/orders/${id}`, {
+    fetch(`http://localhost:3000/api/orders/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
