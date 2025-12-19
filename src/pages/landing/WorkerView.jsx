@@ -37,7 +37,7 @@ const Thumb = ({ src, alt }) => (
 );
 
 /* ---------------- Main Component ---------------- */
-const WorkerProfile = () => {
+const WorkerView = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { data, isLoading, error } = useGetPublicProfileQuery(id);
@@ -332,4 +332,4 @@ const WorkerProfile = () => {
   );
 };
 
-export default WorkerProfile;
+export default WorkerView;

@@ -54,27 +54,33 @@ import AccountVerification from "../components/profile/AccountVerification.jsx";
 import Terms from "../pages/common/Terms.jsx";
 import Workers from "../pages/Workers.jsx";
 import NotFound from "../pages/common/NotFound.jsx";
+import WorkerView from "../pages/landing/WorkerView.jsx";
 
 const router = createBrowserRouter([
   // Public landing pages - accessible to everyone
   {
     element: <LandingLayout />,
-    children: [{
-      element: <GuestGuard />,
-      children: [
-        { index: true, element: <Landing /> },
-        { path: "landing-services", element: <AllServicesLanding /> },
-        { path: "what-is-jinnar", element: <Jinnar /> },
-        { path: "what-is-jinnar/detailed", element: <JinnarDetailed /> },
-        { path: "how-training-works", element: <HowTrainingWorks /> },
-        { path: "help", element: <Help /> },
-        { path: "privacy-policy", element: <PrivacyPolicies /> },
-        { path: "terms-condition", element: <Terms /> },
-        { path: "about-us", element: <AboutUs /> },
-        {path : "workers", element: <Workers />},
-      
-      ],
-    }],
+    children: [
+      {
+        element: <GuestGuard />,
+        children: [
+          { index: true, element: <Landing /> },
+          { path: "landing-services", element: <AllServicesLanding /> },
+          { path: "what-is-jinnar", element: <Jinnar /> },
+          { path: "what-is-jinnar/detailed", element: <JinnarDetailed /> },
+          { path: "how-training-works", element: <HowTrainingWorks /> },
+          { path: "help", element: <Help /> },
+          { path: "privacy-policy", element: <PrivacyPolicies /> },
+          { path: "terms-condition", element: <Terms /> },
+          { path: "about-us", element: <AboutUs /> },
+          { path: "workers", element: <Workers /> },
+          {
+            path: "landing-worker-profile/:id",
+            element: <WorkerView />,
+          },
+        ],
+      },
+    ],
   },
   // Public auth pages - accessible only to unauthenticated users
   {
@@ -110,7 +116,7 @@ const router = createBrowserRouter([
           </RoleGuard>
         ),
       },
-      
+
       {
         path: "complaint",
         element: (

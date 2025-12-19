@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
 import { LandingPageHeroBg } from "../../assets/index.js";
-import {
-  FiUsers,
-  FiPlay,
-  FiMapPin,
-  FiSearch,
-  FiChevronDown,
-} from "react-icons/fi";
+import { FiSearch, FiMapPin, FiChevronDown } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import {
   useGetCategoriesQuery,
@@ -18,132 +12,76 @@ import { useGeocoding } from "../../hooks/useGeocoding.js";
 const Hero = () => {
   const navigate = useNavigate();
 
-  // Fetch categories from API
   const { data: categoriesData, isLoading: categoriesLoading } =
     useGetCategoriesQuery();
 
   const [selectedCategory, setSelectedCategory] = useState("");
-  // Fetch subcategories when a category is selected
   const { data: subcategoriesData, isLoading: subcategoriesLoading } =
     useGetSubcategoriesQuery(selectedCategory, { skip: !selectedCategory });
 
-  // Extract categories from API response (array of category objects)
   const categories = categoriesData || [];
   const subcategories = subcategoriesData || [];
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [userCoords, setUserCoords] = useState(null);
   const [userAddress, setUserAddress] = useState(null);
   const [searchLocation, setSearchLocation] = useState("");
-  const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Geocoding hook for location suggestions
-  const { suggestions: locationSuggestions, isLoading: locationLoading } =
+  const { suggestions, isLoading: locationLoading } =
     useGeocoding(searchLocation);
 
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [sortBy, setSortBy] = useState("");
   const [minRating, setMinRating] = useState("");
 
-  const sortOptions = {
-    rating: "Highest Rated",
-    experience: "Most Experienced",
-    price_low: "Price: Low to High",
-    price_high: "Price: High to Low",
-    newest: "Newest First",
-  };
-
-  // Get user's current location on mount
   useEffect(() => {
-    getUserLocation();
+    navigator.geolocation?.getCurrentPosition(async (pos) => {
+      const address = await reverseGeocode(
+        pos.coords.latitude,
+        pos.coords.longitude
+      );
+      setUserAddress(address);
+    });
   }, []);
 
-  // Function to get user's current location
-  const getUserLocation = () => {
-    if (!navigator.geolocation) {
-      console.error("Geolocation is not supported by this browser");
-      return;
-    }
-
-    setIsGettingLocation(true);
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        setUserCoords({ latitude, longitude });
-
-        // Convert coordinates to address
-        const address = await reverseGeocode(latitude, longitude);
-        setUserAddress(address);
-
-        setIsGettingLocation(false);
-      },
-      (error) => {
-        console.error("Error getting location:", error.message);
-        setIsGettingLocation(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000, // Cache location for 5 minutes
-      }
-    );
-  };
-
-  // Helper function to format category names
-  const formatName = (name) => {
-    if (!name) return "";
-    return name
-      .replace(/[-_]/g, " ")
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
-  };
+  const formatName = (name) =>
+    name?.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   const handleSearch = () => {
     const params = new URLSearchParams();
-    if (searchTerm.trim()) params.set("search", searchTerm.trim());
+    if (searchTerm) params.set("search", searchTerm);
     if (selectedCategory) params.set("category", selectedCategory);
     if (selectedSubcategory) params.set("subcategory", selectedSubcategory);
     if (sortBy) params.set("sortBy", sortBy);
     if (minRating) params.set("minRating", minRating);
+    if (searchLocation || userAddress)
+      params.set("address", searchLocation || userAddress);
 
-    // Use searchLocation if provided, otherwise use userAddress
-    const locationToUse = searchLocation.trim() || userAddress;
-    if (locationToUse) {
-      params.set("address", locationToUse);
-    }
-
-    navigate(
-      `/landing-services${params.toString() ? `?${params.toString()}` : ""}`
-    );
+    navigate(`/landing-services?${params.toString()}`);
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
-  };
   return (
     <section className="relative overflow-visible">
       <div
-        className="relative py-28 sm:py-32 md:py-36 bg-center bg-cover"
+        className="relative py-28 sm:py-32 bg-cover bg-center"
         style={{ backgroundImage: `url(${LandingPageHeroBg})` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-primary/35 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-primary/40 to-transparent" />
 
-        <div className="relative z-10 max-w-5xl mx-auto px-4 h-full flex flex-col items-center justify-center text-center text-white">
+        <div className="relative z-10 max-w-5xl mx-auto px-4 text-white text-center flex flex-col items-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur px-3 py-1 text-xs mb-4">
             <span className="opacity-80">
               Your reliable connection to skilled workers
             </span>
           </div>
+
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tight">
             Find Trusted Professionals Across Africa—In Minutes
           </h1>
+
           <div className="h-1 w-24 sm:w-40 md:w-56 lg:w-72 bg-white/80 my-2" />
-          <p className="mt-1 max-w-2xl text-white/90 text-base sm:text-lg">
+
+          <p className="mt-1 text-white/90 text-base sm:text-lg text center">
             Explore verified workers in every service category, compare choices
             with ease, and book confidently wherever you are on the continent.
           </p>
@@ -163,161 +101,139 @@ const Hero = () => {
             </button>
           </div>
 
-          {/* Search Card */}
-          <div className="mt-8 sm:mt-10 w-full max-w-5xl bg-white/95 text-left rounded-2xl sm:rounded-[28px] shadow-xl p-4 sm:p-5 md:p-7 overflow-visible">
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-3 sm:gap-4 items-end">
-              <div>
-                <h3 className="text-lg sm:text-xl font-semibold text-black mb-2 sm:mb-3">
-                  What service are you looking for?
-                </h3>
-                <div className="relative">
-                  <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60" />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    className="w-full h-11 sm:h-12 rounded-xl border border-border pl-9 pr-3 text-sm text-black placeholder:text-black/50 bg-muted/60 hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
-                    placeholder="e.g., 'plumber', 'electrician'..."
-                  />
-                </div>
+          {/* SEARCH CARD */}
+          <div className="mt-10 bg-white/95 rounded-2xl shadow-xl p-5 text-black">
+            {/* SEARCH INPUT */}
+            <div>
+              <label className="block text-left text-xs font-semibold mb-1">
+                Service
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-3 flex items-center text-black/60">
+                  <FiSearch />
+                </span>
+                <input
+                  className="w-full h-10 sm:h-11 pl-9 pr-3 rounded-xl border border-border text-sm leading-none"
+                  placeholder="Plumber, Electrician..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 items-end">
-              <div className="relative w-full">
-                <label className="text-xs font-semibold text-gray-600 mb-1 block">
+
+            {/* GRID */}
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {/* LOCATION */}
+              <div>
+                <label className="block text-left text-xs font-semibold mb-1">
                   Location
                 </label>
                 <div className="relative">
-                  <FiMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-black/60" />
+                  <span className="absolute inset-y-0 left-3 flex items-center text-black/60">
+                    <FiMapPin />
+                  </span>
                   <input
-                    type="text"
+                    className="w-full h-10 sm:h-11 pl-9 pr-3 rounded-xl border border-border text-sm leading-none"
+                    placeholder={userAddress || "Enter location"}
                     value={searchLocation}
                     onChange={(e) => {
                       setSearchLocation(e.target.value);
                       setShowSuggestions(true);
                     }}
                     onBlur={() =>
-                      setTimeout(() => setShowSuggestions(false), 200)
+                      setTimeout(() => setShowSuggestions(false), 150)
                     }
-                    onKeyPress={handleKeyPress}
-                    className="w-full h-11 sm:h-12 rounded-xl border border-border pl-9 pr-3 text-sm text-black placeholder:text-black/50 bg-muted/60 hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
-                    placeholder={userAddress || "Enter location..."}
                   />
+
                   {showSuggestions && searchLocation.length > 2 && (
-                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <div className="absolute z-20 mt-1 w-full bg-white border rounded-lg shadow max-h-52 overflow-y-auto">
                       {locationLoading && (
-                        <div className="p-3 text-sm text-gray-500">
+                        <div className="p-2 text-sm text-gray-500">
                           Loading...
                         </div>
                       )}
-                      {!locationLoading &&
-                        locationSuggestions.length === 0 &&
-                        searchLocation.length > 2 && (
-                          <div className="p-3 text-sm text-gray-500">
-                            No results found.
-                          </div>
-                        )}
-                      {locationSuggestions.map((suggestion) => (
+                      {suggestions.map((s) => (
                         <div
-                          key={suggestion.place_id}
-                          className="p-3 text-sm text-gray-800 cursor-pointer hover:bg-gray-100"
+                          key={s.place_id}
+                          className="p-2 text-sm hover:bg-gray-100 cursor-pointer"
                           onMouseDown={() => {
-                            // Use onMouseDown to fire before onBlur
-                            setSearchLocation(suggestion.display_name);
+                            setSearchLocation(s.display_name);
                             setShowSuggestions(false);
                           }}
                         >
-                          {suggestion.display_name}
+                          {s.display_name}
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
               </div>
-              <div className="relative w-full">
-                <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                  Category
-                </label>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => {
-                    setSelectedCategory(e.target.value);
-                    setSelectedSubcategory(""); // Reset subcategory
-                  }}
-                  disabled={categoriesLoading}
-                  className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm text-black bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200 disabled:opacity-50"
+
+              {/* CATEGORY */}
+              <SelectBox
+                label="Category"
+                value={selectedCategory}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setSelectedSubcategory("");
+                }}
+                disabled={categoriesLoading}
+              >
+                <option value="">Choose category</option>
+                {categories.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {formatName(c.name)}
+                  </option>
+                ))}
+              </SelectBox>
+
+              {/* SUBCATEGORY */}
+              <SelectBox
+                label="Subcategory"
+                value={selectedSubcategory}
+                onChange={(e) => setSelectedSubcategory(e.target.value)}
+                disabled={!selectedCategory || subcategoriesLoading}
+              >
+                <option value="">All Subcategories</option>
+                {subcategories.map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {formatName(s.name)}
+                  </option>
+                ))}
+              </SelectBox>
+
+              {/* SORT */}
+              <SelectBox
+                label="Sort By"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="">Relevance</option>
+                <option value="rating">Highest Rated</option>
+                <option value="experience">Most Experienced</option>
+              </SelectBox>
+
+              {/* RATING */}
+              <SelectBox
+                label="Minimum Rating"
+                value={minRating}
+                onChange={(e) => setMinRating(e.target.value)}
+              >
+                <option value="">Any Rating</option>
+                {[4, 3, 2, 1].map((r) => (
+                  <option key={r} value={r}>
+                    {r}+ Stars
+                  </option>
+                ))}
+              </SelectBox>
+
+              {/* BUTTON */}
+              <div className="flex items-end">
+                <button
+                  onClick={handleSearch}
+                  className="btn-primary w-full h-10 sm:h-11 rounded-xl"
                 >
-                  <option value="">Choose category</option>
-                  {categories.map((category) => (
-                    <option key={category._id} value={category._id}>
-                      {formatName(category.name)}
-                    </option>
-                  ))}
-                </select>
-                <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none" />
-              </div>
-              <div className="relative w-full">
-                <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                  Subcategory
-                </label>
-                <select
-                  value={selectedSubcategory}
-                  onChange={(e) => setSelectedSubcategory(e.target.value)}
-                  disabled={!selectedCategory || subcategoriesLoading}
-                  className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm text-black bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200 disabled:bg-gray-200 disabled:cursor-not-allowed"
-                >
-                  <option value="">All Subcategories</option>
-                  {subcategories.map((sub) => (
-                    <option key={sub._id} value={sub._id}>
-                      {formatName(sub.name)}
-                    </option>
-                  ))}
-                </select>
-                <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none" />
-              </div>
-            </div>
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 items-end">
-              <div className="relative w-full">
-                <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                  Sort By
-                </label>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm text-black bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
-                >
-                  <option value="">Relevance</option>
-                  {Object.entries(sortOptions).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-                <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none" />
-              </div>
-              <div className="relative w-full">
-                <label className="text-xs font-semibold text-gray-600 mb-1 block">
-                  Minimum Rating
-                </label>
-                <select
-                  value={minRating}
-                  onChange={(e) => setMinRating(e.target.value)}
-                  className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm text-black bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
-                >
-                  <option value="">Any Rating</option>
-                  {[4, 3, 2, 1].map((r) => (
-                    <option key={r} value={r}>
-                      {r} star{r > 1 && "s"} & up
-                    </option>
-                  ))}
-                </select>
-                <FiChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-black/60 pointer-events-none" />
-              </div>
-              <div className="md:pl-2 mt-4 sm:mt-0 w-full md:col-start-3">
-                <button className="btn-primary" onClick={handleSearch}>
-                  <FiSearch />
-                  Search
+                  <FiSearch /> Search
                 </button>
               </div>
             </div>
@@ -327,5 +243,24 @@ const Hero = () => {
     </section>
   );
 };
+
+const SelectBox = ({ label, children, ...props }) => (
+  <div>
+    <label className="block text-left text-xs font-semibold mb-1">
+      {label}
+    </label>
+    <div className="relative">
+      <select
+        {...props}
+        className="appearance-none w-full h-10 sm:h-11 pl-4 pr-9 rounded-xl border border-border text-sm leading-none"
+      >
+        {children}
+      </select>
+      <span className="absolute inset-y-0 right-3 flex items-center text-black/60 pointer-events-none">
+        <FiChevronDown />
+      </span>
+    </div>
+  </div>
+);
 
 export default Hero;
