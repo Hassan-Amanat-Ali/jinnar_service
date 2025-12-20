@@ -24,7 +24,7 @@ class SocketService {
     }
     
     // Create socket connection with token
-    this.socket = io('http://localhost:3000', {
+    this.socket = io('https://api.jinnar.com', {
       transports: ['websocket', 'polling'],
       auth: {
         token: token || '' // Send token without Bearer prefix (backend adds it)
