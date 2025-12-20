@@ -14,9 +14,12 @@ import {
 } from "lucide-react";
 import ali from "../../assets/images/ali-hassan.jpg";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useGetOrderByIdQuery } from "../../services/workerApi";
-import { useStartConversationMutation } from "../../services/customerApi";
-import { getFullImageUrl } from "../../utils/fileUrl.js";
+import {
+  useGetOrderByIdQuery,
+  useStartConversationMutation
+} from "../../services/customerApi";
+import { getFullImageUrl, reverseGeocode } from "../../utils/fileUrl.js";
+import { useState, useEffect } from "react";
 
 const BookingConfirm = () => {
   const navigate = useNavigate();
@@ -27,14 +30,24 @@ const BookingConfirm = () => {
     skip: !orderId,
   });
   const [startConversation] = useStartConversationMutation();
+  const [locationAddress, setLocationAddress] = useState(null);
 
   const order = data;
   const seller = order?.sellerId;
 
-  // Debug logging
-  console.log("BookingConfirm - Raw data:", data);
-  console.log("BookingConfirm - Extracted order:", order);
-  console.log("BookingConfirm - Seller info:", seller);
+  // Fetch address from coordinates
+  useEffect(() => {
+    const fetchAddress = async () => {
+      if (order?.location?.lat && order?.location?.lng) {
+        const address = await reverseGeocode(
+          order.location.lat,
+          order.location.lng
+        );
+        setLocationAddress(address);
+      }
+    };
+    fetchAddress();
+  }, [order?.location?.lat, order?.location?.lng]);
 
   // Format date
   const formatDate = (dateString) => {
@@ -179,8 +192,8 @@ const BookingConfirm = () => {
                 <div className="flex items-start gap-2 mt-2 justify-start sm:justify-end ">
                   <MapPin className="w-4 h-4 text-[#74C7F2] mt-0.5" />
                   <p className="max-w-[220px] sm:max-w-[200px] leading-tight">
-                    Lat: {order.location?.lat?.toFixed(4)}, Lng:{" "}
-                    {order.location?.lng?.toFixed(4)}
+                    {locationAddress ||
+                      `Lat: ${order.location?.lat?.toFixed(4)}, Lng: ${order.location?.lng?.toFixed(4)}`}
                   </p>
                 </div>
               </div>
