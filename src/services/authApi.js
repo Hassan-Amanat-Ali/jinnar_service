@@ -33,7 +33,7 @@ export const authApi = baseApi.injectEndpoints({
     }),
     resendVerificationCode: builder.mutation({
       query: (data) => ({
-        url: "/auth/resend-code",
+        url: "/auth/resend-verification",
         method: "POST",
         body: data,
       }),
