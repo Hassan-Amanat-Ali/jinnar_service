@@ -86,6 +86,12 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Profile image must be less than 5MB");
+        return;
+      }
+
       setFormData({ ...formData, profileImage: file });
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -654,4 +660,3 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
 Step1Form.displayName = "Step1Form";
 
 export default Step1Form;
-

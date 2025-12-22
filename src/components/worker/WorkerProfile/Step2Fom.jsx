@@ -99,6 +99,13 @@ const Step2Fom = forwardRef(({ profileData, isLoading, error }, ref) => {
           return false;
         }
 
+        // Validate file size (10MB limit)
+        if (detail.certificate.size > 10 * 1024 * 1024) {
+          toast.dismiss(loadingToast);
+          toast.error("Certificate file must be less than 10MB");
+          return false;
+        }
+
         try {
           // Update loading message
           toast.loading("Uploading certificate...", { id: loadingToast });
