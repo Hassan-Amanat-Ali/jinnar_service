@@ -372,7 +372,7 @@ const Step1Form = forwardRef(({ profileData, isLoading, error }, ref) => {
               Profile Photo
             </h3>
             <p className="text-xs md:text-sm text-gray-600 mb-4 md:mb-6">
-              Upload a professional photo to build trust with customers
+              Upload a professional photo to build trust with customers (Max 5MB)
             </p>
 
             <label

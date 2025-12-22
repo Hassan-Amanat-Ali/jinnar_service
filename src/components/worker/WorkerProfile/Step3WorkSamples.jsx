@@ -392,7 +392,7 @@ const Step3WorkSamples = forwardRef(
           {/* Portfolio Upload Area */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 mb-6">
             <h3 className="text-sm font-semibold text-gray-900 mb-1">Portfolio (Images & Videos)</h3>
-            <p className="text-xs text-gray-500 mb-4">Showcase your best work with images (JPG, PNG) and short videos (MP4).</p>
+            <p className="text-xs text-gray-500 mb-4">Showcase your best work with images (JPG, PNG) and short videos (MP4). Max 10MB per file.</p>
             
             {/* Dropzone for portfolio */}
             <div
@@ -402,7 +402,7 @@ const Step3WorkSamples = forwardRef(
             >
               <UploadCloud className="w-10 h-10 text-gray-400 mx-auto" />
               <p className="mt-3 text-sm font-medium text-gray-900">Upload Images & Videos</p>
-              <p className="text-xs text-gray-600 mt-1">Drag & drop files here, or click to browse</p>
+              <p className="text-xs text-gray-600 mt-1">Drag & drop files here, or click to browse (Max 10MB)</p>
               <button type="button" onClick={() => portfolioInputRef.current?.click()} className="mt-4 btn-secondary text-xs">Choose Files</button>
               <input ref={portfolioInputRef} type="file" accept="image/*,video/mp4" multiple className="hidden" onChange={(e) => onPortfolioFiles(e.target.files)} />
             </div>
@@ -426,7 +426,7 @@ const Step3WorkSamples = forwardRef(
           {/* Certificates Upload Area */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5">
             <h3 className="text-sm font-semibold text-gray-900 mb-1">Certificates & Qualifications (PDF only)</h3>
-            <p className="text-xs text-gray-500 mb-4">Upload any relevant certificates or licenses as PDF documents.</p>
+            <p className="text-xs text-gray-500 mb-4">Upload any relevant certificates or licenses as PDF documents. Max 10MB per file.</p>
 
             {/* Dropzone for certificates */}
             <div
@@ -436,7 +436,7 @@ const Step3WorkSamples = forwardRef(
             >
               <FileText className="w-10 h-10 text-gray-400 mx-auto" />
               <p className="mt-3 text-sm font-medium text-gray-900">Upload PDF Documents</p>
-              <p className="text-xs text-gray-600 mt-1">Drag & drop PDF files here, or click to browse</p>
+              <p className="text-xs text-gray-600 mt-1">Drag & drop PDF files here, or click to browse (Max 10MB)</p>
               <button type="button" onClick={() => certificateInputRef.current?.click()} className="mt-4 btn-secondary text-xs">Choose Files</button>
               <input ref={certificateInputRef} type="file" accept="application/pdf" multiple className="hidden" onChange={(e) => onCertificateFiles(e.target.files)} />
             </div>
