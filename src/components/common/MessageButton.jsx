@@ -16,8 +16,6 @@ const MessageButton = ({
 
   const handleStartChat = async () => {
     try {
-      console.log('🚀 Starting chat with:', { participantId, participantRole, participantName });
-      
       // Determine chat route based on current user's role
       const userRole = user?.role || localStorage.getItem("userRole");
       const isWorker = userRole === ROLES.WORKER || userRole === "seller" || userRole === "worker";
@@ -49,8 +47,8 @@ const MessageButton = ({
       disabled={!participantId}
       className={`
         flex items-center justify-center gap-2 
-        bg-blue-600 text-white font-medium 
-        rounded-xl hover:bg-blue-700 
+      bg-[#B6E0FE] text-white font-medium 
+        rounded-xl  cursor-pointer
         disabled:opacity-50 disabled:cursor-not-allowed 
         transition-colors
         ${sizeClasses[size]}

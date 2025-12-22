@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import SetupProgress from "../../components/worker/WorkerProfile/SetupProgress";
 import Step3WorkSamples from "../../components/worker/WorkerProfile/Step3WorkSamples";
 import { useGetMyProfileQuery } from "../../services/workerApi";
@@ -7,6 +7,21 @@ import { useGetMyProfileQuery } from "../../services/workerApi";
 const ProfileSetupExperience = () => {
   const navigate = useNavigate();
   const step3FormRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const onChange = (e) => setIsMobile(e.matches);
+    // Set initial
+    setIsMobile(mq.matches);
+    // Listen for changes
+    if (mq.addEventListener) mq.addEventListener("change", onChange);
+    else mq.addListener(onChange);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener("change", onChange);
+      else mq.removeListener(onChange);
+    };
+  }, []);
 
   // Fetch profile data
   const { data: profileData, isLoading, error } = useGetMyProfileQuery();
@@ -16,10 +31,11 @@ const ProfileSetupExperience = () => {
     if (step3FormRef.current) {
       const saved = await step3FormRef.current.handleSave();
       if (saved) {
-        navigate("/worker-setup-pricing");
+        // On small screens skip the pricing step and go directly to availability
+        navigate(isMobile ? "/worker-setup-availability" : "/worker-setup-location");
       }
     } else {
-      navigate("/worker-setup-pricing");
+      navigate(isMobile ? "/worker-setup-availability" : "/worker-setup-location");
     }
   };
 
@@ -82,7 +98,7 @@ const ProfileSetupExperience = () => {
               onClick={handleNext}
               className="w-full sm:w-auto px-8 py-2.5 sm:py-2 bg-[#74C7F2] text-white rounded-lg font-medium hover:bg-[#5ba8e0] transition-colors text-sm sm:text-xs"
             >
-              Next: Pricing
+              {isMobile ? "Next: Availability" : "Next: Location"}
             </button>
           </div>
         </div>

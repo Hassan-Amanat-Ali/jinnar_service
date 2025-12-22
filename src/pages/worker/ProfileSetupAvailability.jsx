@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useRef } from "react";
 import SetupProgress from "../../components/worker/WorkerProfile/SetupProgress";
 import Step5Availability from "../../components/worker/WorkerProfile/Step5Availability";
+import defaultSteps from "../../components/worker/WorkerProfile/setupSteps";
 import { useGetMyProfileQuery } from "../../services/workerApi";
 
 const ProfileSetupAvailability = () => {
@@ -24,7 +25,21 @@ const ProfileSetupAvailability = () => {
   };
 
   const handleBack = () => {
-    navigate("/worker-setup-pricing");
+    // Compute previous step in the full steps list
+    const idx = defaultSteps.findIndex((s) => s.key === 5); // current is Availability (key 5)
+    const prevStep = defaultSteps[idx - 1];
+
+    // Map step key to route
+    const routeMap = {
+      1: "/worker-setup-basic",
+      2: "/worker-setup-services",
+      3: "/worker-setup-experience",
+      4: "/worker-setup-location",
+      5: "/worker-setup-availability",
+    };
+
+    const targetRoute = routeMap[prevStep?.key] || "/worker-setup-experience";
+    navigate(targetRoute);
   };
 
   const handleSaveAndExit = async () => {
@@ -41,7 +56,6 @@ const ProfileSetupAvailability = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-
       {/* Progress Steps */}
       <SetupProgress current={5} />
 
@@ -70,7 +84,13 @@ const ProfileSetupAvailability = () => {
               onClick={handleBack}
               className="w-full sm:w-auto px-6 py-2.5 sm:py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors text-sm sm:text-xs"
             >
-              Back: Pricing
+              {/* Determine previous label */}
+              {(() => {
+                // Determine previous step label
+                const idx = defaultSteps.findIndex((s) => s.key === 5);
+                const prev = defaultSteps[idx - 1];
+                return `Back: ${prev?.label || "Work Experience"}`;
+              })()}
             </button>
             <button
               onClick={handleSaveAndExit}

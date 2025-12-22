@@ -95,6 +95,27 @@ export const workerApi = baseApi.injectEndpoints({
     }),
     getMyOrders: builder.query({
       query: () => "/orders/my-orders",
+      // Normalize various backend response shapes into a plain array of orders
+      transformResponse: (response) => {
+        // If backend returned the array directly
+        if (Array.isArray(response)) return response;
+        console.log("..........resposnsse in rtk",response);
+
+        // Common server wrappers
+        if (response?.orders && Array.isArray(response.orders)) return response.orders;
+        if (response?.jobs && Array.isArray(response.jobs)) return response.jobs;
+        if (response?.data && Array.isArray(response.data)) return response.data;
+
+        // Sometimes the API returns { success: true, data: [...] }
+        if (response?.success && Array.isArray(response.data)) return response.data;
+
+        // Fallback: if response itself contains list-like fields, try to find first array
+        const firstArray = Object.values(response || {}).find((v) => Array.isArray(v));
+        if (firstArray) return firstArray;
+
+        // If nothing found, return empty array to avoid null in UI
+        return [];
+      },
       providesTags: ["Orders"],
     }),
     getNewJobRequests: builder.query({
@@ -135,22 +156,11 @@ export const workerApi = baseApi.injectEndpoints({
     }),
     getOrderById: builder.query({
       query: (id) => {
-        console.log("� API REQUEST START");
-        console.log("🚀 Getting order by ID:", id);
-        console.log("🚀 ID type:", typeof id);
-        console.log("🚀 Full URL will be: /orders/" + id);
+
         return `/orders/${id}`;
       },
-      transformResponse: (response, meta, arg) => {
-        console.log("📦 API RESPONSE START");
-        console.log("📦 Request ID was:", arg);
-        console.log("📦 Response meta:", meta);
-        console.log("📦 Raw response:", response);
-        console.log("📦 Response type:", typeof response);
-        console.log(
-          "📦 Response keys:",
-          response ? Object.keys(response) : "No keys"
-        );
+      transformResponse: (response) => {
+
 
         // Handle different response structures
         let order;
@@ -164,16 +174,6 @@ export const workerApi = baseApi.injectEndpoints({
           order = response;
           console.log("📦 Using direct response");
         }
-
-        console.log("📦 Final extracted order:", order);
-        console.log(
-          "📦 Order keys:",
-          order ? Object.keys(order) : "No order keys"
-        );
-        console.log("📦 Order _id:", order?._id);
-        console.log("📦 Order gigId:", order?.gigId);
-        console.log("📦 Order buyerId:", order?.buyerId);
-        console.log("📦 API RESPONSE END");
 
         return order;
       },

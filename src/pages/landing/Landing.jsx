@@ -86,13 +86,7 @@ const AllServicesLanding = () => {
           setUserAddress(address);
 
           setLocationStatus("granted");
-          console.log(
-            "User location:",
-            coords.latitude,
-            coords.longitude,
-            "Address:",
-            address
-          );
+
         },
         (error) => {
           console.error("Error getting location:", error.message);

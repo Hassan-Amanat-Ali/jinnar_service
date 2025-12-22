@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Star } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
@@ -8,15 +8,48 @@ function Dropdown({
   options,
   isOpen,
   onToggle,
+  onClose,
   onSelect,
   className = "",
   showStars = false,
-  value = "", // Add value prop for controlled component
+  value = "", // controlled value
 }) {
   const [selected, setSelected] = useState("");
+  const containerRef = useRef(null);
+
+  // Keep internal selected in sync with controlled value
+  useEffect(() => {
+    if (value !== undefined && value !== null) setSelected(value);
+  }, [value]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleDocClick = (e) => {
+      if (!containerRef.current) return;
+      if (!containerRef.current.contains(e.target)) {
+        if (onClose) onClose();
+        else if (onToggle) onToggle();
+      }
+    };
+
+    const handleKey = (e) => {
+      if (e.key === "Escape") {
+        if (onClose) onClose();
+        else if (onToggle) onToggle();
+      }
+    };
+
+    document.addEventListener("mousedown", handleDocClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleDocClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [isOpen, onClose, onToggle]);
 
   // Use value prop if provided, otherwise use internal state
-  const displayValue = value || selected;
+  const displayValue = selected || value || "";
 
   const renderStars = (rating) => {
     const stars = [];
@@ -36,8 +69,17 @@ function Dropdown({
     return stars;
   };
 
+  const handleSelect = (opt, e) => {
+    e.stopPropagation();
+    setSelected(opt);
+    if (onSelect) onSelect(opt);
+    // Close using onClose if provided; otherwise toggle (for backwards compat)
+    if (onClose) onClose();
+    else if (onToggle) onToggle();
+  };
+
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       {/* Trigger */}
       <div
         className={twMerge(
@@ -45,6 +87,9 @@ function Dropdown({
           className
         )}
         onClick={onToggle}
+        role="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
       >
         {icon}
         <span className="flex-1">{displayValue || placeholder}</span>
@@ -63,11 +108,7 @@ function Dropdown({
             {options.map((opt, i) => (
               <div
                 key={i}
-                onClick={() => {
-                  setSelected(opt);
-                  onSelect && onSelect(opt);
-                  onToggle(); // Close after selection
-                }}
+                onClick={(e) => handleSelect(opt, e)}
                 className="px-2 flex-wrap text-wrap py-2.5 w-full text-gray-700 hover:bg-gradient-to-r hover:from-sky-50 hover:to-blue-50 hover:text-sky-700 cursor-pointer transition-all duration-150 first:rounded-t-lg last:rounded-b-lg border-b border-gray-50 last:border-b-0 text-xs"
               >
                 {showStars && opt.includes("Star") ? (

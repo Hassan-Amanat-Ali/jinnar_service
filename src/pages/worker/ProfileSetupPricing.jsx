@@ -1,12 +1,34 @@
 import { useNavigate } from "react-router-dom";
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useGetMyProfileQuery } from "../../services/workerApi";
 import SetupProgress from "../../components/worker/WorkerProfile/SetupProgress";
 import Step4Location from "../../components/worker/WorkerProfile/Step4Location";
 
-const ProfileSetupPricing = () => {
+const ProfileSetupLocation = () => {
   const navigate = useNavigate();
   const step4Ref = useRef();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const onChange = (e) => setIsMobile(e.matches);
+    setIsMobile(mq.matches);
+    if (mq.addEventListener) mq.addEventListener("change", onChange);
+    else mq.addListener(onChange);
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener("change", onChange);
+      else mq.removeListener(onChange);
+    };
+  }, []);
+
+  // If on mobile, redirect to availability to remove pricing step from mobile flow
+  useEffect(() => {
+    if (isMobile) {
+      navigate("/worker-setup-availability", { replace: true });
+    }
+    // We only want to run when isMobile changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile]);
 
   const { data: profileData, isLoading, error } = useGetMyProfileQuery();
 
@@ -60,7 +82,7 @@ const ProfileSetupPricing = () => {
         {/* Footer Buttons */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-8 sm:mt-12 pt-6 gap-4 sm:gap-0">
           <p className="text-xs text-gray-500 text-center sm:text-left">
-            * You can adjust pricing later in settings.
+            * You can adjust location later in settings.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
@@ -88,4 +110,4 @@ const ProfileSetupPricing = () => {
   );
 };
 
-export default ProfileSetupPricing;
+export default ProfileSetupLocation;

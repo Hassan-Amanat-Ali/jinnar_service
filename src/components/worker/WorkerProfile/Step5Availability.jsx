@@ -63,14 +63,23 @@ const Toggle = ({ checked, onChange }) => (
   </button>
 );
 
-const Row = ({ label, value, onToggle, start, end, onStart, onEnd }) => {
+const Row = ({ label, value, onToggle, start, end, onStart, onEnd, breaks = [], onAddBreak, onRemoveBreak, onChangeBreak }) => {
   const [openStart, setOpenStart] = useState(false);
   const [openEnd, setOpenEnd] = useState(false);
+  // Open states for breaks keyed by index
+  const [openBreakStart, setOpenBreakStart] = useState({});
+  const [openBreakEnd, setOpenBreakEnd] = useState({});
+
+  const toggleBreakStart = (idx) =>
+    setOpenBreakStart((s) => ({ ...s, [idx]: !s[idx] }));
+  const toggleBreakEnd = (idx) => setOpenBreakEnd((s) => ({ ...s, [idx]: !s[idx] }));
+  const closeBreakStart = (idx) => setOpenBreakStart((s) => ({ ...s, [idx]: false }));
+  const closeBreakEnd = (idx) => setOpenBreakEnd((s) => ({ ...s, [idx]: false }));
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3 space-y-3 sm:space-y-0">
       <div className="flex items-center justify-between sm:justify-start sm:w-auto">
-        <div className="text-sm font-medium text-gray-800 min-w-[3rem]">
+        <div className="text-sm font-medium text-gray-800 min-w-12">
           {label}
         </div>
         <div className="flex items-center gap-2 sm:hidden">
@@ -85,36 +94,94 @@ const Row = ({ label, value, onToggle, start, end, onStart, onEnd }) => {
         <span className="text-xs text-gray-600">Available</span>
       </div>
 
-      {/* Time selectors */}
-      <div className="flex items-center gap-2 justify-center sm:justify-end">
-        <div className={!value ? "opacity-50 pointer-events-none" : ""}>
+      {/* Time selectors + Breaks */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 justify-center sm:justify-end w-full">
+        <div className={!value ? "opacity-50 pointer-events-none w-full sm:w-auto" : "w-full sm:w-auto"}>
           <Dropdown
             icon={<Clock size={14} className="text-gray-400 mr-2" />}
             placeholder={start}
             options={times}
             isOpen={openStart}
             onToggle={() => setOpenStart((o) => (value ? !o : o))}
+            onClose={() => setOpenStart(false)}
             onSelect={(opt) => {
               onStart(opt);
+              // parent closes via onClose (for robustness) but keep this for immediacy
               setOpenStart(false);
             }}
-            className="h-9 text-sm min-w-[5.5rem]"
+            value={start}
+            className="h-9 text-sm w-full sm:min-w-[5.5rem]"
           />
         </div>
-        <span className="text-xs text-gray-500">to</span>
-        <div className={!value ? "opacity-50 pointer-events-none" : ""}>
+        <span className="text-xs text-gray-500 self-center">to</span>
+        <div className={!value ? "opacity-50 pointer-events-none w-full sm:w-auto" : "w-full sm:w-auto"}>
           <Dropdown
             icon={<Clock size={14} className="text-gray-400 mr-2" />}
             placeholder={end}
             options={times}
             isOpen={openEnd}
             onToggle={() => setOpenEnd((o) => (value ? !o : o))}
+            onClose={() => setOpenEnd(false)}
             onSelect={(opt) => {
               onEnd(opt);
               setOpenEnd(false);
             }}
-            className="h-9 text-sm min-w-[5.5rem]"
+            value={end}
+            className="h-9 text-sm w-full sm:min-w-[5.5rem]"
           />
+        </div>
+
+        {/* Breaks editor: responsive layout */}
+        <div className="flex flex-col gap-2 mt-2 sm:mt-0 ml-0 sm:ml-2 w-full sm:w-auto">
+          {breaks.map((b, idx) => (
+            <div key={idx} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full">
+              <div className="w-full sm:w-auto">
+                <Dropdown
+                  icon={<Clock size={14} className="text-gray-400 mr-2" />}
+                  placeholder={b.start}
+                  options={times}
+                  isOpen={!!openBreakStart[idx]}
+                  onToggle={() => toggleBreakStart(idx)}
+                  onClose={() => closeBreakStart(idx)}
+                  onSelect={(opt) => { onChangeBreak(idx, { ...b, start: opt }); closeBreakStart(idx); }}
+                  value={b.start}
+                  className="h-8 text-xs w-full sm:min-w-[4.5rem]"
+                />
+              </div>
+              <span className="text-xs text-gray-500 self-center">to</span>
+              <div className="w-full sm:w-auto">
+                <Dropdown
+                  icon={<Clock size={14} className="text-gray-400 mr-2" />}
+                  placeholder={b.end}
+                  options={times}
+                  isOpen={!!openBreakEnd[idx]}
+                  onToggle={() => toggleBreakEnd(idx)}
+                  onClose={() => closeBreakEnd(idx)}
+                  onSelect={(opt) => { onChangeBreak(idx, { ...b, end: opt }); closeBreakEnd(idx); }}
+                  value={b.end}
+                  className="h-8 text-xs w-full sm:min-w-[4.5rem]"
+                />
+              </div>
+              <div className="flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => onRemoveBreak(idx)}
+                  className="text-xs text-red-500 border border-red-100 px-2 py-1 rounded"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+          <div className="flex justify-start sm:justify-end">
+            <button
+              type="button"
+              onClick={onAddBreak}
+              className="text-xs text-sky-700 border border-sky-100 px-2 py-1 rounded w-max"
+            >
+              + Add break
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -287,6 +354,7 @@ const CalendarAvailability = ({ slots, setSlots }) => {
                   onToggle={() =>
                     setOpenStart((o) => (selectedSlot?.on ? !o : o))
                   }
+                  onClose={() => setOpenStart(false)}
                   onSelect={(opt) => {
                     updateSelected({ start: opt });
                     setOpenStart(false);
@@ -302,6 +370,7 @@ const CalendarAvailability = ({ slots, setSlots }) => {
                   onToggle={() =>
                     setOpenEnd((o) => (selectedSlot?.on ? !o : o))
                   }
+                  onClose={() => setOpenEnd(false)}
                   onSelect={(opt) => {
                     updateSelected({ end: opt });
                     setOpenEnd(false);
@@ -330,7 +399,7 @@ const Step5Availability = forwardRef(
     const [emergency, setEmergency] = useState(true);
     const [schedule, setSchedule] = useState(
       days.reduce((acc, d) => {
-        acc[d] = { on: true, start: "09:00", end: "17:00" };
+        acc[d] = { on: true, start: "09:00", end: "17:00", breaks: [] };
         return acc;
       }, {})
     );
@@ -352,8 +421,9 @@ const Step5Availability = forwardRef(
           if (shortDay && newSchedule[shortDay]) {
             newSchedule[shortDay] = {
               on: true,
-              start: "09:00", // Default, can be enhanced based on timeSlots
-              end: "17:00",
+              start: daySlot.start || "09:00",
+              end: daySlot.end || "17:00",
+              breaks: daySlot.breaks || [],
             };
           }
         });
@@ -421,10 +491,19 @@ const Step5Availability = forwardRef(
                 timeSlots.push("morning", "afternoon", "evening");
               }
 
-              availability.push({
+              const dayPayload = {
                 day: fullDay,
                 timeSlots: timeSlots,
-              });
+                // include detailed start/end so backend can accept either format
+                start: dayData.start,
+                end: dayData.end,
+              };
+
+              if (dayData.breaks && dayData.breaks.length > 0) {
+                dayPayload.breaks = dayData.breaks.map((b) => ({ start: b.start, end: b.end }));
+              }
+
+              availability.push(dayPayload);
             }
           });
         }
@@ -497,11 +576,41 @@ const Step5Availability = forwardRef(
         [day]: { ...prev[day], [key]: value },
       }));
 
+    const addBreak = (day) => {
+      setSchedule((prev) => ({
+        ...prev,
+        [day]: {
+          ...prev[day],
+          breaks: [...(prev[day].breaks || []), { start: "12:00", end: "13:00" }],
+        },
+      }));
+    };
+
+    const removeBreak = (day, idx) => {
+      setSchedule((prev) => ({
+        ...prev,
+        [day]: {
+          ...prev[day],
+          breaks: prev[day].breaks.filter((_, i) => i !== idx),
+        },
+      }));
+    };
+
+    const changeBreak = (day, idx, newBreak) => {
+      setSchedule((prev) => ({
+        ...prev,
+        [day]: {
+          ...prev[day],
+          breaks: prev[day].breaks.map((b, i) => (i === idx ? newBreak : b)),
+        },
+      }));
+    };
+
     return (
-      <div className="space-y-6 max-w-5xl mx-auto px-4 sm:px-0">
+      <div className="space-y-6 max-w-5xl mx-auto">
         {/* Top helper */}
         <div className="flex items-start gap-2 text-[#2E90FA] bg-[#EFF6FF] rounded-2xl border border-[#B6E0FE] p-4 sm:p-5">
-          <Info className="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <Info className="w-5 h-5 shrink-0 mt-0.5" />
           <div>
             <div className="text-sm font-semibold text-gray-900">
               Set Your Working Hours
@@ -587,6 +696,10 @@ const Step5Availability = forwardRef(
                   end={schedule[d].end}
                   onStart={(v) => setDay(d, "start", v)}
                   onEnd={(v) => setDay(d, "end", v)}
+                  breaks={schedule[d].breaks}
+                  onAddBreak={() => addBreak(d)}
+                  onRemoveBreak={(idx) => removeBreak(d, idx)}
+                  onChangeBreak={(idx, nb) => changeBreak(d, idx, nb)}
                 />
               ))}
             </div>
@@ -629,7 +742,7 @@ const Step5Availability = forwardRef(
                   "Personal Info",
                   "Skills & Services",
                   "Work Samples",
-                  "Pricing",
+                  "Location & Address",
                   "Availability",
                 ].map((s, i) => (
                   <span

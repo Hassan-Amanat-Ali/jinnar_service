@@ -29,7 +29,7 @@ import WorkerPublicProfile from "../pages/customer/WorkerProfile.jsx";
 import WorkerHome from "../pages/worker/Home.jsx";
 import ProfileSetupBasic from "../pages/worker/ProfileSetupBasic.jsx";
 import ProfileSetupServices from "../pages/worker/ProfileSetupServices.jsx";
-import ProfileSetupPricing from "../pages/worker/ProfileSetupPricing.jsx";
+import ProfileSetupLocation from "../pages/worker/ProfileSetupPricing.jsx"; // file contains location UI
 import ProfileSetupAvailability from "../pages/worker/ProfileSetupAvailability.jsx";
 import ProfileSetupExperience from "../pages/worker/ProfileSetupExperience.jsx";
 import Jobs from "../pages/worker/Jobs.jsx";
@@ -219,7 +219,7 @@ const router = createBrowserRouter([
       { path: "worker-setup-basic", element: <ProfileSetupBasic /> },
       { path: "worker-setup-services", element: <ProfileSetupServices /> },
       { path: "worker-setup-experience", element: <ProfileSetupExperience /> },
-      { path: "worker-setup-pricing", element: <ProfileSetupPricing /> },
+      { path: "worker-setup-location", element: <ProfileSetupLocation /> },
       {
         path: "worker-setup-availability",
         element: <ProfileSetupAvailability />,
