@@ -1,57 +1,89 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import JobCard from "../../components/customer/MyBookingsCard";
+import { Loader2, Search, Filter, User } from "lucide-react";
+import Dropdown from "../../components/common/DropDown.jsx";
+
 import Hero from "../../components/common/Hero";
-import { Loader2, Search, Filter } from "lucide-react";
+import JobCard from "../../components/customer/MyBookingsCard";
 import { useGetMyOrdersQuery } from "../../services/customerApi";
 import { getFullImageUrl } from "../../utils/fileUrl.js";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const CustomerBookings = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [open, setOpen] = useState(false);
 
-  // Fetch orders from API
+  const statusOptions = [
+    "All",
+    "Pending",
+    "Accepted",
+    "In Progress",
+    "Completed",
+    "Cancelled",
+  ];
+
   const {
-    data: ordersResponse,
+    data: allBookings = [],
     isLoading,
     error,
     refetch,
   } = useGetMyOrdersQuery();
+  console.log(allBookings);
+  console.log(user);
+  const data = allBookings.filter((order) => order.buyerId?._id == user?._id);
 
-  // Extract orders array from API response
-  const bookingsData = ordersResponse?.orders || [];
+  const bookings = useMemo(() => {
+    return data
+      .filter((booking) => {
+        const search = searchTerm.toLowerCase();
 
-  // Debug logs
-  console.log("🔍 Customer Orders API Response:", ordersResponse);
-  console.log("🔍 Extracted Orders:", bookingsData);
+        const matchesSearch =
+          booking.gigId?.title?.toLowerCase().includes(search) ||
+          booking.jobDescription?.toLowerCase().includes(search) ||
+          booking.sellerId?.name?.toLowerCase().includes(search);
 
-  // Filter bookings based on search and status
-  const filteredBookings = bookingsData.filter((booking) => {
-    const matchesSearch =
-      booking.gigId?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      booking.jobDescription
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      booking.sellerId?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus =
+          statusFilter === "all" || booking.status === statusFilter;
 
-    const matchesStatus =
-      statusFilter === "all" || booking.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleViewDetails = (bookingId) => {
-    navigate(`/customer-booking/${bookingId}`);
-  };
+        return matchesSearch && matchesStatus;
+      })
+      .map((booking) => ({
+        id: booking._id,
+        serviceImage: getFullImageUrl(booking.gigId?.images?.[0]?.url),
+        serviceTitle: booking.gigId?.title || "Service",
+        serviceDescription:
+          booking.jobDescription || "No description available",
+        emergencyTag: booking.emergency ? "Emergency" : null,
+        statusTag:
+          booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) ||
+          "Unknown",
+        workerImage: getFullImageUrl(booking.sellerId?.profilePicture),
+        workerName: booking.sellerId?.name || "Worker",
+        workerRating: booking.sellerId?.rating || "N/A",
+        date: booking.date
+          ? new Date(booking.date).toLocaleDateString()
+          : "TBD",
+        time:
+          booking.timeSlot?.charAt(0).toUpperCase() +
+            booking.timeSlot?.slice(1) || "TBD",
+        location: booking.location
+          ? `${booking.location.lat.toFixed(4)}, ${booking.location.lng.toFixed(
+              4
+            )}`
+          : "Location TBD",
+        price: booking.price || "Price TBD",
+        workerId: booking.sellerId?._id,
+      }));
+  }, [data, searchTerm, statusFilter]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading your bookings...</p>
-        </div>
+        <Loader2 className="w-8 h-8 animate-spin text-[#7FCBF4]" />
       </div>
     );
   }
@@ -59,16 +91,13 @@ const CustomerBookings = () => {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="text-xl text-red-600 mb-2">
-            Error loading bookings
-          </div>
-          <div className="text-sm text-gray-500 mb-4">
-            {error?.data?.message || error?.message || "Please try again later"}
-          </div>
+        <div className="text-center">
+          <p className="text-red-600 mb-3">
+            {error?.data?.message || "Failed to load bookings"}
+          </p>
           <button
-            onClick={() => refetch()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            onClick={refetch}
+            className="px-4 py-2 bg-[#7FCBF4] text-white rounded-lg"
           >
             Retry
           </button>
@@ -77,108 +106,78 @@ const CustomerBookings = () => {
     );
   }
 
-  // Transform API data to match JobCard component expectations
-  const transformedBookings = filteredBookings.map((booking) => ({
-    id: booking._id,
-    serviceImage: getFullImageUrl(booking.gigId?.images?.[0]?.url) || null,
-    serviceTitle: booking.gigId?.title || "Service",
-    serviceDescription: booking.jobDescription || "No description available",
-    emergencyTag: booking.emergency ? "Emergency" : null,
-    statusTag:
-      booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) ||
-      "Unknown",
-    workerImage: getFullImageUrl(booking.sellerId?.profilePicture) || null,
-    workerName: booking.sellerId?.name || "Worker",
-    workerRating: booking.sellerId?.rating || "N/A",
-    date: booking.date ? new Date(booking.date).toLocaleDateString() : "TBD",
-    time:
-      booking.timeSlot?.charAt(0).toUpperCase() + booking.timeSlot?.slice(1) ||
-      "TBD",
-    location: booking.location
-      ? `${booking.location.lat.toFixed(4)}, ${booking.location.lng.toFixed(4)}`
-      : "Location TBD",
-    price: booking.price || "Price TBD",
-    workerId: booking.sellerId?._id, // Add workerId for messaging
-  }));
-
   return (
     <div>
       <Hero
         place="customer-bookings"
         title="My Bookings"
         subtitle="Track and manage your service bookings"
-        className="h-64 md:h-80 lg:h-88"
+        className="h-50 md:h-70 lg:h-60"
       />
 
-      <div className="px-4 py-8 max-w-7xl mx-auto">
-        {/* Search and Filter Controls */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4">
-          {/* Search Input */}
+      <div className="px-4 pb-5 sm:py-5 max-w-7xl mx-auto">
+        <div className="mb-8 flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search bookings..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Search bookings, services, or workers"
+              className="
+                w-full h-11
+                pl-11 pr-4
+                text-sm text-gray-700
+                bg-white
+                border border-gray-200
+                rounded-xl
+                shadow-sm
+                transition-all duration-200
+                placeholder:text-gray-400
+                focus:outline-none
+                focus:border-[#7FCBF4]
+                focus:ring-4 focus:ring-[#7FCBF4]/20
+                hover:border-gray-300
+              "
             />
           </div>
 
-          {/* Status Filter */}
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white min-w-[150px]"
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="accepted">Accepted</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </div>
+          <Dropdown
+            icon={<Filter size={16} className="mr-2 text-gray-400" />}
+            placeholder="Filter Status"
+            options={statusOptions}
+            isOpen={open}
+            value={
+              statusFilter === "all"
+                ? ""
+                : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)
+            }
+            onToggle={() => setOpen((v) => !v)}
+            onClose={() => setOpen(false)}
+            onSelect={(val) => setStatusFilter(val.toLowerCase())}
+            className="min-w-[180px]"
+          />
         </div>
 
-        {/* Bookings Grid */}
-        {filteredBookings.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {transformedBookings.map((booking) => (
+        {bookings.length ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {bookings.map((booking) => (
               <JobCard
                 key={booking.id}
-                serviceImage={booking.serviceImage}
-                serviceTitle={booking.serviceTitle}
-                serviceDescription={booking.serviceDescription}
-                emergencyTag={booking.emergencyTag}
-                statusTag={booking.statusTag}
-                workerImage={booking.workerImage}
-                workerName={booking.workerName}
-                workerRating={booking.workerRating}
-                date={booking.date}
-                time={booking.time}
-                location={booking.location}
-                price={booking.price}
+                {...booking}
                 bookingId={booking.id}
-                workerId={booking.workerId}
-                onViewDetails={() => handleViewDetails(booking.id)}
+                onViewDetails={() =>
+                  navigate(`/customer-booking/${booking.id}`)
+                }
+                messageButtonRole="customer"
               />
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <div className="text-gray-500 text-lg mb-2">
-              {searchTerm || statusFilter !== "all"
-                ? "No bookings match your filters"
-                : "No bookings found"}
-            </div>
-            <div className="text-gray-400 text-sm">
-              {searchTerm || statusFilter !== "all"
-                ? "Try adjusting your search or filter criteria"
-                : "Book a service to see your bookings here"}
-            </div>
+          <div className="text-center py-12 text-gray-500">
+            {searchTerm || statusFilter !== "all"
+              ? "No bookings match your filters"
+              : "No bookings found"}
           </div>
         )}
       </div>

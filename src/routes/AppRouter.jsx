@@ -29,7 +29,7 @@ import WorkerPublicProfile from "../pages/customer/WorkerProfile.jsx";
 import WorkerHome from "../pages/worker/Home.jsx";
 import ProfileSetupBasic from "../pages/worker/ProfileSetupBasic.jsx";
 import ProfileSetupServices from "../pages/worker/ProfileSetupServices.jsx";
-import ProfileSetupLocation from "../pages/worker/ProfileSetupPricing.jsx"; // file contains location UI
+import ProfileSetupLocation from "../pages/worker/ProfileSetupPricing.jsx";
 import ProfileSetupAvailability from "../pages/worker/ProfileSetupAvailability.jsx";
 import ProfileSetupExperience from "../pages/worker/ProfileSetupExperience.jsx";
 import Jobs from "../pages/worker/Jobs.jsx";
@@ -142,11 +142,7 @@ const router = createBrowserRouter([
       { path: "worker-profile/:id", element: <WorkerPublicProfile /> },
       {
         path: "customer-chat",
-        element: (
-          <RoleGuard allow={[ROLES.CUSTOMER, ROLES.WORKER]}>
-            <Chat />
-          </RoleGuard>
-        ),
+        element: <Chat />,
       },
       {
         path: "services",

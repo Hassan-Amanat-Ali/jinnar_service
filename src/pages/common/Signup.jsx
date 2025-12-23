@@ -19,11 +19,8 @@ const Signup = () => {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [role] = useState(
-    localStorage.getItem("userRole") || ROLES.CUSTOMER
-  );
+  const [role] = useState(localStorage.getItem("userRole") || ROLES.CUSTOMER);
 
-  // RTK Query hooks
   const [customerSignup, { isLoading: isCustomerLoading }] =
     useCustomerSignupMutation();
   const [workerSignup, { isLoading: isWorkerLoading }] =
@@ -32,9 +29,8 @@ const Signup = () => {
   const loading = isCustomerLoading || isWorkerLoading;
 
   const handleSignup = async (e) => {
-    e?.preventDefault();
+    e.preventDefault();
 
-    // Validation
     if (!name.trim()) {
       toast.error("Please enter your name");
       return;
@@ -45,7 +41,6 @@ const Signup = () => {
       return;
     }
 
-    // Basic validation: if it has '@', it's an email, otherwise it could be a phone.
     const isEmail = identifier.includes("@");
     const isPhone = /^\+?\d{10,15}$/.test(identifier);
     if (!isEmail && !isPhone) {
@@ -73,27 +68,27 @@ const Signup = () => {
       const signupMutation =
         role === ROLES.CUSTOMER ? customerSignup : workerSignup;
 
-      const result = await signupMutation({
+      await signupMutation({
         name: name.trim(),
         identifier: identifier.trim(),
         password: password,
         role: backendRole,
       }).unwrap();
 
-      // Backend sends verification code via email, navigate to verify page
-      toast.info(`Verification code sent to your ${isEmail ? "email" : "phone"}`);
+      toast.info(
+        `Verification code sent to your ${isEmail ? "email" : "phone"}`
+      );
+
       navigate("/verify", {
-        state: { 
+        state: {
           identifier: identifier.trim(),
-          role, 
-          action: "signup"
+          role,
+          action: "signup",
         },
       });
     } catch (err) {
-      console.error("Signup error:", err );
       const payload = err?.data || err;
 
-      // Handle different error formats
       if (payload?.error) {
         toast.error(payload.error);
       } else if (Array.isArray(payload?.errors) && payload.errors.length) {
@@ -108,7 +103,9 @@ const Signup = () => {
       } else if (err?.status === "FETCH_ERROR") {
         toast.error("Network error. Please check your connection");
       } else if (err?.status === 409) {
-        toast.error("Identifier (email or phone) already registered. Please login");
+        toast.error(
+          "Identifier (email or phone) already registered. Please login"
+        );
       } else if (err?.status === 400) {
         toast.error("Invalid input. Please check your details");
       } else {
@@ -116,6 +113,7 @@ const Signup = () => {
       }
     }
   };
+
   const sliderData = [
     {
       image: sideImg,
@@ -139,14 +137,11 @@ const Signup = () => {
 
   return (
     <div className="min-h-dvh grid grid-cols-1 lg:grid-cols-2 bg-white pt-24 lg:pt-0">
-      {/* Left: Image panel with automatic slider */}
+      {/* Left: Slider */}
       <div className="relative hidden lg:block">
         <Swiper
           modules={[Autoplay]}
-          autoplay={{
-            delay: 4000,
-            disableOnInteraction: false,
-          }}
+          autoplay={{ delay: 4000, disableOnInteraction: false }}
           loop={true}
           className="h-full w-full"
         >
@@ -158,7 +153,6 @@ const Signup = () => {
                 className="absolute inset-0 h-full w-full object-cover"
               />
               <div className="absolute inset-0 bg-black/30" />
-
               <div className="absolute bottom-6 left-6 right-6 text-white">
                 <h3 className="text-lg font-semibold tracking-tight">
                   {slide.title}
@@ -166,8 +160,6 @@ const Signup = () => {
                 <p className="text-sm text-white/85 mt-2 max-w-md">
                   {slide.description}
                 </p>
-
-                {/* Slider dots in original position */}
                 <div className="mt-6 flex items-center gap-2">
                   {sliderData.map((_, dotIndex) => (
                     <span
@@ -184,7 +176,7 @@ const Signup = () => {
         </Swiper>
       </div>
 
-      {/* Right: Form panel */}
+      {/* Right: Form */}
       <div className="flex items-center justify-center px-4 sm:px-6 lg:px-10 py-10 lg:py-0">
         <div className="w-full max-w-md">
           <h1 className="text-2xl sm:text-3xl font-semibold text-[#141414]">
@@ -195,12 +187,7 @@ const Signup = () => {
           </p>
 
           <div className="mt-6 rounded-2xl border border-gray-200 shadow-sm p-6">
-            {/* Role is selected on the /role page. We read it from localStorage and don't show role options here. */}
-
-            {/* Errors are displayed via toast notifications */}
-
             <form onSubmit={handleSignup}>
-              {/* Name */}
               <label className="block text-sm font-medium text-[#141414]">
                 Full Name
               </label>
@@ -212,7 +199,6 @@ const Signup = () => {
                 onChange={(e) => setName(e.target.value)}
               />
 
-              {/* Email */}
               <label className="block text-sm font-medium text-[#141414] mt-4">
                 Email or Phone Number
               </label>
@@ -224,10 +210,9 @@ const Signup = () => {
                 onChange={(e) => setIdentifier(e.target.value)}
               />
               <p className="text-xs text-gray-500 mt-1">
-                For phone numbers, include country code (e.g., +255712345678 for Tanzania)
+                Include country code for phone numbers (e.g., +255712345678)
               </p>
 
-              {/* Password */}
               <label className="block text-sm font-medium text-[#141414] mt-4">
                 Password
               </label>
@@ -239,7 +224,6 @@ const Signup = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
 
-              {/* Confirm Password */}
               <label className="block text-sm font-medium text-[#141414] mt-4">
                 Confirm Password
               </label>
@@ -251,7 +235,6 @@ const Signup = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
               />
 
-              {/* Signup button */}
               <button
                 type="submit"
                 disabled={loading}
@@ -262,7 +245,6 @@ const Signup = () => {
               </button>
             </form>
 
-            {/* Login prompt */}
             <p className="mt-6 text-center text-sm text-[#141414]/80">
               Already have an account?{" "}
               <Link

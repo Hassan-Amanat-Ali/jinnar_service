@@ -16,7 +16,7 @@ const RoleGuard = ({ allow, children }) => {
   if (!role) {
     return <Navigate to="/role" state={{ from: location }} replace />;
   }
-  // Check if the user's current role is allowed to access this route.
+
   const isAllowed = Array.isArray(allow)
     ? allow.includes(role)
     : allow === role;

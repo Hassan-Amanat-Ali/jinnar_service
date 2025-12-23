@@ -2,17 +2,15 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   Search,
-  Phone,
-  Video,
   CheckCheck,
-  Paperclip,
-  Smile,
   Send,
   ArrowLeft,
   MoreVertical,
   Circle,
   Loader2,
   DollarSign,
+  Menu,
+  X,
 } from "lucide-react";
 import Hero from "../../components/common/Hero";
 import Avatar from "../../components/common/Avatar";
@@ -26,6 +24,8 @@ import {
   useSendMessageMutation,
   useMarkAsReadMutation,
 } from "../../services/chatApi";
+import OfferCard from "../../components/common/OfferCard";
+import styles from "./Chat.module.scss";
 
 // Contact Item Component
 const ContactItem = ({
@@ -37,7 +37,6 @@ const ContactItem = ({
   const otherParticipant = conversation?.participants?.find(
     (p) => p._id !== currentUserId
   );
-
   const lastMessage = conversation?.lastMessage;
   const lastTime = conversation?.lastTime;
   const unreadCount = conversation?.unreadCount || 0;
@@ -47,15 +46,13 @@ const ContactItem = ({
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = (now - date) / (1000 * 60 * 60);
-
     if (diffInHours < 24) {
       return date.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       });
-    } else {
-      return date.toLocaleDateString([], { month: "short", day: "numeric" });
     }
+    return date.toLocaleDateString([], { month: "short", day: "numeric" });
   };
 
   return (
@@ -76,7 +73,6 @@ const ContactItem = ({
           size="md"
           className="h-8 w-8 md:h-10 md:w-10"
         />
-        {/* Online indicator */}
         <Circle className="absolute -bottom-0.5 -right-0.5 w-3 h-3 fill-green-500 text-green-500" />
       </div>
       <div className="min-w-0 flex-1">
@@ -105,12 +101,8 @@ const ContactItem = ({
   );
 };
 
-// Import OfferCard component
-import OfferCard from "../../components/common/OfferCard";
-
-// Message Component
+// Message Bubble Component
 const MessageBubble = ({ message, currentUserId, otherParticipant }) => {
-  // Check if this is a custom offer message
   if (message.customOffer) {
     return (
       <OfferCard
@@ -121,9 +113,9 @@ const MessageBubble = ({ message, currentUserId, otherParticipant }) => {
     );
   }
 
-  // Regular message handling
   const messageSenderId = message.senderId || message.sender?._id;
   const isMe = messageSenderId === currentUserId;
+  const messageText = message.message || message.content || "";
 
   const formatTime = (timestamp) => {
     if (!timestamp) return "";
@@ -132,22 +124,6 @@ const MessageBubble = ({ message, currentUserId, otherParticipant }) => {
       minute: "2-digit",
     });
   };
-
-  // Get message text - API uses 'message' field, not 'content'
-  const messageText = message.message || message.content || "";
-
-  console.log("📩 MessageBubble:", {
-    messageText,
-    isMe,
-    messageSenderId,
-    currentUserId,
-    comparison: `${messageSenderId} === ${currentUserId} = ${
-      messageSenderId === currentUserId
-    }`,
-    sender: message.sender,
-    receiver: message.receiver,
-    hasCustomOffer: !!message.customOffer,
-  });
 
   return (
     <div className={`flex gap-2 md:gap-3 ${isMe ? "flex-row-reverse" : ""}`}>
@@ -162,18 +138,18 @@ const MessageBubble = ({ message, currentUserId, otherParticipant }) => {
         />
       )}
       <div
-        className={`flex-1 max-w-xs md:max-w-md ${
-          isMe ? "flex justify-end" : ""
+        className={`w-fit items-end gap-1 ${
+          isMe ? "flex justify-end flex-col" : ""
         }`}
       >
         <div
           className={`rounded-2xl px-3 md:px-4 py-2 md:py-3 ${
             isMe
-              ? "bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white"
+              ? "bg-linear-to-r from-[#B6E0FE] to-[#74C7F2] text-white"
               : "bg-gray-100 text-gray-900"
           }`}
         >
-          <p className="text-xs md:text-sm break-words whitespace-pre-wrap">
+          <p className="text-xs md:text-sm wrap-break-word whitespace-pre-wrap">
             {messageText}
           </p>
         </div>
@@ -201,59 +177,29 @@ const Chat = () => {
   const [showGigSelection, setShowGigSelection] = useState(false);
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [selectedGig, setSelectedGig] = useState(null);
+  const [showSidebar, setShowSidebar] = useState(false);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  // Get current user from AuthContext (not Redux!)
   const { user: currentUser } = useAuth();
-
-  // Try multiple ways to get user ID (handle different API response structures)
   const currentUserId =
     currentUser?._id || currentUser?.id || currentUser?.userId;
 
   const { isConnected, socket } = useSocket();
-
-  // Debug: Log current user info and token
-  console.log("👤 Current User Debug:", {
-    currentUser,
-    hasUser: !!currentUser,
-    _id: currentUser?._id,
-    id: currentUser?.id,
-    userId: currentUser?.userId,
-    currentUserId,
-    allKeys: currentUser ? Object.keys(currentUser) : [],
-    hasToken: !!localStorage.getItem("token"),
-    tokenPreview: localStorage.getItem("token")?.substring(0, 20) + "...",
-  });
-
-  // Get conversation or user ID from URL params
   const conversationId = searchParams.get("conversation");
   const userId = searchParams.get("user");
-
-  // When conversation parameter is provided, treat it as user ID for starting/continuing chat
   const targetUserId = conversationId || userId;
-  
-  // Get other participant ID for API calls
   const otherParticipantId =
     targetUserId ||
     selectedConversation?.participants?.find((p) => p._id !== currentUserId)
       ?._id;
 
-  console.log("🎯 Chat IDs Debug:", {
-    userId,
-    conversationId,
-    otherParticipantId,
-    currentUserId,
-    selectedConversationId: selectedConversation?._id,
-    hasSelectedConversation: !!selectedConversation,
-  });
-
-  // API Hooks
   const {
     data: conversationsData,
     isLoading: conversationsLoading,
     refetch: refetchConversations,
   } = useGetConversationsQuery();
+
   const {
     data: messagesData,
     isLoading: messagesLoading,
@@ -263,28 +209,19 @@ const Chat = () => {
     { skip: !otherParticipantId }
   );
 
-  console.log("📡 API Status:", {
-    otherParticipantId,
-    hasOtherParticipant: !!otherParticipantId,
-    messagesLoading,
-    conversationsLoading,
-    messagesDataLength: messagesData?.length || 0,
-    conversationsDataLength: conversationsData?.length || 0,
-  });
-
-  // Safely handle API responses with useMemo to prevent re-renders
-  const conversations = useMemo(() => {
-    return Array.isArray(conversationsData) ? conversationsData : [];
-  }, [conversationsData]);
-
-  const messages = useMemo(() => {
-    return Array.isArray(messagesData) ? messagesData : [];
-  }, [messagesData]);
+  const conversations = useMemo(
+    () => (Array.isArray(conversationsData) ? conversationsData : []),
+    [conversationsData]
+  );
+  const messages = useMemo(
+    () => (Array.isArray(messagesData) ? messagesData : []),
+    [messagesData]
+  );
   const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
   const [markAsRead] = useMarkAsReadMutation();
 
-  // Socket chat hook
-  const socketConversationId = selectedConversation?._id || `temp-${targetUserId}`;
+  const socketConversationId =
+    selectedConversation?._id || `temp-${targetUserId}`;
   const {
     messages: socketMessages,
     setMessages: setSocketMessages,
@@ -294,58 +231,23 @@ const Chat = () => {
     stopTyping,
   } = useChat(socketConversationId);
 
-  // Handle offer updates via socket
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleOfferUpdate = (updatedMessage) => {
-      console.log("🔄 Offer update received:", updatedMessage);
-      
-      // Update socket messages if the message exists there
-      setSocketMessages((prevMessages) => 
-        prevMessages.map((msg) => 
-          msg._id === updatedMessage._id ? updatedMessage : msg
-        )
-      );
-      
-      // Also refresh API messages to ensure consistency
-      refetchMessages();
-    };
-
-    socket.on("updateMessage", handleOfferUpdate);
-
-    return () => {
-      socket.off("updateMessage", handleOfferUpdate);
-    };
-  }, [socket, setSocketMessages, refetchMessages]);
-
-  // Auto-scroll chat container only (not the whole page)
   const scrollToBottom = (smooth = true) => {
-    if (messagesEndRef.current && messagesEndRef.current.parentElement) {
-      const container = messagesEndRef.current.parentElement;
-      container.scrollTo({
-        top: container.scrollHeight,
+    if (messagesEndRef.current?.parentElement) {
+      messagesEndRef.current.parentElement.scrollTo({
+        top: messagesEndRef.current.parentElement.scrollHeight,
         behavior: smooth ? "smooth" : "auto",
       });
     }
   };
 
-  // Only auto-scroll when conversation changes or new messages arrive
   const prevMessagesLengthRef = useRef(0);
-
   useEffect(() => {
     const currentLength = messages.length + socketMessages.length;
     const isInitialLoad =
       prevMessagesLengthRef.current === 0 && currentLength > 0;
     const hasNewMessages = currentLength > prevMessagesLengthRef.current;
-
-    // Only scroll on initial load or when receiving new messages (not sending)
-    if (isInitialLoad) {
-      scrollToBottom(false); // Instant scroll on initial load
-    } else if (hasNewMessages && !isSending) {
-      scrollToBottom(true); // Smooth scroll for new incoming messages
-    }
-
+    if (isInitialLoad) scrollToBottom(false);
+    else if (hasNewMessages && !isSending) scrollToBottom(true);
     prevMessagesLengthRef.current = currentLength;
   }, [
     messages.length,
@@ -354,81 +256,40 @@ const Chat = () => {
     isSending,
   ]);
 
-  // Update participant info from messages when available
   useEffect(() => {
-    if (messages.length > 0 && selectedConversation && userId) {
-      const firstMessage = messages[0];
-      // Get the other participant from message data
-      const otherUser =
-        firstMessage.sender?._id === currentUserId
-          ? firstMessage.receiver
-          : firstMessage.sender;
+    if (!socket) return;
+    const handleOfferUpdate = (updatedMessage) => {
+      setSocketMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === updatedMessage._id ? updatedMessage : msg
+        )
+      );
+      refetchMessages();
+    };
+    socket.on("updateMessage", handleOfferUpdate);
+    return () => socket.off("updateMessage", handleOfferUpdate);
+  }, [socket, setSocketMessages, refetchMessages]);
 
-      console.log("👥 Updating conversation with user data:", {
-        firstMessage: {
-          senderId: firstMessage.sender?._id,
-          receiverId: firstMessage.receiver?._id,
-          currentUserId,
-        },
-        otherUser,
-        selectedConversationId: selectedConversation._id,
-      });
-
-      if (otherUser && selectedConversation._id.startsWith("temp-")) {
-        // Update temp conversation with real user data
-        setSelectedConversation((prev) => ({
-          ...prev,
-          participants: [
-            {
-              _id: currentUserId,
-              name: currentUser?.name,
-              role: currentUser?.role,
-            },
-            {
-              _id: otherUser._id,
-              name: otherUser.name || "User",
-              profilePicture: otherUser.profilePicture,
-              role: otherUser.role || "user",
-            },
-          ],
-        }));
-      }
-    } else if (
-      userId &&
-      selectedConversation &&
-      selectedConversation._id.startsWith("temp-") &&
-      !messages.length
-    ) {
-      // If we have a userId but no messages yet, keep the temporary conversation ready
-      console.log("📝 Keeping temporary conversation ready for user:", userId);
-    }
-  }, [messages, selectedConversation, userId, currentUserId, currentUser]);
-
-  // Set selected conversation from URL params
   useEffect(() => {
     if (targetUserId && currentUserId) {
-      // First, try to find existing conversation by ID (if conversationId was provided and it's an actual conversation ID)
       let conversation = null;
-      if (conversationId && conversationId.length > 10 && conversations.length > 0) { // Assume real conversation IDs are longer
+      if (
+        conversationId &&
+        conversationId.length > 10 &&
+        conversations.length > 0
+      ) {
         conversation = conversations.find((c) => c._id === conversationId);
       }
-      
-      // If no conversation found by ID, try to find by participant (only if conversations are loaded)
       if (!conversation && conversations.length > 0) {
         conversation = conversations.find((c) =>
           c.participants?.some((p) => p._id === targetUserId)
         );
       }
-      
       if (conversation) {
         setSelectedConversation(conversation);
-        // Update URL to use actual conversation ID if we found one
-        if (conversation._id !== conversationId) {
+        if (conversation._id !== conversationId)
           setSearchParams({ conversation: conversation._id });
-        }
       } else {
-        // No existing conversation found or conversations not loaded yet - create a temporary one for new chat
-        console.log("🆕 Creating temporary conversation for user:", targetUserId);
         setSelectedConversation({
           _id: `temp-${targetUserId}`,
           participants: [
@@ -437,11 +298,11 @@ const Chat = () => {
               name: currentUser?.name,
               role: currentUser?.role,
             },
-            { _id: targetUserId, name: "Customer", role: "user" }, // We'll get the real name from API or messages
+            { _id: targetUserId, name: "Customer", role: "user" },
           ],
           lastMessage: null,
           unreadCount: 0,
-          isNewChat: true, // Flag to indicate this is a new chat
+          isNewChat: true,
         });
       }
     }
@@ -454,66 +315,38 @@ const Chat = () => {
     setSearchParams,
   ]);
 
-  // Handle conversation selection
   const handleConversationSelect = useCallback(
     (conversation) => {
       setSelectedConversation(conversation);
       setSearchParams({ conversation: conversation._id });
-
-      // Mark as read
-      if (conversation.unreadCount > 0) {
-        markAsRead(conversation._id);
-      }
+      if (conversation.unreadCount > 0) markAsRead(conversation._id);
+      // Close sidebar on mobile when conversation is selected
+      setShowSidebar(false);
     },
     [setSearchParams, markAsRead]
   );
 
-  // Handle send message
   const handleSendMessage = useCallback(
     async (e) => {
       e.preventDefault();
       if (!messageText.trim() || !otherParticipantId || isSending) return;
 
-      try {
-        console.log(
-          "📤 Sending message to:",
-          otherParticipantId,
-          "message:",
-          messageText.trim()
-        );
-
-        const messageData = {
-          receiverId: otherParticipantId,
-          message: messageText.trim(),
-          messageType: "text",
-        };
-
-        // Send via API (this will create conversation if it doesn't exist)
-        const result = await sendMessage(messageData).unwrap();
-        console.log("✅ Message sent successfully:", result);
-
-        // Send via socket for real-time updates
-        sendSocketMessage({
-          ...messageData,
-          conversationId: socketConversationId,
-          sender: currentUser,
-        });
-
-        setMessageText("");
-
-        // Refresh messages and conversations to get updated data
-        refetchMessages();
-        refetchConversations();
-
-        // Stop typing indicator
-        if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-          stopTyping(otherParticipantId);
-        }
-      } catch (error) {
-        console.error("❌ Failed to send message:", error);
-        alert("Failed to send message. Please try again.");
-      }
+      const messageData = {
+        receiverId: otherParticipantId,
+        message: messageText.trim(),
+        messageType: "text",
+      };
+      await sendMessage(messageData).unwrap();
+      sendSocketMessage({
+        ...messageData,
+        conversationId: socketConversationId,
+        sender: currentUser,
+      });
+      setMessageText("");
+      refetchMessages();
+      refetchConversations();
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      stopTyping(otherParticipantId);
     },
     [
       messageText,
@@ -529,51 +362,19 @@ const Chat = () => {
     ]
   );
 
-  // Filter conversations by search term
-  const filteredConversations = conversations.filter((conv) => {
-    const otherParticipant = conv.participants?.find(
-      (p) => p._id !== currentUserId
-    );
-    return otherParticipant?.name
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase());
-  });
-
-  // Get other participant for selected conversation
+  const filteredConversations = conversations.filter((conv) =>
+    conv.participants?.some(
+      (p) =>
+        p._id !== currentUserId &&
+        p.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
   const otherParticipant = selectedConversation?.participants?.find(
     (p) => p._id !== currentUserId
   );
-
-  // Combine API messages with socket messages and sort by timestamp
-  const allMessages = [...messages, ...socketMessages].sort((a, b) => {
-    const timeA = new Date(a.createdAt).getTime();
-    const timeB = new Date(b.createdAt).getTime();
-    return timeA - timeB;
-  });
-
-  console.log("💬 All Messages:", {
-    count: allMessages.length,
-    apiMessages: messages.length,
-    socketMessages: socketMessages.length,
-    currentUserId,
-    currentUser: {
-      _id: currentUser?._id,
-      id: currentUser?.id,
-      name: currentUser?.name,
-    },
-    otherParticipantId,
-    otherParticipant,
-    firstMessage: allMessages[0]
-      ? {
-          senderId: allMessages[0].senderId || allMessages[0].sender?._id,
-          text: (
-            allMessages[0].message ||
-            allMessages[0].content ||
-            ""
-          ).substring(0, 50),
-        }
-      : null,
-  });
+  const allMessages = [...messages, ...socketMessages].sort(
+    (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+  );
 
   if (conversationsLoading) {
     return (
@@ -586,33 +387,40 @@ const Chat = () => {
     );
   }
 
-  // Log for debugging
-  console.log("🔥 Chat Component State:", {
-    conversations,
-    messages,
-    conversationsLoading,
-    messagesLoading,
-    otherParticipantId,
-    conversationId,
-    userId,
-    isConnected,
-    currentUserId,
-  });
-
   return (
-    <main className="h-screen bg-white flex flex-col">
+    <main className="bg-white flex flex-col">
       <Hero
         place="Chat"
         title="Messages"
         subtitle="Communicate with workers and customers"
-        className="h-32 md:h-40 lg:h-48"
+        className="h-42 md:h-50 lg:h-68 mb-0"
       />
-
-      <div className="flex flex-1 overflow-hidden max-w-7xl mx-auto w-full">
-        {/* Conversations Sidebar */}
-        <aside className="w-full border-r border-gray-200 bg-gray-50 sm:w-72 lg:w-80 flex flex-col shadow-sm">
-          {/* Search */}
+      <div className="flex flex-1 overflow-hidden border border-neutral-200 mb-10 w-full mx-auto max-w-7xl rounded-lg relative">
+        {/* Sidebar/Conversations List */}
+        <aside
+          className={`
+            ${showSidebar ? "translate-x-0" : "-translate-x-full"}
+            lg:translate-x-0
+            fixed lg:relative
+            inset-y-0 left-0
+            z-40
+            w-72 sm:w-80
+            border-r border-gray-200 bg-gray-50
+            flex flex-col
+            transition-transform duration-300 ease-in-out
+          `}
+        >
           <header className="border-b border-gray-200 p-3 md:p-4 bg-white">
+            <div className="flex items-center justify-between mb-3 lg:hidden mt-10 lg:mt-0">
+              <h3 className="text-sm font-semibold text-gray-900">Messages</h3>
+              <button
+                onClick={() => setShowSidebar(false)}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Close sidebar"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
             <div className="relative">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -623,29 +431,10 @@ const Chat = () => {
                 placeholder="Search conversations"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-2xl border border-gray-200 bg-neutral-100 py-3 pl-11 pr-4 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:outline-none"
+                className="w-full rounded-2xl border border-gray-200 bg-neutral-100 py-2 pl-11 pr-4 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:outline-none"
               />
-            </div>
-
-            {/* Connection Status */}
-            <div className="mt-2 flex items-center gap-2 text-xs">
-              <Circle
-                className={`w-2 h-2 fill-current ${
-                  isConnected ? "text-green-500" : "text-red-500"
-                }`}
-              />
-              <span className="text-gray-600">
-                {isConnected ? "Connected" : "Disconnected"}
-              </span>
-              {!isConnected && (
-                <span className="text-xs text-red-500">
-                  (Check console for details)
-                </span>
-              )}
             </div>
           </header>
-
-          {/* Conversations List */}
           <div className="flex-1 overflow-y-auto">
             <div className="divide-y divide-gray-100">
               {filteredConversations.length > 0 ? (
@@ -667,18 +456,26 @@ const Chat = () => {
           </div>
         </aside>
 
-        {/* Chat Area */}
-        <section className="flex flex-1 flex-col bg-white shadow-sm">
+        {/* Overlay for mobile */}
+        {showSidebar && (
+          <div
+            className="fixed inset-0 bg-black/10 backdrop-blur-2xl  bg-opacity-50 z-30 lg:hidden"
+            onClick={() => setShowSidebar(false)}
+          />
+        )}
+
+        {/* Chat Section */}
+        <section className="flex flex-1 flex-col shadow-sm h-130 w-full">
           {selectedConversation ? (
             <>
-              {/* Chat Header */}
               <header className="flex items-center justify-between border-b border-gray-100 p-3 md:p-4 bg-white shadow-sm">
                 <div className="flex items-center gap-2 md:gap-3">
                   <button
-                    className="sm:hidden"
-                    onClick={() => setSelectedConversation(null)}
+                    className="lg:hidden p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                    onClick={() => setShowSidebar(true)}
+                    aria-label="Open conversations"
                   >
-                    <ArrowLeft className="w-6 h-6 text-gray-600" />
+                    <Menu className="w-5 h-5 text-gray-600" />
                   </button>
                   <Avatar
                     src={otherParticipant?.profilePicture}
@@ -697,7 +494,6 @@ const Chat = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 md:gap-2">
-                  {/* Custom Offer Button - Only show for workers */}
                   {otherParticipant && (
                     <button
                       onClick={() => setShowGigSelection(true)}
@@ -708,19 +504,7 @@ const Chat = () => {
                       <span className="hidden md:inline">Offer</span>
                     </button>
                   )}
-                  
-                  <button
-                    className="p-1.5 md:p-2 text-gray-500 hover:text-gray-700"
-                    aria-label="Voice call"
-                  >
-                    <Phone size={16} className="md:w-[18px] md:h-[18px]" />
-                  </button>
-                  <button
-                    className="p-1.5 md:p-2 text-gray-500 hover:text-gray-700"
-                    aria-label="Video call"
-                  >
-                    <Video size={16} className="md:w-[18px] md:h-[18px]" />
-                  </button>
+
                   <button
                     className="p-1.5 md:p-2 text-gray-500 hover:text-gray-700"
                     aria-label="More options"
@@ -733,10 +517,8 @@ const Chat = () => {
                 </div>
               </header>
 
-              {/* Messages */}
               <div
-                className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4"
-                style={{ overflowAnchor: "none" }}
+                className={`flex-1 ${styles.scrollContainer} p-3 md:p-4 space-y-3 md:space-y-4`}
               >
                 {messagesLoading ? (
                   <div className="flex justify-center">
@@ -761,11 +543,15 @@ const Chat = () => {
                         Start a conversation
                       </h3>
                       <p className="text-gray-600 mb-6">
-                        Send a message to {otherParticipant?.name || "this customer"} to start your conversation.
+                        Send a message to{" "}
+                        {otherParticipant?.name || "this customer"} to start
+                        your conversation.
                       </p>
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <p className="text-sm text-blue-800">
-                          💡 <strong>Tip:</strong> Introduce yourself professionally and explain your services or respond to their inquiry.
+                          💡 <strong>Tip:</strong> Introduce yourself
+                          professionally and explain your services or respond to
+                          their inquiry.
                         </p>
                       </div>
                     </div>
@@ -776,7 +562,6 @@ const Chat = () => {
                   </div>
                 )}
 
-                {/* Typing indicator */}
                 {typingUsers.length > 0 && (
                   <div className="text-sm text-gray-500 italic">
                     {typingUsers.map((u) => u.userName).join(", ")}{" "}
@@ -787,40 +572,29 @@ const Chat = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Message Composer */}
               <footer className="border-t border-gray-100 p-2 md:p-3">
                 <form onSubmit={handleSendMessage}>
                   <div className="flex items-center gap-1 md:gap-2 rounded-full border border-gray-200 bg-white px-2 md:px-3 py-1.5 md:py-2 shadow-sm">
-                    <button
-                      type="button"
-                      className="p-1.5 md:p-2 text-gray-500 hover:text-gray-700"
-                      aria-label="Attach file"
-                    >
-                      <Paperclip
-                        size={16}
-                        className="md:w-[18px] md:h-[18px]"
-                      />
-                    </button>
                     <input
                       type="text"
-                      placeholder={selectedConversation?.isNewChat 
-                        ? `Send your first message to ${otherParticipant?.name || "this customer"}...`
-                        : "Type a message..."
+                      placeholder={
+                        selectedConversation?.isNewChat
+                          ? `Send your first message to ${
+                              otherParticipant?.name || "this customer"
+                            }...`
+                          : "Type a message..."
                       }
                       value={messageText}
                       onChange={(e) => {
                         setMessageText(e.target.value);
-                        // Emit typing status like in working example
                         if (otherParticipantId) {
                           startTyping(otherParticipantId);
-                          // Clear previous timeout
-                          if (typingTimeoutRef.current) {
+                          if (typingTimeoutRef.current)
                             clearTimeout(typingTimeoutRef.current);
-                          }
-                          // Set new timeout to stop typing
-                          typingTimeoutRef.current = setTimeout(() => {
-                            stopTyping(otherParticipantId);
-                          }, 1000);
+                          typingTimeoutRef.current = setTimeout(
+                            () => stopTyping(otherParticipantId),
+                            1000
+                          );
                         }
                       }}
                       onKeyPress={(e) => {
@@ -832,13 +606,7 @@ const Chat = () => {
                       disabled={isSending}
                       className="flex-1 bg-transparent text-xs md:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none min-w-0"
                     />
-                    <button
-                      type="button"
-                      className="text-gray-500 hover:text-gray-700"
-                      aria-label="Emoji"
-                    >
-                      <Smile size={16} className="md:w-[18px] md:h-[18px]" />
-                    </button>
+
                     <button
                       type="submit"
                       disabled={!messageText.trim() || isSending}
@@ -860,8 +628,14 @@ const Chat = () => {
               </footer>
             </>
           ) : (
-            /* No Conversation Selected */
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <button
+                className="lg:hidden mb-4 px-4 py-2 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white rounded-lg flex items-center gap-2"
+                onClick={() => setShowSidebar(true)}
+              >
+                <Menu className="w-5 h-5" />
+                View Conversations
+              </button>
               <div className="text-center text-gray-500">
                 <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                   <Send className="w-8 h-8 text-gray-400" />
@@ -878,7 +652,6 @@ const Chat = () => {
         </section>
       </div>
 
-      {/* Step 1: Gig Selection Modal */}
       <GigSelectionModal
         isOpen={showGigSelection}
         onClose={() => {
@@ -893,7 +666,6 @@ const Chat = () => {
         receiverName={otherParticipant?.name}
       />
 
-      {/* Step 2: Custom Offer Details Modal */}
       <CustomOfferModal
         isOpen={showOfferModal}
         onClose={() => {
@@ -903,11 +675,9 @@ const Chat = () => {
         receiverId={otherParticipantId}
         receiverName={otherParticipant?.name}
         selectedGig={selectedGig}
-        onOfferSent={(result) => {
-          console.log("✅ Offer sent via modal:", result);
+        onOfferSent={() => {
           setShowOfferModal(false);
           setSelectedGig(null);
-          // Refresh messages to show the new offer
           refetchMessages();
           refetchConversations();
         }}

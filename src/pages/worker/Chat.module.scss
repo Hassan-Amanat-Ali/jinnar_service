@@ -1,0 +1,27 @@
+.scrollContainer {
+  overflow-y: auto;
+
+  // Firefox
+  scrollbar-width: thin;
+  scrollbar-color: #74c7f2 #f1f1f1;
+
+  // Webkit (Chrome, Safari, Edge)
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #74c7f2;
+    border-radius: 8px;
+    border: 2px solid #f1f1f1;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #5ba8e0;
+  }
+}
