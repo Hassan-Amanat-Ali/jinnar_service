@@ -7,11 +7,13 @@ import { useNavigate } from "react-router-dom";
 import { useGetMyOrdersQuery, useGetWalletQuery, useUpdateFcmTokenMutation } from "../../services/workerApi";
 import { format } from "date-fns";
 import { requestNotificationPermission } from "../../utils/fcm";
+import {useAuth} from "../../context/AuthContext.jsx";
 
 const Home = () => {
   const navigate = useNavigate();
   const [updateFcmToken] = useUpdateFcmTokenMutation();
-  
+  const user = useAuth()
+
   // Fetch real bookings data
   const { data: ordersData, isLoading: ordersLoading } = useGetMyOrdersQuery();
   const { data: walletData } = useGetWalletQuery();
@@ -21,7 +23,7 @@ const Home = () => {
     const setupFCM = async () => {
       try {
         const token = await requestNotificationPermission();
-        
+
         if (token) {
           // Send token to backend
           await updateFcmToken({ token }).unwrap();
@@ -34,10 +36,10 @@ const Home = () => {
 
     setupFCM();
   }, [updateFcmToken]);
-  
+
   // Get recent orders (last 3)
-  const recentOrders = ordersData?.orders?.slice(0, 3) || [];
-  
+  const recentOrders = ordersData?.slice(0, 3).filter((order)=>(order?.sellerId?._id === user?.user?._id)) || [];
+
   // Helper function to format date
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -47,27 +49,16 @@ const Home = () => {
       return 'Invalid date';
     }
   };
-  
-  // Helper function to get status badge color
-  const getStatusColor = (status) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      accepted: 'bg-blue-100 text-blue-800',
-      'in-progress': 'bg-purple-100 text-purple-800',
-      completed: 'bg-green-100 text-green-800',
-      cancelled: 'bg-red-100 text-red-800',
-      declined: 'bg-gray-100 text-gray-800',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
-  
+
+
+
   return (
     <div>
       <Hero />
-      
+
       {/* Charts with wallet data */}
       <Charts walletData={walletData} />
-      
+
       {/* Your Bookings Section */}
       <div className="max-w-7xl mx-auto my-8 sm:my-12 lg:my-16 px-4 sm:px-6 lg:px-6 xl:px-5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
@@ -86,7 +77,7 @@ const Home = () => {
             View All
           </button>
         </div>
-        
+
         {/* Loading State */}
         {ordersLoading ? (
           <div className="flex justify-center items-center py-12">

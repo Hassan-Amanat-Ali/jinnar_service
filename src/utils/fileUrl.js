@@ -5,29 +5,23 @@
  * @returns {string | undefined | null} The full image URL, or the original value if it's invalid or already an absolute URL.
  */
 export const getFullImageUrl = (relativeUrl) => {
-  // If the URL is falsy (null, undefined, empty string), return it as is.
-  // Also, if it's already a full HTTP/HTTPS URL or a local blob URL, return it directly.
-  if (
-    !relativeUrl ||
-    relativeUrl.startsWith("http") ||
-    relativeUrl.startsWith("blob:")
-  ) {
-    return relativeUrl;
-  }
+  if (!relativeUrl) return relativeUrl;
+
+  // If it's already an absolute URL or blob url, return as-is
+  const trimmed = String(relativeUrl).trim();
+  if (trimmed.startsWith("http") || trimmed.startsWith("blob:")) return trimmed;
 
   const baseUrl = import.meta.env.VITE_BASE_URL;
 
-  console.log(relativeUrl)
   if (!baseUrl) {
     console.error(
-      "VITE_API_BASE_URL is not defined. Please add it to your .env file to ensure images load correctly."
+      "VITE_BASE_URL is not defined. Please add it to your .env file to ensure images load correctly."
     );
-    // Return the relative path to help with debugging, so it's clear the base URL is the issue.
-    return relativeUrl;
+    return trimmed;
   }
 
   // Combine the base URL and the relative path, ensuring no double slashes.
-  return `${baseUrl.replace(/\/$/, "")}/${relativeUrl.replace(/^\//, "")}`;
+  return `${baseUrl.replace(/\/$/, "")}/${trimmed.replace(/^\//, "")}`;
 };
 
 /**

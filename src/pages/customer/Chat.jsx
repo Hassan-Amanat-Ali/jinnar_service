@@ -3,14 +3,14 @@ import { useSearchParams } from "react-router-dom";
 import {
   Search,
   CheckCheck,
-  Smile,
   Send,
-  ArrowLeft,
   MoreVertical,
   Circle,
   Loader2,
   Flag,
   X,
+  Menu,
+  Paperclip,
 } from "lucide-react";
 import Hero from "../../components/common/Hero";
 import Avatar from "../../components/common/Avatar";
@@ -21,9 +21,11 @@ import {
   useGetMessagesQuery,
   useSendMessageMutation,
   useMarkAsReadMutation,
+  useUploadChatMediaMutation,
 } from "../../services/chatApi";
 import { useGetPublicProfileQuery } from "../../services/workerApi";
 import { getFullImageUrl } from "../../utils/fileUrl.js";
+import OfferCard from "../../components/common/OfferCard";
 
 // Contact Item Component
 const ContactItem = ({
@@ -35,6 +37,13 @@ const ContactItem = ({
   const otherParticipant = conversation?.participants?.find(
     (p) => p._id !== currentUserId
   );
+    const participantId = otherParticipant?._id;
+
+  // fetch public profile
+  const { data: publicProfile } = useGetPublicProfileQuery(participantId, { skip: !participantId });
+
+  const displayName = publicProfile?.profile?.name || otherParticipant?.name || "Unknown User";
+  const displayPicture = publicProfile?.profile?.profilePicture || otherParticipant?.profilePicture;
 
   const lastMessage = conversation?.lastMessage;
   const lastTime = conversation?.lastTime;
@@ -64,23 +73,23 @@ const ContactItem = ({
         active
           ? "bg-[#EAF6FF] border-l-4 border-l-[#74C7F2]"
           : "hover:bg-gray-50",
+        conversation?.isNewChat ? "bg-linear-to-r from-[#B6E0FE] to-[#74C7F2] text-white" : ""
       ].join(" ")}
       aria-current={active ? "true" : undefined}
     >
       <div className="relative">
         <Avatar
-          src={getFullImageUrl(otherParticipant?.profilePicture)}
-          name={otherParticipant?.name}
+          src={getFullImageUrl(displayPicture)}
+          name={displayName}
           size="md"
           className="h-8 w-8 md:h-10 md:w-10"
         />
-        {/* Online indicator */}
         <Circle className="absolute -bottom-0.5 -right-0.5 w-3 h-3 fill-green-500 text-green-500" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between">
           <p className="truncate text-xs md:text-sm font-semibold text-gray-900">
-            {otherParticipant?.name || "Unknown User"}
+            {displayName}
           </p>
           <span className="shrink-0 text-[10px] md:text-xs text-gray-500">
             {formatTime(lastTime || lastMessage?.createdAt)}
@@ -103,12 +112,8 @@ const ContactItem = ({
   );
 };
 
-// Import OfferCard component
-import OfferCard from "../../components/common/OfferCard";
-
 // Message Component
 const MessageBubble = ({ message, currentUserId, otherParticipant }) => {
-  // Check if this is a custom offer message
   if (message.customOffer) {
     return (
       <OfferCard
@@ -119,9 +124,13 @@ const MessageBubble = ({ message, currentUserId, otherParticipant }) => {
     );
   }
 
-  // Regular message handling
+
   const messageSenderId = message.senderId || message.sender?._id;
   const isMe = messageSenderId === currentUserId;
+  const messageText = message.message || message.content || "";
+
+  const isFile = message.attachment && message.attachment.url;
+  const isImage = isFile && message.attachment.type === "image";
 
   const formatTime = (timestamp) => {
     if (!timestamp) return "";
@@ -131,49 +140,38 @@ const MessageBubble = ({ message, currentUserId, otherParticipant }) => {
     });
   };
 
-  // Get message text - API uses 'message' field, not 'content'
-  const messageText = message.message || message.content || "";
-
-  console.log("📩 MessageBubble:", {
-    messageText,
-    isMe,
-    messageSenderId,
-    currentUserId,
-    comparison: `${messageSenderId} === ${currentUserId} = ${
-      messageSenderId === currentUserId
-    }`,
-    sender: message.sender,
-    receiver: message.receiver,
-    hasCustomOffer: !!message.customOffer,
-  });
-
   return (
     <div className={`flex gap-2 md:gap-3 ${isMe ? "flex-row-reverse" : ""}`}>
       {!isMe && (
         <Avatar
           src={getFullImageUrl(
-            otherParticipant?.profilePicture || message.sender?.profilePicture,
+            otherParticipant?.profilePicture || message.sender?.profilePicture
           )}
           name={otherParticipant?.name || message.sender?.name}
           size="default"
           className="h-6 w-6 md:h-8 md:w-8"
         />
       )}
-      <div
-        className={`flex-1 max-w-xs md:max-w-md ${
-          isMe ? "flex justify-end" : ""
-        }`}
-      >
+
+      <div className={`w-fit items-end gap-1 ${isMe ? "flex justify-end flex-col" : ""}`}>
         <div
           className={`rounded-2xl px-3 md:px-4 py-2 md:py-3 ${
             isMe
-              ? "bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white"
+              ? "bg-linear-to-r from-[#B6E0FE] to-[#74C7F2] text-white"
               : "bg-gray-100 text-gray-900"
           }`}
         >
-          <p className="text-xs md:text-sm break-words whitespace-pre-wrap">
-            {messageText}
-          </p>
+          {isImage ? (
+            <img src={getFullImageUrl(message.attachment.url)} alt={message.attachment.type || "shared file"} className="max-w-xs max-h-60 rounded-lg" />
+          ) : isFile ? (
+            <a href={getFullImageUrl(message.attachment.url)} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+              {message.attachment.type === "video" ? "View video" : "Download file"}
+            </a>
+          ) : (
+            <p className="text-xs md:text-sm wrap-break-word whitespace-pre-wrap">
+              {messageText}
+            </p>
+          )}
         </div>
         <p
           className={`mt-1 text-[10px] md:text-xs text-gray-500 ${
@@ -207,20 +205,27 @@ const ReportModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
       <div className="bg-white rounded-2xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-gray-900">Report User</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
             <X size={20} />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Reason
+            </label>
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#74C7F2] outline-none"
             >
               <option value="Spam">Spam</option>
-              <option value="Inappropriate Content">Inappropriate Content</option>
+              <option value="Inappropriate Content">
+                Inappropriate Content
+              </option>
               <option value="Harassment">Harassment</option>
               <option value="Scam/Fraud">Scam/Fraud</option>
               <option value="Poor Service">Poor Service</option>
@@ -229,7 +234,9 @@ const ReportModal = ({ isOpen, onClose, onSubmit, isSubmitting }) => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -257,90 +264,130 @@ const Chat = () => {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messageText, setMessageText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const messagesEndRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
+  const [localMessages, setLocalMessages] = useState([]);
+  const [showSidebar, setShowSidebar] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [isReporting, setIsReporting] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [pendingAttachment, setPendingAttachment] = useState(null);
+   const messagesEndRef = useRef(null);
+   const typingTimeoutRef = useRef(null);
+   const fileInputRef = useRef(null);
 
-  // Get current user from AuthContext (not Redux!)
   const { user: currentUser } = useAuth();
-
-  // Try multiple ways to get user ID (handle different API response structures)
   const currentUserId =
     currentUser?._id || currentUser?.id || currentUser?.userId;
 
   const { isConnected, socket } = useSocket();
 
-  // Debug: Log current user info and token
-  console.log("👤 Current User Debug:", {
-    currentUser,
-    hasUser: !!currentUser,
-    _id: currentUser?._id,
-    id: currentUser?.id,
-    userId: currentUser?.userId,
-    currentUserId,
-    allKeys: currentUser ? Object.keys(currentUser) : [],
-    hasToken: !!localStorage.getItem("token"),
-    tokenPreview: localStorage.getItem("token")?.substring(0, 20) + "...",
-  });
-
-  // Get conversation or user ID from URL params
   const conversationId = searchParams.get("conversation");
   const userId = searchParams.get("user");
-
-  // When conversation parameter is provided, treat it as user ID for starting/continuing chat
   const targetUserId = conversationId || userId;
-  
-  // Get other participant ID for API calls
+
   const otherParticipantId =
     targetUserId ||
     selectedConversation?.participants?.find((p) => p._id !== currentUserId)
       ?._id;
 
-  console.log("🎯 Chat IDs Debug:", {
-    userId,
-    conversationId,
-    otherParticipantId,
-    currentUserId,
-    selectedConversationId: selectedConversation?._id,
-    hasSelectedConversation: !!selectedConversation,
-  });
+  // Ensure otherParticipant is available for header/profile lookups
+  const otherParticipant = selectedConversation?.participants?.find(
+    (p) => p._id !== currentUserId
+  );
 
-  // API Hooks
   const {
     data: conversationsData,
     isLoading: conversationsLoading,
     refetch: refetchConversations,
   } = useGetConversationsQuery();
+
   const {
     data: messagesData,
     isLoading: messagesLoading,
-    refetch: refetchMessages,
+    // refetch: refetchMessages, // Remove unused
   } = useGetMessagesQuery(
     { userId: otherParticipantId },
     { skip: !otherParticipantId }
   );
 
-  // Fetch public profile for the target user to get their name/image if not available
   const { data: publicProfile } = useGetPublicProfileQuery(targetUserId, {
-    skip: !targetUserId || (selectedConversation && !selectedConversation._id.startsWith("temp-")),
+    skip:
+      !targetUserId ||
+      (selectedConversation && !selectedConversation._id.startsWith("temp-")),
   });
+
+  const conversations = useMemo(
+    () => (Array.isArray(conversationsData) ? conversationsData : []),
+    [conversationsData]
+  );
+
+  const messages = useMemo(
+    () => (Array.isArray(messagesData) ? messagesData : []),
+    [messagesData]
+  );
+
+  const [ , { isLoading: isSending }] = useSendMessageMutation();
+  const [markAsRead] = useMarkAsReadMutation();
+  const [uploadChatMedia] = useUploadChatMediaMutation();
+
+  // Stage attachment on select; upload will occur when user clicks Send
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const allowed = ["image/jpeg", "image/png", "application/pdf", "video/mp4"];
+    if (!allowed.includes(file.type)) {
+      alert("Unsupported file type. Allowed: jpg, png, pdf, mp4");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      alert("File too large. Max 50MB");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    const previewUrl = file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
+    setPendingAttachment({ file, previewUrl, fileName: file.name, fileType: file.type });
+  };
+
+  const socketConversationId =
+    selectedConversation?._id || `temp-${targetUserId}`;
+
+  const {
+    messages: socketMessages,
+    setMessages: setSocketMessages,
+    typingUsers,
+    startTyping,
+    stopTyping,
+  } = useChat(socketConversationId);
+
+  // Sync messages from API to local state
+  useEffect(() => {
+    if (messages.length > 0) {
+      setLocalMessages(messages);
+    }
+  }, [messages]);
 
   // Update temporary conversation with fetched profile data
   useEffect(() => {
-    if (selectedConversation?._id.startsWith("temp-") && publicProfile?.profile) {
-      const targetParticipant = selectedConversation.participants.find((p) => p._id === targetUserId);
+    if (
+      selectedConversation?._id.startsWith("temp-") &&
+      publicProfile?.profile
+    ) {
+      const targetParticipant = selectedConversation.participants.find(
+        (p) => p._id === targetUserId
+      );
 
-      // Only update if name is "User" or missing profile picture
-      if (targetParticipant && (targetParticipant.name === "User" || !targetParticipant.profilePicture)) {
-        console.log("👤 Updating temporary conversation with profile data:", publicProfile.profile);
+      if (
+        targetParticipant &&
+        (targetParticipant.name === "Worker" ||
+          !targetParticipant.profilePicture)
+      ) {
         setSelectedConversation((prev) => ({
           ...prev,
           participants: prev.participants.map((p) =>
             p._id === targetUserId
               ? {
                   ...p,
-                  name: publicProfile.profile.name || "User",
+                  name: publicProfile.profile.name || "Worker",
                   profilePicture: publicProfile.profile.profilePicture,
                   role: publicProfile.profile.role || "worker",
                 }
@@ -351,172 +398,111 @@ const Chat = () => {
     }
   }, [publicProfile, targetUserId, selectedConversation]);
 
-  console.log("📡 API Status:", {
-    otherParticipantId,
-    hasOtherParticipant: !!otherParticipantId,
-    messagesLoading,
-    conversationsLoading,
-    messagesDataLength: messagesData?.length || 0,
-    conversationsDataLength: conversationsData?.length || 0,
-  });
-
-  // Safely handle API responses with useMemo to prevent re-renders
-  const conversations = useMemo(() => {
-    return Array.isArray(conversationsData) ? conversationsData : [];
-  }, [conversationsData]);
-
-  const messages = useMemo(() => {
-    return Array.isArray(messagesData) ? messagesData : [];
-  }, [messagesData]);
-  const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
-  const [markAsRead] = useMarkAsReadMutation();
-
-  // Socket chat hook
-  const socketConversationId = selectedConversation?._id || `temp-${targetUserId}`;
-  const {
-    messages: socketMessages,
-    setMessages: setSocketMessages,
-    typingUsers,
-    sendMessage: sendSocketMessage,
-    startTyping,
-    stopTyping,
-  } = useChat(socketConversationId);
-
-  // Handle offer updates via socket
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleOfferUpdate = (updatedMessage) => {
-      console.log("🔄 Offer update received:", updatedMessage);
-      
-      // Update socket messages if the message exists there
-      setSocketMessages((prevMessages) => 
-        prevMessages.map((msg) => 
-          msg._id === updatedMessage._id ? updatedMessage : msg
-        )
-      );
-      
-      // Also refresh API messages to ensure consistency
-      refetchMessages();
-    };
-
-    socket.on("updateMessage", handleOfferUpdate);
-
-    return () => {
-      socket.off("updateMessage", handleOfferUpdate);
-    };
-  }, [socket, setSocketMessages, refetchMessages]);
-
-  // Auto-scroll chat container only (not the whole page)
   const scrollToBottom = (smooth = true) => {
-    if (messagesEndRef.current && messagesEndRef.current.parentElement) {
-      const container = messagesEndRef.current.parentElement;
-      container.scrollTo({
-        top: container.scrollHeight,
+    if (messagesEndRef.current?.parentElement) {
+      messagesEndRef.current.parentElement.scrollTo({
+        top: messagesEndRef.current.parentElement.scrollHeight,
         behavior: smooth ? "smooth" : "auto",
       });
     }
   };
 
-  // Only auto-scroll when conversation changes or new messages arrive
   const prevMessagesLengthRef = useRef(0);
-
   useEffect(() => {
-    const currentLength = messages.length + socketMessages.length;
+    const currentLength = localMessages.length + socketMessages.length;
     const isInitialLoad =
       prevMessagesLengthRef.current === 0 && currentLength > 0;
     const hasNewMessages = currentLength > prevMessagesLengthRef.current;
-
-    // Only scroll on initial load or when receiving new messages (not sending)
-    if (isInitialLoad) {
-      scrollToBottom(false); // Instant scroll on initial load
-    } else if (hasNewMessages && !isSending) {
-      scrollToBottom(true); // Smooth scroll for new incoming messages
-    }
-
+    if (isInitialLoad) scrollToBottom(false);
+    else if (hasNewMessages) scrollToBottom(true);
     prevMessagesLengthRef.current = currentLength;
+  }, [localMessages.length, socketMessages.length, selectedConversation?._id]);
+
+  // Listen for new messages from socket
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = (newMessage) => {
+      const messageSenderId = newMessage.sender?._id || newMessage.senderId;
+      const messageReceiverId =
+        newMessage.receiver?._id || newMessage.receiverId;
+
+      const isRelevant =
+        (messageSenderId === currentUserId &&
+          messageReceiverId === otherParticipantId) ||
+        (messageSenderId === otherParticipantId &&
+          messageReceiverId === currentUserId);
+
+      if (isRelevant) {
+        setLocalMessages((prev) => {
+          const exists = prev.some(
+            (msg) => msg._id === newMessage._id || msg.id === newMessage.id
+          );
+          if (exists) return prev;
+          return [...prev, newMessage];
+        });
+      }
+
+      refetchConversations();
+    };
+
+    const handleOfferUpdate = (updatedMessage) => {
+      setLocalMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === updatedMessage._id ? updatedMessage : msg
+        )
+      );
+      setSocketMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === updatedMessage._id ? updatedMessage : msg
+        )
+      );
+    };
+
+    const handleChatListUpdate = () => {
+      refetchConversations();
+    };
+
+    socket.on("newMessage", handleNewMessage);
+    socket.on("updateMessage", handleOfferUpdate);
+    socket.on("updateChatList", handleChatListUpdate);
+
+    return () => {
+      socket.off("newMessage", handleNewMessage);
+      socket.off("updateMessage", handleOfferUpdate);
+      socket.off("updateChatList", handleChatListUpdate);
+    };
   }, [
-    messages.length,
-    socketMessages.length,
-    selectedConversation?._id,
-    isSending,
+    socket,
+    currentUserId,
+    otherParticipantId,
+    refetchConversations,
+    setSocketMessages,
   ]);
 
-  // Update participant info from messages when available
-  useEffect(() => {
-    if (messages.length > 0 && selectedConversation && userId) {
-      const firstMessage = messages[0];
-      // Get the other participant from message data
-      const otherUser =
-        firstMessage.sender?._id === currentUserId
-          ? firstMessage.receiver
-          : firstMessage.sender;
-
-      console.log("👥 Updating conversation with user data:", {
-        firstMessage: {
-          senderId: firstMessage.sender?._id,
-          receiverId: firstMessage.receiver?._id,
-          currentUserId,
-        },
-        otherUser,
-        selectedConversationId: selectedConversation._id,
-      });
-
-      if (otherUser && selectedConversation._id.startsWith("temp-")) {
-        // Update temp conversation with real user data
-        setSelectedConversation((prev) => ({
-          ...prev,
-          participants: [
-            {
-              _id: currentUserId,
-              name: currentUser?.name,
-              role: currentUser?.role,
-            },
-            {
-              _id: otherUser._id,
-              name: otherUser.name || "User",
-              profilePicture: otherUser.profilePicture,
-              role: otherUser.role || "user",
-            },
-          ],
-        }));
-      }
-    } else if (
-      userId &&
-      selectedConversation &&
-      selectedConversation._id.startsWith("temp-") &&
-      !messages.length
-    ) {
-      // If we have a userId but no messages yet, keep the temporary conversation ready
-      console.log("📝 Keeping temporary conversation ready for user:", userId);
-    }
-  }, [messages, selectedConversation, userId, currentUserId, currentUser]);
-
-  // Set selected conversation from URL params
   useEffect(() => {
     if (targetUserId && currentUserId) {
-      // First, try to find existing conversation by ID (if conversationId was provided and it's an actual conversation ID)
       let conversation = null;
-      if (conversationId && conversationId.length > 10 && conversations.length > 0) { // Assume real conversation IDs are longer
+      if (
+        conversationId &&
+        conversationId.length > 10 &&
+        conversations.length > 0
+      ) {
         conversation = conversations.find((c) => c._id === conversationId);
       }
-      
-      // If no conversation found by ID, try to find by participant (only if conversations are loaded)
+
       if (!conversation && conversations.length > 0) {
         conversation = conversations.find((c) =>
           c.participants?.some((p) => p._id === targetUserId)
         );
       }
-      
+
       if (conversation) {
         setSelectedConversation(conversation);
-        // Update URL to use actual conversation ID if we found one
         if (conversation._id !== conversationId) {
           setSearchParams({ conversation: conversation._id });
         }
       } else {
-        // No existing conversation found or conversations not loaded yet - create a temporary one for new chat
-        console.log("🆕 Creating temporary conversation for user:", targetUserId);
         setSelectedConversation({
           _id: `temp-${targetUserId}`,
           participants: [
@@ -525,11 +511,11 @@ const Chat = () => {
               name: currentUser?.name,
               role: currentUser?.role,
             },
-            { _id: targetUserId, name: "User", role: "user" }, // We'll get the real name from API or messages
+            { _id: targetUserId, name: "Worker", role: "worker" },
           ],
           lastMessage: null,
           unreadCount: 0,
-          isNewChat: true, // Flag to indicate this is a new chat
+          isNewChat: true,
         });
       }
     }
@@ -542,43 +528,49 @@ const Chat = () => {
     setSearchParams,
   ]);
 
-  // Handle conversation selection
+  // Fix: When selecting a conversation, fetch and set messages for that conversation, and mark as read
   const handleConversationSelect = useCallback(
     (conversation) => {
       setSelectedConversation(conversation);
       setSearchParams({ conversation: conversation._id });
-
-      // Mark as read
+      setShowSidebar(false);
+      // Mark as read and update unread count immediately
       if (conversation.unreadCount > 0) {
         markAsRead(conversation._id);
+        // UI will update on next fetch
       }
+      // Do NOT manually fetch messages here; let useGetMessagesQuery handle it
     },
     [setSearchParams, markAsRead]
   );
 
-  // Handle report submission
   const handleReportSubmit = async ({ reason, description }) => {
     if (!otherParticipantId) return;
-    
+
     setIsReporting(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("https://api.jinnar.com/api/user/reports/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          reportedUserId: otherParticipantId,
-          reason,
-          description,
-        }),
-      });
+      const response = await fetch(
+        "https://api.jinnar.com/api/user/reports/create",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            reportedUserId: otherParticipantId,
+            reason,
+            description,
+          }),
+        }
+      );
 
       const data = await response.json();
       if (response.ok) {
-        alert("Report submitted successfully. Our support team will review it.");
+        alert(
+          "Report submitted successfully. Our support team will review it."
+        );
         setShowReportModal(false);
       } else {
         alert(data.error || "Failed to submit report");
@@ -590,69 +582,119 @@ const Chat = () => {
       setIsReporting(false);
     }
   };
-
-  // Handle send message
   const handleSendMessage = useCallback(
-    async (e) => {
+    (e) => {
       e.preventDefault();
-      if (!messageText.trim() || !otherParticipantId || isSending) return;
+      // If there's no message and no pending attachment, do nothing
+      if (!messageText.trim() && !pendingAttachment) return;
+      if (!otherParticipantId || !socket) return;
 
-      try {
-        console.log(
-          "📤 Sending message to:",
-          otherParticipantId,
-          "message:",
-          messageText.trim()
-        );
+      const tempMessage = {
+        _id: `temp-${Date.now()}`,
+        senderId: currentUserId,
+        receiverId: otherParticipantId,
+        message: messageText.trim(),
+        content: messageText.trim(),
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        sender: {
+          _id: currentUserId,
+          name: currentUser?.name,
+          profilePicture: currentUser?.profilePicture,
+        },
+      };
 
-        const messageData = {
-          receiverId: otherParticipantId,
-          message: messageText.trim(),
-          messageType: "text",
+      // 1) Optimistic UI - include pending attachment preview if present
+      if (pendingAttachment) {
+        tempMessage.attachment = {
+          url: pendingAttachment.previewUrl,
+          type: pendingAttachment.fileType.startsWith("image") ? "image" : pendingAttachment.fileType.startsWith("video") ? "video" : "file",
+          fileName: pendingAttachment.fileName,
+          pending: true,
         };
+      }
+      setLocalMessages((prev) => [...prev, tempMessage]);
+      // clear input text now; keep pendingAttachment until upload completes or user cancels
+      setMessageText("");
 
-        // Send via API (this will create conversation if it doesn't exist)
-        const result = await sendMessage(messageData).unwrap();
-        console.log("✅ Message sent successfully:", result);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      stopTyping(otherParticipantId);
 
-        // Send via socket for real-time updates
-        sendSocketMessage({
-          ...messageData,
-          conversationId: socketConversationId,
-          sender: currentUser,
-        });
+      // 2) If there's a pending attachment, upload via RTK mutation (FormData) to /api/chat/send
+      if (pendingAttachment) {
+        (async () => {
+          setUploadingFile(true);
+          try {
+            const formData = new FormData();
+            formData.append("attachment", pendingAttachment.file);
+            formData.append("receiverId", otherParticipantId);
+            if (messageText.trim()) formData.append("message", messageText.trim());
 
-        setMessageText("");
-
-        // Refresh messages and conversations to get updated data
-        refetchMessages();
-        refetchConversations();
-
-        // Stop typing indicator
-        if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-          stopTyping(otherParticipantId);
-        }
-      } catch (error) {
-        console.error("❌ Failed to send message:", error);
-        alert("Failed to send message. Please try again.");
+            const res = await uploadChatMedia(formData).unwrap();
+            console.log("uploadChatMedia response:", res);
+            if (res && res.data) {
+              // Replace temp message with server message
+              setLocalMessages((prev) =>
+                prev.map((msg) => (msg._id === tempMessage._id ? res.data : msg))
+              );
+              // Emit via socket so recipient gets realtime update (server also emits but keep consistent)
+              socket.emit("sendMessage", { receiverId: otherParticipantId, message: res.data.message, attachment: res.data.attachment });
+            } else {
+              // Remove temp message on failure
+              setLocalMessages((prev) => prev.filter((msg) => msg._id !== tempMessage._id));
+              alert(res?.error || "File upload failed");
+            }
+          } catch (error) {
+            console.error("File upload error:", error);
+            setLocalMessages((prev) => prev.filter((msg) => msg._id !== tempMessage._id));
+            alert("File upload error");
+          } finally {
+            setUploadingFile(false);
+            setPendingAttachment(null);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+          }
+        })();
+      } else {
+        // No attachment: send via socket as before
+        socket.emit(
+          "sendMessage",
+          {
+            receiverId: otherParticipantId,
+            message: tempMessage.message,
+          },
+          (response) => {
+            if (response?.status === "ok") {
+              setLocalMessages((prev) =>
+                prev.map((msg) =>
+                  msg._id === tempMessage._id ? response.data : msg
+                )
+              );
+            } else {
+              setLocalMessages((prev) => prev.filter((msg) => msg._id !== tempMessage._id));
+            }
+          }
+        );
       }
     },
     [
       messageText,
       otherParticipantId,
-      isSending,
-      sendMessage,
-      sendSocketMessage,
+      socket,
+      currentUserId,
       currentUser,
-      refetchMessages,
-      refetchConversations,
-      socketConversationId,
       stopTyping,
+      pendingAttachment,
+      uploadChatMedia,
     ]
   );
 
-  // Filter conversations by search term
+  // Allow user to remove pending attachment before sending
+  const removePendingAttachment = () => {
+    if (pendingAttachment?.previewUrl) URL.revokeObjectURL(pendingAttachment.previewUrl);
+    setPendingAttachment(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const filteredConversations = conversations.filter((conv) => {
     const otherParticipant = conv.participants?.find(
       (p) => p._id !== currentUserId
@@ -662,41 +704,14 @@ const Chat = () => {
       .includes(searchTerm.toLowerCase());
   });
 
-  // Get other participant for selected conversation
-  const otherParticipant = selectedConversation?.participants?.find(
-    (p) => p._id !== currentUserId
-  );
-
-  // Combine API messages with socket messages and sort by timestamp
-  const allMessages = [...messages, ...socketMessages].sort((a, b) => {
-    const timeA = new Date(a.createdAt).getTime();
-    const timeB = new Date(b.createdAt).getTime();
-    return timeA - timeB;
-  });
-
-  console.log("💬 All Messages:", {
-    count: allMessages.length,
-    apiMessages: messages.length,
-    socketMessages: socketMessages.length,
-    currentUserId,
-    currentUser: {
-      _id: currentUser?._id,
-      id: currentUser?.id,
-      name: currentUser?.name,
-    },
-    otherParticipantId,
-    otherParticipant,
-    firstMessage: allMessages[0]
-      ? {
-          senderId: allMessages[0].senderId || allMessages[0].sender?._id,
-          text: (
-            allMessages[0].message ||
-            allMessages[0].content ||
-            ""
-          ).substring(0, 50),
-        }
-      : null,
-  });
+  const allMessages = useMemo(() => {
+    const combined = [...localMessages, ...socketMessages];
+    const unique = combined.filter(
+      (msg, index, self) =>
+        index === self.findIndex((m) => (m._id || m.id) === (msg._id || msg.id))
+    );
+    return unique.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  }, [localMessages, socketMessages]);
 
   if (conversationsLoading) {
     return (
@@ -709,33 +724,41 @@ const Chat = () => {
     );
   }
 
-  // Log for debugging
-  console.log("🔥 Chat Component State:", {
-    conversations,
-    messages,
-    conversationsLoading,
-    messagesLoading,
-    otherParticipantId,
-    conversationId,
-    userId,
-    isConnected,
-    currentUserId,
-  });
-
   return (
-    <main className="h-screen bg-white flex flex-col">
+    <main className="bg-white flex flex-col">
       <Hero
         place="Chat"
         title="Messages"
-        subtitle="Communicate with workers and customers"
-        className="h-32 md:h-40 lg:h-48"
+        subtitle="Communicate with workers and service providers"
+        className="h-42 md:h-50 lg:h-68 mb-0"
       />
 
-      <div className="flex flex-1 overflow-hidden max-w-7xl mx-auto w-full">
-        {/* Conversations Sidebar */}
-        <aside className="w-full border-r border-gray-200 bg-gray-50 sm:w-72 lg:w-80 flex flex-col shadow-sm">
-          {/* Search */}
+      <div className="flex flex-1 overflow-hidden border border-neutral-200 mb-10 w-full mx-auto max-w-7xl rounded-lg relative">
+        {/* Sidebar/Conversations List */}
+        <aside
+          className={`
+            ${showSidebar ? "translate-x-0" : "-translate-x-full"}
+            lg:translate-x-0
+            fixed lg:relative
+            inset-y-0 left-0
+            z-40
+            w-72 sm:w-80
+            border-r border-gray-200 bg-gray-50
+            flex flex-col
+            transition-transform duration-300 ease-in-out
+          `}
+        >
           <header className="border-b border-gray-200 p-3 md:p-4 bg-white">
+            <div className="flex items-center justify-between mb-3 lg:hidden mt-10 lg:mt-0">
+              <h3 className="text-sm font-semibold text-gray-900">Messages</h3>
+              <button
+                onClick={() => setShowSidebar(false)}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Close sidebar"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
             <div className="relative">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -746,29 +769,11 @@ const Chat = () => {
                 placeholder="Search conversations"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-2xl border border-gray-200 bg-neutral-100 py-3 pl-11 pr-4 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:outline-none"
+                className="w-full rounded-2xl border border-gray-200 bg-neutral-100 py-2 pl-11 pr-4 text-sm text-gray-800 shadow-sm placeholder:text-gray-400 focus:outline-none"
               />
-            </div>
-
-            {/* Connection Status */}
-            <div className="mt-2 flex items-center gap-2 text-xs">
-              <Circle
-                className={`w-2 h-2 fill-current ${
-                  isConnected ? "text-green-500" : "text-red-500"
-                }`}
-              />
-              <span className="text-gray-600">
-                {isConnected ? "Connected" : "Disconnected"}
-              </span>
-              {!isConnected && (
-                <span className="text-xs text-red-500">
-                  (Check console for details)
-                </span>
-              )}
             </div>
           </header>
 
-          {/* Conversations List */}
           <div className="flex-1 overflow-y-auto">
             <div className="divide-y divide-gray-100">
               {filteredConversations.length > 0 ? (
@@ -790,32 +795,40 @@ const Chat = () => {
           </div>
         </aside>
 
-        {/* Chat Area */}
-        <section className="flex flex-1 flex-col bg-white shadow-sm">
+        {/* Overlay for mobile */}
+        {showSidebar && (
+          <div
+            className="fixed inset-0 bg-black/10 backdrop-blur-2xl bg-opacity-50 z-30 lg:hidden"
+            onClick={() => setShowSidebar(false)}
+          />
+        )}
+
+        {/* Chat Section */}
+        <section className="flex flex-1 flex-col shadow-sm h-130 w-full">
           {selectedConversation ? (
             <>
-              {/* Chat Header */}
               <header className="flex items-center justify-between border-b border-gray-100 p-3 md:p-4 bg-white shadow-sm">
                 <div className="flex items-center gap-2 md:gap-3">
                   <button
-                    className="sm:hidden"
-                    onClick={() => setSelectedConversation(null)}
+                    className="lg:hidden p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                    onClick={() => setShowSidebar(true)}
+                    aria-label="Open conversations"
                   >
-                    <ArrowLeft className="w-6 h-6 text-gray-600" />
+                    <Menu className="w-5 h-5 text-gray-600" />
                   </button>
                   <Avatar
-                    src={getFullImageUrl(otherParticipant?.profilePicture)}
-                    name={otherParticipant?.name}
+                    src={getFullImageUrl(publicProfile?.profile?.profilePicture || otherParticipant?.profilePicture)}
+                    name={publicProfile?.profile?.name || otherParticipant?.name}
                     size="default"
                     className="h-6 w-6 md:h-8 md:w-8"
                   />
                   <div>
                     <h2 className="text-xs md:text-sm font-semibold text-gray-900">
-                      {otherParticipant?.name || "Unknown User"}
+                      {publicProfile?.profile?.name || otherParticipant?.name || "Unknown User"}
                     </h2>
                     <p className="text-[10px] md:text-xs text-gray-500">
-                      {otherParticipant?.role || "User"} •{" "}
-                      {isConnected ? "Online" : "Offline"}
+                      {publicProfile?.profile?.role || otherParticipant?.role || "Worker"} •{" "}
+                       {isConnected ? "Online" : "Offline"}
                     </p>
                   </div>
                 </div>
@@ -824,9 +837,7 @@ const Chat = () => {
                     className="p-1.5 md:p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors"
                     aria-label="Report user"
                     title="Report User"
-                    onClick={() => {
-                      setShowReportModal(true);
-                    }}
+                    onClick={() => setShowReportModal(true)}
                   >
                     <Flag size={16} className="md:w-[18px] md:h-[18px]" />
                   </button>
@@ -842,7 +853,6 @@ const Chat = () => {
                 </div>
               </header>
 
-              {/* Messages */}
               <div
                 className="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 md:space-y-4"
                 style={{ overflowAnchor: "none" }}
@@ -870,11 +880,14 @@ const Chat = () => {
                         Start a conversation
                       </h3>
                       <p className="text-gray-600 mb-6">
-                        Send a message to {otherParticipant?.name || "this user"} to start your conversation.
+                        Send a message to{" "}
+                        {otherParticipant?.name || "this worker"} to start your
+                        conversation.
                       </p>
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                         <p className="text-sm text-blue-800">
-                          💡 <strong>Tip:</strong> Be polite and clearly describe what service you need or questions you have.
+                          💡 <strong>Tip:</strong> Be polite and clearly
+                          describe what service you need or questions you have.
                         </p>
                       </div>
                     </div>
@@ -885,7 +898,6 @@ const Chat = () => {
                   </div>
                 )}
 
-                {/* Typing indicator */}
                 {typingUsers.length > 0 && (
                   <div className="text-sm text-gray-500 italic">
                     {typingUsers.map((u) => u.userName).join(", ")}{" "}
@@ -896,34 +908,60 @@ const Chat = () => {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Message Composer */}
               <footer className="border-t border-gray-100 p-2 md:p-3">
                 <form onSubmit={handleSendMessage}>
                   <div className="flex items-center gap-1 md:gap-2 rounded-full border border-gray-200 bg-white px-2 md:px-3 py-1.5 md:py-2 shadow-sm">
                     <input
+                      type="file"
+                      ref={fileInputRef}
+                      style={{ display: "none" }}
+                      accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      onChange={handleFileSelect}
+                      disabled={uploadingFile}
+                    />
+                    {pendingAttachment && (
+                      <div className="flex items-center gap-2 mr-2">
+                        {pendingAttachment.previewUrl ? (
+                          <img src={pendingAttachment.previewUrl} alt="preview" className="w-12 h-12 object-cover rounded-md" />
+                        ) : (
+                          <div className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-md text-xs">{pendingAttachment.fileName}</div>
+                        )}
+                        <button type="button" onClick={removePendingAttachment} className="text-red-500">Remove</button>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center rounded-full text-gray-500 hover:text-blue-500"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFile}
+                      aria-label="Attach file"
+                    >
+                      <Paperclip size={18} />
+                    </button>
+                    <input
                       type="text"
-                      placeholder={selectedConversation?.isNewChat 
-                        ? `Send your first message to ${otherParticipant?.name || "this user"}...`
-                        : "Type a message..."
+                      placeholder={
+                        selectedConversation?.isNewChat
+                          ? `Send your first message to ${
+                              otherParticipant?.name || "this worker"
+                            }...`
+                          : "Type a message..."
                       }
                       value={messageText}
                       onChange={(e) => {
                         setMessageText(e.target.value);
-                        // Emit typing status like in working example
                         if (otherParticipantId) {
                           startTyping(otherParticipantId);
-                          // Clear previous timeout
-                          if (typingTimeoutRef.current) {
+                          if (typingTimeoutRef.current)
                             clearTimeout(typingTimeoutRef.current);
-                          }
-                          // Set new timeout to stop typing
-                          typingTimeoutRef.current = setTimeout(() => {
-                            stopTyping(otherParticipantId);
-                          }, 1000);
+                          typingTimeoutRef.current = setTimeout(
+                            () => stopTyping(otherParticipantId),
+                            1000
+                          );
                         }
                       }}
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") {
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
                           handleSendMessage(e);
                         }
@@ -931,16 +969,10 @@ const Chat = () => {
                       disabled={isSending}
                       className="flex-1 bg-transparent text-xs md:text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none min-w-0"
                     />
-                    <button
-                      type="button"
-                      className="text-gray-500 hover:text-gray-700"
-                      aria-label="Emoji"
-                    >
-                      <Smile size={16} className="md:w-[18px] md:h-[18px]" />
-                    </button>
+
                     <button
                       type="submit"
-                      disabled={!messageText.trim() || isSending}
+                      disabled={!(messageText.trim() || pendingAttachment) || isSending}
                       className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full text-white shadow cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{
                         background:
@@ -949,9 +981,12 @@ const Chat = () => {
                       aria-label="Send"
                     >
                       {isSending ? (
-                        <Loader2 size={14} className="animate-spin" />
+                        <Loader2
+                          size={14}
+                          className="md:w-4 md:h-4 animate-spin"
+                        />
                       ) : (
-                        <Send size={14} className="md:w-[18px] md:h-[18px]" />
+                        <Send size={14} className="md:w-4 md:h-4" />
                       )}
                     </button>
                   </div>
@@ -959,8 +994,14 @@ const Chat = () => {
               </footer>
             </>
           ) : (
-            /* No Conversation Selected */
-            <div className="flex-1 flex items-center justify-center">
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <button
+                className="lg:hidden mb-4 px-4 py-2 bg-linear-to-r from-[#B6E0FE] to-[#74C7F2] text-white rounded-lg flex items-center gap-2"
+                onClick={() => setShowSidebar(true)}
+              >
+                <Menu className="w-5 h-5" />
+                View Conversations
+              </button>
               <div className="text-center text-gray-500">
                 <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                   <Send className="w-8 h-8 text-gray-400" />
@@ -977,6 +1018,7 @@ const Chat = () => {
         </section>
       </div>
 
+      {/* Report Modal */}
       <ReportModal
         isOpen={showReportModal}
         onClose={() => setShowReportModal(false)}

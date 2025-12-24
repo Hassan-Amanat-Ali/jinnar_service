@@ -4,13 +4,13 @@ import {
   Search,
   CheckCheck,
   Send,
-  ArrowLeft,
   MoreVertical,
   Circle,
   Loader2,
   DollarSign,
   Menu,
   X,
+  Paperclip,
 } from "lucide-react";
 import Hero from "../../components/common/Hero";
 import Avatar from "../../components/common/Avatar";
@@ -23,9 +23,12 @@ import {
   useGetMessagesQuery,
   useSendMessageMutation,
   useMarkAsReadMutation,
+  useUploadChatMediaMutation,
 } from "../../services/chatApi";
+import { useGetPublicProfileQuery } from "../../services/workerApi";
 import OfferCard from "../../components/common/OfferCard";
 import styles from "./Chat.module.scss";
+import {getFullImageUrl} from "../../utils/fileUrl.js";
 
 // Contact Item Component
 const ContactItem = ({
@@ -34,9 +37,24 @@ const ContactItem = ({
   onClick,
   currentUserId,
 }) => {
+  // find the participant id that is not the current user
   const otherParticipant = conversation?.participants?.find(
     (p) => p._id !== currentUserId
   );
+  const participantId = otherParticipant?._id;
+
+  // Fetch public profile for this participant using the existing RTK hook
+  const { data: publicProfile } = useGetPublicProfileQuery(participantId, {
+    skip: !participantId,
+  });
+
+  // Use profile data if available, otherwise fall back to conversation participant
+  const displayName =
+    publicProfile?.profile?.name || otherParticipant?.name || "Unknown User";
+  const displayPicture =
+    publicProfile?.profile?.profilePicture || otherParticipant?.profilePicture;
+  const displayRole = publicProfile?.profile?.role || otherParticipant?.role || "User";
+
   const lastMessage = conversation?.lastMessage;
   const lastTime = conversation?.lastTime;
   const unreadCount = conversation?.unreadCount || 0;
@@ -55,6 +73,7 @@ const ContactItem = ({
     return date.toLocaleDateString([], { month: "short", day: "numeric" });
   };
 
+
   return (
     <button
       onClick={onClick}
@@ -68,8 +87,8 @@ const ContactItem = ({
     >
       <div className="relative">
         <Avatar
-          src={otherParticipant?.profilePicture}
-          name={otherParticipant?.name}
+          src={getFullImageUrl(displayPicture)}
+          name={displayName}
           size="md"
           className="h-8 w-8 md:h-10 md:w-10"
         />
@@ -78,7 +97,7 @@ const ContactItem = ({
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between">
           <p className="truncate text-xs md:text-sm font-semibold text-gray-900">
-            {otherParticipant?.name || "Unknown User"}
+            {displayName}
           </p>
           <span className="shrink-0 text-[10px] md:text-xs text-gray-500">
             {formatTime(lastTime || lastMessage?.createdAt)}
@@ -112,10 +131,12 @@ const MessageBubble = ({ message, currentUserId, otherParticipant }) => {
       />
     );
   }
-
   const messageSenderId = message.senderId || message.sender?._id;
   const isMe = messageSenderId === currentUserId;
   const messageText = message.message || message.content || "";
+
+  const isFile = message.attachment && message.attachment.url;
+  const isImage = isFile && message.attachment.type === "image";
 
   const formatTime = (timestamp) => {
     if (!timestamp) return "";
@@ -129,9 +150,7 @@ const MessageBubble = ({ message, currentUserId, otherParticipant }) => {
     <div className={`flex gap-2 md:gap-3 ${isMe ? "flex-row-reverse" : ""}`}>
       {!isMe && (
         <Avatar
-          src={
-            otherParticipant?.profilePicture || message.sender?.profilePicture
-          }
+          src={getFullImageUrl(otherParticipant?.profilePicture || message.sender?.profilePicture)}
           name={otherParticipant?.name || message.sender?.name}
           size="default"
           className="h-6 w-6 md:h-8 md:w-8"
@@ -149,9 +168,17 @@ const MessageBubble = ({ message, currentUserId, otherParticipant }) => {
               : "bg-gray-100 text-gray-900"
           }`}
         >
-          <p className="text-xs md:text-sm wrap-break-word whitespace-pre-wrap">
-            {messageText}
-          </p>
+          {isImage ? (
+            <img src={getFullImageUrl(message.attachment.url)} alt={message.attachment.type || "shared file"} className="max-w-xs max-h-60 rounded-lg" />
+          ) : isFile ? (
+            <a href={getFullImageUrl(message.attachment.url)} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+              {message.attachment.type === "video" ? "View video" : "Download file"}
+            </a>
+          ) : (
+            <p className="text-xs md:text-sm wrap-break-word whitespace-pre-wrap">
+              {messageText}
+            </p>
+          )}
         </div>
         <p
           className={`mt-1 text-[10px] md:text-xs text-gray-500 ${
@@ -178,8 +205,33 @@ const Chat = () => {
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [selectedGig, setSelectedGig] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [localMessages, setLocalMessages] = useState([]);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [pendingAttachment, setPendingAttachment] = useState(null);
+  const [uploadChatMedia] = useUploadChatMediaMutation();
+
+  // Stage attachment on select; upload will occur when user clicks Send
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const allowed = ["image/jpeg", "image/png", "application/pdf", "video/mp4"];
+    if (!allowed.includes(file.type)) {
+      alert("Unsupported file type. Allowed: jpg, png, pdf, mp4");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      alert("File too large. Max 50MB");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    const previewUrl = file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
+    setPendingAttachment({ file, previewUrl, fileName: file.name, fileType: file.type });
+  };
+
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const { user: currentUser } = useAuth();
   const currentUserId =
@@ -193,6 +245,20 @@ const Chat = () => {
     targetUserId ||
     selectedConversation?.participants?.find((p) => p._id !== currentUserId)
       ?._id;
+
+  // Ensure we have otherParticipant available before using it for header display
+  const otherParticipant = selectedConversation?.participants?.find((p) => p._id !== currentUserId);
+
+  // Fetch public profile for header display (use existing RTK hook)
+  const { data: publicProfile } = useGetPublicProfileQuery(targetUserId, {
+    skip:
+      !targetUserId ||
+      (selectedConversation && !selectedConversation._id.startsWith("temp-")),
+  });
+
+  const headerDisplayName = publicProfile?.profile?.name || otherParticipant?.name;
+  const headerDisplayPicture = publicProfile?.profile?.profilePicture || otherParticipant?.profilePicture;
+  const headerDisplayRole = publicProfile?.profile?.role || otherParticipant?.role || "User";
 
   const {
     data: conversationsData,
@@ -213,23 +279,32 @@ const Chat = () => {
     () => (Array.isArray(conversationsData) ? conversationsData : []),
     [conversationsData]
   );
+
   const messages = useMemo(
     () => (Array.isArray(messagesData) ? messagesData : []),
     [messagesData]
   );
-  const [sendMessage, { isLoading: isSending }] = useSendMessageMutation();
+
+  const [ , { isLoading: isSending }] = useSendMessageMutation();
   const [markAsRead] = useMarkAsReadMutation();
 
   const socketConversationId =
     selectedConversation?._id || `temp-${targetUserId}`;
+
   const {
     messages: socketMessages,
     setMessages: setSocketMessages,
     typingUsers,
-    sendMessage: sendSocketMessage,
     startTyping,
     stopTyping,
   } = useChat(socketConversationId);
+
+  // Sync messages from API to local state
+  useEffect(() => {
+    if (messages.length > 0) {
+      setLocalMessages(messages);
+    }
+  }, [messages]);
 
   const scrollToBottom = (smooth = true) => {
     if (messagesEndRef.current?.parentElement) {
@@ -242,33 +317,88 @@ const Chat = () => {
 
   const prevMessagesLengthRef = useRef(0);
   useEffect(() => {
-    const currentLength = messages.length + socketMessages.length;
+    const currentLength = localMessages.length + socketMessages.length;
     const isInitialLoad =
       prevMessagesLengthRef.current === 0 && currentLength > 0;
     const hasNewMessages = currentLength > prevMessagesLengthRef.current;
     if (isInitialLoad) scrollToBottom(false);
-    else if (hasNewMessages && !isSending) scrollToBottom(true);
+    else if (hasNewMessages) scrollToBottom(true);
     prevMessagesLengthRef.current = currentLength;
-  }, [
-    messages.length,
-    socketMessages.length,
-    selectedConversation?._id,
-    isSending,
-  ]);
+  }, [localMessages.length, socketMessages.length, selectedConversation?._id]);
 
+  // Listen for new messages from socket
   useEffect(() => {
     if (!socket) return;
+
+    const handleNewMessage = (newMessage) => {
+      // Check if message belongs to current conversation
+      const messageSenderId = newMessage.sender?._id || newMessage.senderId;
+      const messageReceiverId =
+        newMessage.receiver?._id || newMessage.receiverId;
+
+      const isRelevant =
+        (messageSenderId === currentUserId &&
+          messageReceiverId === otherParticipantId) ||
+        (messageSenderId === otherParticipantId &&
+          messageReceiverId === currentUserId);
+
+      if (isRelevant) {
+        // Avoid duplicates
+        setLocalMessages((prev) => {
+          const exists = prev.some(
+            (msg) => msg._id === newMessage._id || msg.id === newMessage.id
+          );
+          if (exists) return prev;
+          return [...prev, newMessage];
+        });
+      }
+
+      // Refresh conversations list to update last message
+      refetchConversations();
+    };
+
     const handleOfferUpdate = (updatedMessage) => {
+      setLocalMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === updatedMessage._id ? updatedMessage : msg
+        )
+      );
       setSocketMessages((prev) =>
         prev.map((msg) =>
           msg._id === updatedMessage._id ? updatedMessage : msg
         )
       );
-      refetchMessages();
     };
+
+    socket.on("newMessage", handleNewMessage);
     socket.on("updateMessage", handleOfferUpdate);
-    return () => socket.off("updateMessage", handleOfferUpdate);
-  }, [socket, setSocketMessages, refetchMessages]);
+
+    return () => {
+      socket.off("newMessage", handleNewMessage);
+      socket.off("updateMessage", handleOfferUpdate);
+    };
+  }, [
+    socket,
+    currentUserId,
+    otherParticipantId,
+    refetchConversations,
+    setSocketMessages,
+  ]);
+
+  // Listen for chat list updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleChatListUpdate = () => {
+      refetchConversations();
+    };
+
+    socket.on("updateChatList", handleChatListUpdate);
+
+    return () => {
+      socket.off("updateChatList", handleChatListUpdate);
+    };
+  }, [socket, refetchConversations]);
 
   useEffect(() => {
     if (targetUserId && currentUserId) {
@@ -320,47 +450,127 @@ const Chat = () => {
       setSelectedConversation(conversation);
       setSearchParams({ conversation: conversation._id });
       if (conversation.unreadCount > 0) markAsRead(conversation._id);
-      // Close sidebar on mobile when conversation is selected
       setShowSidebar(false);
+      // Do NOT clear localMessages here; let useGetMessagesQuery handle it
     },
     [setSearchParams, markAsRead]
   );
 
   const handleSendMessage = useCallback(
-    async (e) => {
+    (e) => {
       e.preventDefault();
-      if (!messageText.trim() || !otherParticipantId || isSending) return;
+      if (!messageText.trim() && !pendingAttachment) return;
+      if (!otherParticipantId || isSending) return;
 
-      const messageData = {
+      const tempMessage = {
+        _id: `temp-${Date.now()}`,
+        senderId: currentUserId,
         receiverId: otherParticipantId,
         message: messageText.trim(),
-        messageType: "text",
+        content: messageText.trim(),
+        createdAt: new Date().toISOString(),
+        isRead: false,
+        sender: {
+          _id: currentUserId,
+          name: currentUser?.name,
+          profilePicture: currentUser?.profilePicture,
+        },
       };
-      await sendMessage(messageData).unwrap();
-      sendSocketMessage({
-        ...messageData,
-        conversationId: socketConversationId,
-        sender: currentUser,
-      });
+
+      // Optimistic UI - include pending attachment preview if exists
+      if (pendingAttachment) {
+        tempMessage.attachment = {
+          url: pendingAttachment.previewUrl,
+          type: pendingAttachment.fileType.startsWith("image") ? "image" : pendingAttachment.fileType.startsWith("video") ? "video" : "file",
+          fileName: pendingAttachment.fileName,
+          pending: true,
+        };
+      }
+      setLocalMessages((prev) => [...prev, tempMessage]);
       setMessageText("");
-      refetchMessages();
-      refetchConversations();
+
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       stopTyping(otherParticipantId);
+
+      // If there's a pending attachment, upload via RTK mutation and then emit/replace
+      if (pendingAttachment) {
+        (async () => {
+          setUploadingFile(true);
+          try {
+            const formData = new FormData();
+            formData.append("attachment", pendingAttachment.file);
+            formData.append("receiverId", otherParticipantId);
+            if (messageText.trim()) formData.append("message", messageText.trim());
+
+            const res = await uploadChatMedia(formData).unwrap();
+            if (res && res.data) {
+              setLocalMessages((prev) => prev.map((m) => (m._id === tempMessage._id ? res.data : m)));
+              socket.emit("sendMessage", { receiverId: otherParticipantId, message: res.data.message, attachment: res.data.attachment });
+            } else {
+              setLocalMessages((prev) => prev.filter((m) => m._id !== tempMessage._id));
+              alert(res?.error || "File upload failed");
+            }
+          } catch (err) {
+            console.error("File upload error:", err);
+            setLocalMessages((prev) => prev.filter((m) => m._id !== tempMessage._id));
+            alert("File upload error");
+          } finally {
+            setUploadingFile(false);
+            setPendingAttachment(null);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+          }
+        })();
+      } else {
+        // No attachment: send as before via socket
+        if (socket) {
+          socket.emit(
+            "sendMessage",
+            { receiverId: otherParticipantId, message: tempMessage.message },
+            (response) => {
+              if (response?.status === "ok") {
+                setLocalMessages((prev) => prev.map((m) => (m._id === tempMessage._id ? response.data : m)));
+              } else {
+                setLocalMessages((prev) => prev.filter((m) => m._id !== tempMessage._id));
+              }
+            }
+          );
+        }
+      }
     },
     [
       messageText,
       otherParticipantId,
-      isSending,
-      sendMessage,
-      sendSocketMessage,
+      currentUserId,
       currentUser,
-      refetchMessages,
-      refetchConversations,
-      socketConversationId,
+      socket,
+      isSending,
       stopTyping,
+      pendingAttachment,
+      uploadChatMedia,
     ]
   );
+
+  const removePendingAttachment = () => {
+    if (pendingAttachment?.previewUrl) URL.revokeObjectURL(pendingAttachment.previewUrl);
+    setPendingAttachment(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // Add socket connection error handling and logging
+  useEffect(() => {
+    if (!socket) return;
+    const onConnect = () => console.log("Socket connected");
+    const onDisconnect = (reason) => console.warn("Socket disconnected:", reason);
+    const onConnectError = (err) => console.error("Socket connection error:", err);
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    socket.on("connect_error", onConnectError);
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      socket.off("connect_error", onConnectError);
+    };
+  }, [socket]);
 
   const filteredConversations = conversations.filter((conv) =>
     conv.participants?.some(
@@ -369,12 +579,18 @@ const Chat = () => {
         p.name?.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
-  const otherParticipant = selectedConversation?.participants?.find(
-    (p) => p._id !== currentUserId
-  );
-  const allMessages = [...messages, ...socketMessages].sort(
-    (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-  );
+
+  // otherParticipant already declared earlier for header usage
+
+  // Combine and deduplicate messages
+  const allMessages = useMemo(() => {
+    const combined = [...localMessages, ...socketMessages];
+    const unique = combined.filter(
+      (msg, index, self) =>
+        index === self.findIndex((m) => (m._id || m.id) === (msg._id || msg.id))
+    );
+    return unique.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  }, [localMessages, socketMessages]);
 
   if (conversationsLoading) {
     return (
@@ -435,7 +651,7 @@ const Chat = () => {
               />
             </div>
           </header>
-          <div className="flex-1 overflow-y-auto">
+          <div className={`flex-1 ${styles.scrollContainer}`}>
             <div className="divide-y divide-gray-100">
               {filteredConversations.length > 0 ? (
                 filteredConversations.map((conversation) => (
@@ -459,7 +675,7 @@ const Chat = () => {
         {/* Overlay for mobile */}
         {showSidebar && (
           <div
-            className="fixed inset-0 bg-black/10 backdrop-blur-2xl  bg-opacity-50 z-30 lg:hidden"
+            className="fixed inset-0 bg-black/10 backdrop-blur-2xl bg-opacity-50 z-30 lg:hidden"
             onClick={() => setShowSidebar(false)}
           />
         )}
@@ -478,18 +694,17 @@ const Chat = () => {
                     <Menu className="w-5 h-5 text-gray-600" />
                   </button>
                   <Avatar
-                    src={otherParticipant?.profilePicture}
-                    name={otherParticipant?.name}
+                    src={getFullImageUrl(headerDisplayPicture)}
+                    name={headerDisplayName}
                     size="default"
                     className="h-6 w-6 md:h-8 md:w-8"
                   />
                   <div>
                     <h2 className="text-xs md:text-sm font-semibold text-gray-900">
-                      {otherParticipant?.name || "Unknown User"}
+                      {headerDisplayName || "Unknown User"}
                     </h2>
                     <p className="text-[10px] md:text-xs text-gray-500">
-                      {otherParticipant?.role || "User"} •{" "}
-                      {isConnected ? "Online" : "Offline"}
+                      {headerDisplayRole || "User"} • {isConnected ? "Online" : "Offline"}
                     </p>
                   </div>
                 </div>
@@ -497,7 +712,7 @@ const Chat = () => {
                   {otherParticipant && (
                     <button
                       onClick={() => setShowGigSelection(true)}
-                      className="px-2 md:px-3 py-1.5 md:py-2 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white text-xs md:text-sm font-medium rounded-lg hover:shadow-md transition-all flex items-center gap-1"
+                      className="px-2 md:px-3 py-1.5 md:py-2 bg-linear-to-r from-[#B6E0FE] to-[#74C7F2] text-white text-xs md:text-sm font-medium rounded-lg hover:shadow-md transition-all flex items-center gap-1"
                       title="Send Custom Offer"
                     >
                       <DollarSign size={14} className="md:w-4 md:h-4" />
@@ -543,8 +758,7 @@ const Chat = () => {
                         Start a conversation
                       </h3>
                       <p className="text-gray-600 mb-6">
-                        Send a message to{" "}
-                        {otherParticipant?.name || "this customer"} to start
+                        Send a message to {otherParticipant?.name || "this customer"} to start
                         your conversation.
                       </p>
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -564,7 +778,7 @@ const Chat = () => {
 
                 {typingUsers.length > 0 && (
                   <div className="text-sm text-gray-500 italic">
-                    {typingUsers.map((u) => u.userName).join(", ")}{" "}
+                    {typingUsers.map((u) => u.userName).join(", ")} {" "}
                     {typingUsers.length === 1 ? "is" : "are"} typing...
                   </div>
                 )}
@@ -575,6 +789,33 @@ const Chat = () => {
               <footer className="border-t border-gray-100 p-2 md:p-3">
                 <form onSubmit={handleSendMessage}>
                   <div className="flex items-center gap-1 md:gap-2 rounded-full border border-gray-200 bg-white px-2 md:px-3 py-1.5 md:py-2 shadow-sm">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      style={{ display: "none" }}
+                      accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                      onChange={handleFileSelect}
+                      disabled={uploadingFile}
+                    />
+                    {pendingAttachment && (
+                      <div className="flex items-center gap-2 mr-2">
+                        {pendingAttachment.previewUrl ? (
+                          <img src={pendingAttachment.previewUrl} alt="preview" className="w-12 h-12 object-cover rounded-md" />
+                        ) : (
+                          <div className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-md text-xs">{pendingAttachment.fileName}</div>
+                        )}
+                        <button type="button" onClick={removePendingAttachment} className="text-red-500">Remove</button>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center rounded-full text-gray-500 hover:text-blue-500"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFile}
+                      aria-label="Attach file"
+                    >
+                      <Paperclip size={18} />
+                    </button>
                     <input
                       type="text"
                       placeholder={
@@ -597,7 +838,7 @@ const Chat = () => {
                           );
                         }
                       }}
-                      onKeyPress={(e) => {
+                      onKeyDown={(e) => {
                         if (e.key === "Enter") {
                           e.preventDefault();
                           handleSendMessage(e);
@@ -609,11 +850,10 @@ const Chat = () => {
 
                     <button
                       type="submit"
-                      disabled={!messageText.trim() || isSending}
+                      disabled={!(messageText.trim() || pendingAttachment) || isSending}
                       className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full text-white shadow cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{
-                        background:
-                          "linear-gradient(180deg, #B6E0FE 0%, #74C7F2 100%)",
+                        background: "linear-gradient(180deg, #B6E0FE 0%, #74C7F2 100%)",
                       }}
                       aria-label="Send"
                     >
@@ -630,7 +870,7 @@ const Chat = () => {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center">
               <button
-                className="lg:hidden mb-4 px-4 py-2 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white rounded-lg flex items-center gap-2"
+                className="lg:hidden mb-4 px-4 py-2 bg-linear-to-r from-[#B6E0FE] to-[#74C7F2] text-white rounded-lg flex items-center gap-2"
                 onClick={() => setShowSidebar(true)}
               >
                 <Menu className="w-5 h-5" />
