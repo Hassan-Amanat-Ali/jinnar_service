@@ -5,21 +5,18 @@ import { getFullImageUrl } from "../../utils/fileUrl";
 
 const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
   const [selectedGigId, setSelectedGigId] = useState("");
-  const { data: gigsResponse, isLoading: gigsLoading } = useGetMyGigsQuery();
 
-  // Handle different API response structures
-  // Get gigs from the correct response structure (same as WorkerGigs.jsx)
+  const { data: gigsResponse, isLoading } = useGetMyGigsQuery();
   const gigs = gigsResponse?.gigs || [];
 
-  // Debug log
-  console.log("🎯 Gigs Debug:", {
-    gigsResponse,
-    gigs,
-    gigsLength: gigs.length,
-    isLoading: gigsLoading,
-    hasGigsProperty: !!gigsResponse?.gigs,
-    isArray: Array.isArray(gigs),
-  });
+  const getPriceValue = (pricing) => {
+    if (typeof pricing === "object" && pricing !== null) {
+      return pricing.price || 0;
+    }
+    return pricing || 0;
+  };
+
+  const formatPrice = (pricing) => Number(getPriceValue(pricing)).toFixed(2);
 
   const handleContinue = () => {
     const selectedGig = gigs.find((gig) => gig._id === selectedGigId);
@@ -28,21 +25,13 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
     }
   };
 
-  const formatPrice = (pricing) => {
-    // Handle both pricing object {method, price} and direct price value
-    const price = pricing?.price || pricing || 0;
-    return typeof price === "number"
-      ? price.toFixed(2)
-      : parseFloat(price || 0).toFixed(2);
-  };
-
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Transparent Backdrop */}
+      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black bg-opacity-10 backdrop-blur-[1px]"
+        className="absolute inset-0 bg-black/20 bg-opacity-10 backdrop-blur-lg"
         onClick={onClose}
       />
 
@@ -55,7 +44,7 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
           </h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1 hover:bg-gray-100 rounded-lg"
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>
@@ -63,14 +52,14 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
 
         {/* Content */}
         <div className="p-6">
-          {/* Recipient Info */}
+          {/* Receiver */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
             <p className="text-sm text-blue-800">
               <strong>Creating offer for:</strong> {receiverName || "Customer"}
             </p>
           </div>
 
-          {/* Gig Selection */}
+          {/* Gigs */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
               <Package className="w-5 h-5 text-gray-600" />
@@ -79,14 +68,14 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
               </h3>
             </div>
 
-            {gigsLoading ? (
+            {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                 <span className="ml-3 text-gray-600">
                   Loading your services...
                 </span>
               </div>
-            ) : Array.isArray(gigs) && gigs.length > 0 ? (
+            ) : gigs.length > 0 ? (
               <div className="space-y-3 max-h-96 overflow-y-auto">
                 {gigs.map((gig) => (
                   <label
@@ -107,22 +96,16 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
                     />
 
                     <div className="flex items-start gap-4">
-                      {/* Gig Image */}
-                      {gig.images &&
-                        Array.isArray(gig.images) &&
-                        gig.images.length > 0 && (
-                          <div className="shrink-0">
-                            <img
-                              src={getFullImageUrl(
-                                gig.images[0]?.url || gig.images[0]
-                              )}
-                              alt={gig.title}
-                              className="w-16 h-16 rounded-lg object-cover"
-                            />
-                          </div>
-                        )}
+                      {gig.images?.length > 0 && (
+                        <img
+                          src={getFullImageUrl(
+                            gig.images[0]?.url || gig.images[0]
+                          )}
+                          alt={gig.title}
+                          className="w-16 h-16 rounded-lg object-cover shrink-0"
+                        />
+                      )}
 
-                      {/* Gig Info */}
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-gray-900 mb-1 line-clamp-1">
                           {gig.title}
@@ -136,7 +119,7 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
                           <div className="flex items-center gap-1">
                             <DollarSign className="w-4 h-4" />
                             <span className="font-medium text-gray-900">
-                              ${formatPrice(gig.pricing)}
+                              TZS {formatPrice(gig.pricing)}
                             </span>
                           </div>
 
@@ -155,19 +138,18 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
                           )}
                         </div>
 
-                        {/* Skills/Tags */}
-                        {gig.skills && gig.skills.length > 0 && (
+                        {gig.skills?.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
                             {gig.skills.slice(0, 3).map((skill, index) => (
                               <span
                                 key={index}
-                                className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-md"
+                                className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-md"
                               >
                                 {skill}
                               </span>
                             ))}
                             {gig.skills.length > 3 && (
-                              <span className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-md">
+                              <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-md">
                                 +{gig.skills.length - 3} more
                               </span>
                             )}
@@ -175,9 +157,8 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
                         )}
                       </div>
 
-                      {/* Selection Indicator */}
                       {selectedGigId === gig._id && (
-                        <div className="shrink-0 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center shrink-0">
                           <div className="w-2 h-2 bg-white rounded-full" />
                         </div>
                       )}
@@ -197,7 +178,7 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
                 </p>
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
                   Create Service First
                 </button>
@@ -207,19 +188,18 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
         </div>
 
         {/* Actions */}
-        {Array.isArray(gigs) && gigs.length > 0 && (
+        {gigs.length > 0 && (
           <div className="flex gap-3 p-6 border-t border-gray-200 bg-gray-50">
             <button
-              type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
             >
               Cancel
             </button>
             <button
               onClick={handleContinue}
               disabled={!selectedGigId}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <Package className="w-4 h-4" />
               Continue

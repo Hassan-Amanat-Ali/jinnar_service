@@ -9,9 +9,11 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetPublicProfileQuery } from "../../services/workerApi";
-import { getFullImageUrl } from "../../utils/fileUrl.js";
+import { getFullImageUrl, reverseGeocode } from "../../utils/fileUrl.js";
+import { useEffect, useState } from "react";
 
 /* ---------------- Rating Stars ---------------- */
+
 const RatingStars = ({ value = 5, outOf = 5, size = 16 }) => {
   const stars = Array.from({ length: outOf }, (_, i) => i < Math.round(value));
   return (
@@ -41,6 +43,13 @@ const WorkerView = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { data, isLoading, error } = useGetPublicProfileQuery(id);
+  console.log(data);
+
+  const [location, setLocation] = useState(null);
+
+  useEffect(() => {
+    setLocation(reverseGeocode(data?.profile?.selectedAreas.coordinates));
+  }, [data]);
 
   /* ---------------- Loading State ---------------- */
   if (isLoading) {
@@ -223,7 +232,7 @@ const WorkerView = () => {
                 {profile.selectedAreas?.length > 0 && (
                   <div className="flex items-center justify-center gap-2 bg-gray-100 rounded-full py-2 text-sm">
                     <MapPin size={16} />
-                    {profile.selectedAreas.length} locations
+                    {location}
                   </div>
                 )}
               </div>

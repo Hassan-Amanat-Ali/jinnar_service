@@ -28,7 +28,7 @@ import {
 import { useGetPublicProfileQuery } from "../../services/workerApi";
 import OfferCard from "../../components/common/OfferCard";
 import styles from "./Chat.module.scss";
-import {getFullImageUrl} from "../../utils/fileUrl.js";
+import { getFullImageUrl } from "../../utils/fileUrl.js";
 
 // Contact Item Component
 const ContactItem = ({
@@ -53,7 +53,8 @@ const ContactItem = ({
     publicProfile?.profile?.name || otherParticipant?.name || "Unknown User";
   const displayPicture =
     publicProfile?.profile?.profilePicture || otherParticipant?.profilePicture;
-  const displayRole = publicProfile?.profile?.role || otherParticipant?.role || "User";
+  const displayRole =
+    publicProfile?.profile?.role || otherParticipant?.role || "User";
 
   const lastMessage = conversation?.lastMessage;
   const lastTime = conversation?.lastTime;
@@ -72,7 +73,6 @@ const ContactItem = ({
     }
     return date.toLocaleDateString([], { month: "short", day: "numeric" });
   };
-
 
   return (
     <button
@@ -150,7 +150,9 @@ const MessageBubble = ({ message, currentUserId, otherParticipant }) => {
     <div className={`flex gap-2 md:gap-3 ${isMe ? "flex-row-reverse" : ""}`}>
       {!isMe && (
         <Avatar
-          src={getFullImageUrl(otherParticipant?.profilePicture || message.sender?.profilePicture)}
+          src={getFullImageUrl(
+            otherParticipant?.profilePicture || message.sender?.profilePicture
+          )}
           name={otherParticipant?.name || message.sender?.name}
           size="default"
           className="h-6 w-6 md:h-8 md:w-8"
@@ -169,10 +171,21 @@ const MessageBubble = ({ message, currentUserId, otherParticipant }) => {
           }`}
         >
           {isImage ? (
-            <img src={getFullImageUrl(message.attachment.url)} alt={message.attachment.type || "shared file"} className="max-w-xs max-h-60 rounded-lg" />
+            <img
+              src={getFullImageUrl(message.attachment.url)}
+              alt={message.attachment.type || "shared file"}
+              className="max-w-xs max-h-60 rounded-lg"
+            />
           ) : isFile ? (
-            <a href={getFullImageUrl(message.attachment.url)} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-              {message.attachment.type === "video" ? "View video" : "Download file"}
+            <a
+              href={getFullImageUrl(message.attachment.url)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline"
+            >
+              {message.attachment.type === "video"
+                ? "View video"
+                : "Download file"}
             </a>
           ) : (
             <p className="text-xs md:text-sm wrap-break-word whitespace-pre-wrap">
@@ -225,8 +238,15 @@ const Chat = () => {
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
-    const previewUrl = file.type.startsWith("image/") ? URL.createObjectURL(file) : null;
-    setPendingAttachment({ file, previewUrl, fileName: file.name, fileType: file.type });
+    const previewUrl = file.type.startsWith("image/")
+      ? URL.createObjectURL(file)
+      : null;
+    setPendingAttachment({
+      file,
+      previewUrl,
+      fileName: file.name,
+      fileType: file.type,
+    });
   };
 
   const messagesEndRef = useRef(null);
@@ -247,7 +267,9 @@ const Chat = () => {
       ?._id;
 
   // Ensure we have otherParticipant available before using it for header display
-  const otherParticipant = selectedConversation?.participants?.find((p) => p._id !== currentUserId);
+  const otherParticipant = selectedConversation?.participants?.find(
+    (p) => p._id !== currentUserId
+  );
 
   // Fetch public profile for header display (use existing RTK hook)
   const { data: publicProfile } = useGetPublicProfileQuery(targetUserId, {
@@ -256,9 +278,12 @@ const Chat = () => {
       (selectedConversation && !selectedConversation._id.startsWith("temp-")),
   });
 
-  const headerDisplayName = publicProfile?.profile?.name || otherParticipant?.name;
-  const headerDisplayPicture = publicProfile?.profile?.profilePicture || otherParticipant?.profilePicture;
-  const headerDisplayRole = publicProfile?.profile?.role || otherParticipant?.role || "User";
+  const headerDisplayName =
+    publicProfile?.profile?.name || otherParticipant?.name;
+  const headerDisplayPicture =
+    publicProfile?.profile?.profilePicture || otherParticipant?.profilePicture;
+  const headerDisplayRole =
+    publicProfile?.profile?.role || otherParticipant?.role || "User";
 
   const {
     data: conversationsData,
@@ -285,7 +310,9 @@ const Chat = () => {
     [messagesData]
   );
 
-  const [ , { isLoading: isSending }] = useSendMessageMutation();
+  console.log("............", messages);
+
+  const [, { isLoading: isSending }] = useSendMessageMutation();
   const [markAsRead] = useMarkAsReadMutation();
 
   const socketConversationId =
@@ -385,6 +412,31 @@ const Chat = () => {
     setSocketMessages,
   ]);
 
+  // Listen for new offers from socket
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewOffer = (offer) => {
+      const messageSenderId = offer.sender?._id || offer.senderId;
+      const messageReceiverId = offer.receiver?._id || offer.receiverId;
+
+      const isRelevant =
+        (messageSenderId === currentUserId &&
+          messageReceiverId === otherParticipantId) ||
+        (messageSenderId === otherParticipantId &&
+          messageReceiverId === currentUserId);
+
+      if (isRelevant) {
+        setLocalMessages((prev) => [...prev, offer]);
+        refetchConversations(); // update sidebar last message
+      }
+    };
+
+    socket.on("newOffer", handleNewOffer);
+
+    return () => socket.off("newOffer", handleNewOffer);
+  }, [socket, currentUserId, otherParticipantId, refetchConversations]);
+
   // Listen for chat list updates
   useEffect(() => {
     if (!socket) return;
@@ -481,7 +533,11 @@ const Chat = () => {
       if (pendingAttachment) {
         tempMessage.attachment = {
           url: pendingAttachment.previewUrl,
-          type: pendingAttachment.fileType.startsWith("image") ? "image" : pendingAttachment.fileType.startsWith("video") ? "video" : "file",
+          type: pendingAttachment.fileType.startsWith("image")
+            ? "image"
+            : pendingAttachment.fileType.startsWith("video")
+            ? "video"
+            : "file",
           fileName: pendingAttachment.fileName,
           pending: true,
         };
@@ -500,19 +556,30 @@ const Chat = () => {
             const formData = new FormData();
             formData.append("attachment", pendingAttachment.file);
             formData.append("receiverId", otherParticipantId);
-            if (messageText.trim()) formData.append("message", messageText.trim());
+            if (messageText.trim())
+              formData.append("message", messageText.trim());
 
             const res = await uploadChatMedia(formData).unwrap();
             if (res && res.data) {
-              setLocalMessages((prev) => prev.map((m) => (m._id === tempMessage._id ? res.data : m)));
-              socket.emit("sendMessage", { receiverId: otherParticipantId, message: res.data.message, attachment: res.data.attachment });
+              setLocalMessages((prev) =>
+                prev.map((m) => (m._id === tempMessage._id ? res.data : m))
+              );
+              socket.emit("sendMessage", {
+                receiverId: otherParticipantId,
+                message: res.data.message,
+                attachment: res.data.attachment,
+              });
             } else {
-              setLocalMessages((prev) => prev.filter((m) => m._id !== tempMessage._id));
+              setLocalMessages((prev) =>
+                prev.filter((m) => m._id !== tempMessage._id)
+              );
               alert(res?.error || "File upload failed");
             }
           } catch (err) {
             console.error("File upload error:", err);
-            setLocalMessages((prev) => prev.filter((m) => m._id !== tempMessage._id));
+            setLocalMessages((prev) =>
+              prev.filter((m) => m._id !== tempMessage._id)
+            );
             alert("File upload error");
           } finally {
             setUploadingFile(false);
@@ -528,9 +595,15 @@ const Chat = () => {
             { receiverId: otherParticipantId, message: tempMessage.message },
             (response) => {
               if (response?.status === "ok") {
-                setLocalMessages((prev) => prev.map((m) => (m._id === tempMessage._id ? response.data : m)));
+                setLocalMessages((prev) =>
+                  prev.map((m) =>
+                    m._id === tempMessage._id ? response.data : m
+                  )
+                );
               } else {
-                setLocalMessages((prev) => prev.filter((m) => m._id !== tempMessage._id));
+                setLocalMessages((prev) =>
+                  prev.filter((m) => m._id !== tempMessage._id)
+                );
               }
             }
           );
@@ -551,7 +624,8 @@ const Chat = () => {
   );
 
   const removePendingAttachment = () => {
-    if (pendingAttachment?.previewUrl) URL.revokeObjectURL(pendingAttachment.previewUrl);
+    if (pendingAttachment?.previewUrl)
+      URL.revokeObjectURL(pendingAttachment.previewUrl);
     setPendingAttachment(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -560,8 +634,10 @@ const Chat = () => {
   useEffect(() => {
     if (!socket) return;
     const onConnect = () => console.log("Socket connected");
-    const onDisconnect = (reason) => console.warn("Socket disconnected:", reason);
-    const onConnectError = (err) => console.error("Socket connection error:", err);
+    const onDisconnect = (reason) =>
+      console.warn("Socket disconnected:", reason);
+    const onConnectError = (err) =>
+      console.error("Socket connection error:", err);
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
     socket.on("connect_error", onConnectError);
@@ -704,7 +780,8 @@ const Chat = () => {
                       {headerDisplayName || "Unknown User"}
                     </h2>
                     <p className="text-[10px] md:text-xs text-gray-500">
-                      {headerDisplayRole || "User"} • {isConnected ? "Online" : "Offline"}
+                      {headerDisplayRole || "User"} •{" "}
+                      {isConnected ? "Online" : "Offline"}
                     </p>
                   </div>
                 </div>
@@ -758,7 +835,8 @@ const Chat = () => {
                         Start a conversation
                       </h3>
                       <p className="text-gray-600 mb-6">
-                        Send a message to {otherParticipant?.name || "this customer"} to start
+                        Send a message to{" "}
+                        {otherParticipant?.name || "this customer"} to start
                         your conversation.
                       </p>
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -778,7 +856,7 @@ const Chat = () => {
 
                 {typingUsers.length > 0 && (
                   <div className="text-sm text-gray-500 italic">
-                    {typingUsers.map((u) => u.userName).join(", ")} {" "}
+                    {typingUsers.map((u) => u.userName).join(", ")}{" "}
                     {typingUsers.length === 1 ? "is" : "are"} typing...
                   </div>
                 )}
@@ -800,11 +878,23 @@ const Chat = () => {
                     {pendingAttachment && (
                       <div className="flex items-center gap-2 mr-2">
                         {pendingAttachment.previewUrl ? (
-                          <img src={pendingAttachment.previewUrl} alt="preview" className="w-12 h-12 object-cover rounded-md" />
+                          <img
+                            src={pendingAttachment.previewUrl}
+                            alt="preview"
+                            className="w-12 h-12 object-cover rounded-md"
+                          />
                         ) : (
-                          <div className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-md text-xs">{pendingAttachment.fileName}</div>
+                          <div className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-md text-xs">
+                            {pendingAttachment.fileName}
+                          </div>
                         )}
-                        <button type="button" onClick={removePendingAttachment} className="text-red-500">Remove</button>
+                        <button
+                          type="button"
+                          onClick={removePendingAttachment}
+                          className="text-red-500"
+                        >
+                          Remove
+                        </button>
                       </div>
                     )}
                     <button
@@ -850,10 +940,13 @@ const Chat = () => {
 
                     <button
                       type="submit"
-                      disabled={!(messageText.trim() || pendingAttachment) || isSending}
+                      disabled={
+                        !(messageText.trim() || pendingAttachment) || isSending
+                      }
                       className="inline-flex h-7 w-7 md:h-9 md:w-9 items-center justify-center rounded-full text-white shadow cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{
-                        background: "linear-gradient(180deg, #B6E0FE 0%, #74C7F2 100%)",
+                        background:
+                          "linear-gradient(180deg, #B6E0FE 0%, #74C7F2 100%)",
                       }}
                       aria-label="Send"
                     >
@@ -908,19 +1001,19 @@ const Chat = () => {
 
       <CustomOfferModal
         isOpen={showOfferModal}
-        onClose={() => {
-          setShowOfferModal(false);
-          setSelectedGig(null);
-        }}
-        receiverId={otherParticipantId}
+        onClose={() => setShowOfferModal(false)}
+        receiverId={otherParticipant?._id}
         receiverName={otherParticipant?.name}
         selectedGig={selectedGig}
-        onOfferSent={() => {
-          setShowOfferModal(false);
-          setSelectedGig(null);
-          refetchMessages();
-          refetchConversations();
+        onOfferSent={(offer, tempId) => {
+          setLocalMessages((prev) =>
+            tempId
+              ? prev.map((m) => (m._id === tempId ? offer : m))
+              : [...prev, offer]
+          );
         }}
+        socket={socket}
+        currentUser={currentUser}
       />
     </main>
   );

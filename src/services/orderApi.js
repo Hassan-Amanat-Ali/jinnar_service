@@ -9,30 +9,33 @@ export const orderApi = baseApi.injectEndpoints({
         method: "POST",
         body: offerData,
       }),
-      invalidatesTags: ["CustomOffer"],
+      invalidatesTags: (result, error, { messageId }) =>
+        messageId ? [{ type: "CustomOffer", id: messageId }] : ["CustomOffer"],
     }),
-    
+
     // Accept a custom offer
     acceptOffer: builder.mutation({
-      query: ({ orderId }) => ({
+      query: ({ orderId, messageId }) => ({
         url: "/orders/accept-offer",
         method: "POST",
-        body: { orderId },
+        body: { orderId, messageId },
       }),
-      invalidatesTags: ["CustomOffer", "Order"],
+      invalidatesTags: (result, error, { messageId }) => [
+        { type: "CustomOffer", id: messageId },
+      ],
     }),
-    
+
     // Reject a custom offer
     rejectOffer: builder.mutation({
-      query: ({ orderId }) => ({
+      query: ({ orderId, messageId }) => ({
         url: "/orders/reject-offer",
         method: "POST",
-        body: { orderId },
+        body: { orderId, messageId },
       }),
-      invalidatesTags: ["CustomOffer"],
+      invalidatesTags: (result, error, { messageId }) => [
+        { type: "CustomOffer", id: messageId },
+      ],
     }),
-    
-
   }),
 });
 
