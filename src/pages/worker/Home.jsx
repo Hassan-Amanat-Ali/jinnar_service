@@ -4,7 +4,7 @@ import Charts from "../../components/worker/Home/Charts";
 import Hero from "../../components/worker/Home/Hero";
 import BookingCard from "../../components/customer/BookinCard";
 import { useNavigate } from "react-router-dom";
-import { useGetMyOrdersQuery, useGetWalletQuery, useUpdateFcmTokenMutation } from "../../services/workerApi";
+import { useGetMyOrdersQuery, useGetWalletQuery, useGetEarningsQuery, useUpdateFcmTokenMutation } from "../../services/workerApi";
 import { format } from "date-fns";
 import { requestNotificationPermission } from "../../utils/fcm";
 import {useAuth} from "../../context/AuthContext.jsx";
@@ -17,6 +17,7 @@ const Home = () => {
   // Fetch real bookings data
   const { data: ordersData, isLoading: ordersLoading } = useGetMyOrdersQuery();
   const { data: walletData } = useGetWalletQuery();
+  const { data: earningsData } = useGetEarningsQuery();
 
   // Request FCM permission and update token on component mount
   useEffect(() => {
@@ -57,7 +58,7 @@ const Home = () => {
       <Hero />
 
       {/* Charts with wallet data */}
-      <Charts walletData={walletData} />
+      <Charts walletData={walletData} earningsData={earningsData} />
 
       {/* Your Bookings Section */}
       <div className="max-w-7xl mx-auto my-8 sm:my-12 lg:my-16 px-4 sm:px-6 lg:px-6 xl:px-5">

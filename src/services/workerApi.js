@@ -99,7 +99,6 @@ export const workerApi = baseApi.injectEndpoints({
       transformResponse: (response) => {
         // If backend returned the array directly
         if (Array.isArray(response)) return response;
-        console.log("..........resposnsse in rtk",response);
 
         // Common server wrappers
         if (response?.orders && Array.isArray(response.orders)) return response.orders;
@@ -197,6 +196,10 @@ export const workerApi = baseApi.injectEndpoints({
     }),
     getWallet: builder.query({
       query: () => "/wallet/balance",
+      providesTags: ["Wallet"],
+    }),
+    getEarnings: builder.query({
+      query: () => "/wallet/earnings",
       providesTags: ["Wallet"],
     }),
     depositMoney: builder.mutation({
@@ -299,6 +302,7 @@ export const {
   useCancelOrderMutation,
   useReviewOrderMutation,
   useGetWalletQuery,
+  useGetEarningsQuery,
   useDepositMoneyMutation,
   useWithdrawWalletMutation,
   useGetNotificationsQuery,

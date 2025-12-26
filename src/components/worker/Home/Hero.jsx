@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { CheckCircle, Briefcase, Check, DollarSign, Star } from "lucide-react";
 import bag from "../../../assets/icons/worker-bag.png";
 import check from "../../../assets/icons/check.png";
-import { useGetMyProfileQuery, useGetMyOrdersQuery, useGetNewJobRequestsQuery, useGetWalletQuery } from "../../../services/workerApi";
+import { useGetMyProfileQuery, useGetMyOrdersQuery, useGetNewJobRequestsQuery, useGetWalletQuery, useGetSellerStatsQuery } from "../../../services/workerApi";
 import { getFullImageUrl } from "../../../utils/fileUrl.js";
 
 const Hero = () => {
@@ -15,9 +15,10 @@ const Hero = () => {
   const { data: ordersData } = useGetMyOrdersQuery();
   const { data: newJobsData } = useGetNewJobRequestsQuery();
   const { data: walletData } = useGetWalletQuery();
+  const { data: sellerStats } = useGetSellerStatsQuery();
   
   // Calculate real stats
-  const allOrders = ordersData?.orders || [];
+  const allOrders = ordersData || [];
   const completedOrders = allOrders.filter(order => order.status === 'completed');
   // Get active job requests from new jobs data (pending jobs waiting for response)
   const activeJobRequests = newJobsData?.jobs?.length || 0;
@@ -35,21 +36,6 @@ const Hero = () => {
     })
     .reduce((total, order) => total + (order.price || 0), 0);
 
-  // Log personal details for debugging completion status
-  useEffect(() => {
-    if (profile) {
-      const profilePicUrl = getFullImageUrl(profile.profilePicture);
-      console.group("🕵️ Personal Details Completion Check");
-      console.log("Name:", `'${profile.name}'`, `| Pass: ${!!profile.name}`);
-      console.log("Mobile Number:", `'${profile.mobileNumber}'`, `| Pass: ${!!profile.mobileNumber}`);
-      console.log("Years of Experience:", profile.yearsOfExperience, `| Type: ${typeof profile.yearsOfExperience}`, `| Pass: ${typeof profile.yearsOfExperience === 'number'}`);
-      console.log("Profile Picture URL:", `'${profilePicUrl}'`, `| Pass: ${!!profilePicUrl}`);
-      console.log("Bio:", `'${profile.bio}'`, `| Pass: ${!!profile.bio}`);
-      console.groupEnd();
-    } else {
-      console.log("🕵️ Personal Details Check: Profile data not available yet.");
-    }
-  }, [profile]);
 
   // Check individual completion status
   const hasPersonalDetails = profile?.name && profile?.mobileNumber && typeof profile?.yearsOfExperience === 'number' && !!getFullImageUrl(profile?.profilePicture) && profile?.bio;
@@ -62,6 +48,25 @@ const Hero = () => {
   // Get stats - use calculated values from orders
   const jobsCompleted = completedOrders.length;
   const rating = profile?.rating?.average || profile?.rating || 0;
+  // Get growth percentages from seller stats API
+  const jobsGrowthPercentage = sellerStats?.jobsGrowthPercentage;
+  const ratingGrowthPercentage = sellerStats?.ratingGrowthPercentage;
+  
+  // Helper function to render growth indicator
+  const renderGrowthIndicator = (percentage) => {
+    if (percentage === null || percentage === undefined) return null;
+    
+    const isPositive = percentage >= 0;
+    const arrow = isPositive ? '↗' : '↘';
+    const colorClass = isPositive ? 'text-green-600' : 'text-red-600';
+    const sign = isPositive ? '+' : '';
+    
+    return (
+      <span className={`text-xs font-medium ${colorClass}`}>
+        {arrow} {sign}{percentage}%
+      </span>
+    );
+  };
   
   const calculateProfileCompletion = () => {
     if (!profile) return 0;
@@ -264,7 +269,7 @@ const Hero = () => {
             <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
               <img src={check} alt="" className="w-5 h-5 text-green-600" />
             </div>
-            <span className="text-xs font-medium text-green-600">↗ +12%</span>
+            {renderGrowthIndicator(jobsGrowthPercentage)}
           </div>
           <p className="text-xs text-gray-600 mb-1">Jobs Completed</p>
           <p className="text-2xl font-bold text-gray-900">{jobsCompleted}</p>
@@ -298,7 +303,7 @@ const Hero = () => {
             <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
               <Star className="w-5 h-5 text-yellow-600" />
             </div>
-            <span className="text-xs font-medium text-green-600">↗ +12%</span>
+            {renderGrowthIndicator(ratingGrowthPercentage)}
           </div>
           <p className="text-xs text-gray-600 mb-1">Rating</p>
           <p className="text-2xl font-bold text-gray-900">

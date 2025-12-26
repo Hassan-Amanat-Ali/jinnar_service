@@ -1,6 +1,7 @@
 import React from "react";
 import Button from "../../components/common/Button";
 import icon from "../../assets/icons/star.png";
+import OptimizedImage from "../../components/common/OptimizedImage";
 import { useNavigate } from "react-router-dom";
 
 // Single Card Component
@@ -22,7 +23,11 @@ const SingleCard = ({
       <div className="w-full h-auto overflow-hidden shadow-sm rounded-2xl border-[#F2F2F2] border-1 bg-white">
         <div className="relative">
           <div className="h-48 sm:h-50 w-full">
-            <img src={img} alt={title} className="w-full h-full object-cover" />
+            <OptimizedImage
+              src={img}
+              alt={title}
+              className="w-full h-full object-cover"
+            />
           </div>
           {status && (
             <div className="absolute top-2 left-2 bg-white/30 backdrop-blur-sm py-0.5 sm:py-1 px-2 rounded-md text-xs sm:rounded-lg shadow-sm font-semibold">
@@ -71,7 +76,11 @@ const SingleCard = ({
   return (
     <div className="w-full h-auto overflow-hidden shadow-sm rounded-2xl border-[#F2F2F2] border-1 bg-white">
       <div className="h-48 sm:h-50 w-full">
-        <img src={img} alt={title} className="w-full h-full object-cover" />
+        <OptimizedImage
+          src={img}
+          alt={title}
+          className="w-full h-full object-cover"
+        />
       </div>
       <div className="p-3 space-y-2">
         <div className="flex items-center justify-between">

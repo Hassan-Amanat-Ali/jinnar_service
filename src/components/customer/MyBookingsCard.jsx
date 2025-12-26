@@ -3,6 +3,7 @@ import { Calendar, Clock, MapPin, DollarSign, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import MessageButton from "../common/MessageButton";
 import { reverseGeocode } from "../../utils/fileUrl";
+import OptimizedImage from "../common/OptimizedImage";
 
 const JobCard = ({
   serviceImage,
@@ -42,7 +43,7 @@ const JobCard = ({
     <div className="w-full max-w-md mx-auto bg-white rounded-2xl shadow-lg p-3 sm:p-4 md:p-5 border border-gray-100 sm:h-92">
       <div className="flex items-start sm:items-center gap-2 sm:gap-3 min-h-12 sm:h-18">
         {serviceImage ? (
-          <img
+          <OptimizedImage
             src={serviceImage}
             alt="Service"
             className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover shrink-0"
@@ -80,7 +81,7 @@ const JobCard = ({
 
       <div className="mt-3 sm:mt-4 flex items-center gap-2 sm:gap-3 bg-[#E3F3FF] p-2 sm:p-3 rounded-xl">
         {workerImage ? (
-          <img
+          <OptimizedImage
             src={workerImage}
             alt="Worker"
             className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shrink-0"

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   MapPin,
   Calendar,
@@ -16,6 +16,7 @@ import {
   RotateCcw,
   MessageSquare,
 } from "lucide-react";
+import { reverseGeocode } from "../../../utils/fileUrl";
 
 const InfoItem = ({ icon, children }) => (
   <span className="inline-flex items-center gap-1.5 text-xs sm:text-[13px] text-white/90">
@@ -79,7 +80,31 @@ const ActionButton = ({ variant = "solid", icon, children }) => {
 };
 
 const JobDetailComponent = ({ order }) => {
-  // Transform API data to component format
+  const [locationAddress, setLocationAddress] = useState('Loading location...');
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchLocation = async () => {
+      if (order?.location?.lat && order?.location?.lng) {
+        const address = await reverseGeocode(order.location.lat, order.location.lng);
+        if (isMounted) {
+          setLocationAddress(address || `${order.location.lat.toFixed(4)}, ${order.location.lng.toFixed(4)}`);
+        }
+      } else {
+        if (isMounted) {
+          setLocationAddress('Location not specified');
+        }
+      }
+    };
+
+    fetchLocation();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [order?.location?.lat, order?.location?.lng]);
+
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
@@ -95,7 +120,6 @@ const JobDetailComponent = ({ order }) => {
   
   const formatTime = (timeSlot) => {
     if (!timeSlot) return 'N/A';
-    // Convert timeSlot like "morning", "afternoon", "evening" to readable format
     const timeMap = {
       morning: '09:00 AM',
       afternoon: '02:00 PM',
@@ -133,19 +157,18 @@ const JobDetailComponent = ({ order }) => {
     subtitle: "Request",
     date: formatDate(order?.date),
     time: formatTime(order?.timeSlot),
-    duration: order?.duration || "2–3 hours",
+    duration: order?.duration || "To be determined",
     urgency: order?.emergency ? "Emergency" : "Normal",
-    price: `TZS ${order?.price?.toLocaleString() || '0'}`,
+    price: order?.price ? `TZS ${order.price.toLocaleString()}` : "Price to be negotiated",
     posted: calculatePostedTime(order?.createdAt),
+    status: order?.status || "pending",
     customer: {
       initials: getInitials(order?.buyerId?.name),
       name: order?.buyerId?.name || "Customer",
-      rating: order?.buyerId?.rating?.average || order?.buyerId?.rating || 4.5,
-      phone: order?.buyerId?.phoneNumber || "+255 XXX XXX XXX",
-      email: order?.buyerId?.email || "customer@example.com",
-      address: order?.location?.address || 
-        `${order?.location?.lat?.toFixed(4)}, ${order?.location?.lng?.toFixed(4)}` || 
-        "Location not specified",
+      rating: order?.buyerId?.rating?.average ?? order?.buyerId?.rating ?? 0,
+      phone: order?.buyerId?.mobileNumber || order?.buyerId?.phoneNumber || "Not provided",
+      email: order?.buyerId?.email || "Not provided",
+      address: locationAddress,
     },
     description: order?.jobDescription || order?.description || "No description provided.",
     requirements: order?.requirements || [
@@ -153,16 +176,15 @@ const JobDetailComponent = ({ order }) => {
       "Bring necessary tools",
       "Complete work professionally",
     ],
-    attachments: order?.attachments || [],
+    attachments: order?.image ? [order.image] : (order?.attachments || []),
+    gigCategory: order?.gigId?.category?.name || order?.gigId?.primarySubcategory?.name || order?.gigId?.title || "Service",
   };
 
   return (
     <section className="w-full">
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 mb-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Main content */}
           <div className="lg:col-span-2 space-y-4">
-            {/* Header card */}
             <div className="rounded-xl border border-sky-100 shadow-sm overflow-hidden">
               <div className="bg-[#60A5FA] px-4 sm:px-6 py-4">
                 <div className="flex items-start justify-between gap-3">
@@ -174,19 +196,13 @@ const JobDetailComponent = ({ order }) => {
                       {job.subtitle}
                     </p>
                     <div className="mt-2 flex flex-wrap items-center gap-3">
-                      <InfoItem
-                        icon={<Calendar size={14} className="text-white" />}
-                      >
+                      <InfoItem icon={<Calendar size={14} className="text-white" />}>
                         {job.date}
                       </InfoItem>
-                      <InfoItem
-                        icon={<Clock size={14} className="text-white" />}
-                      >
+                      <InfoItem icon={<Clock size={14} className="text-white" />}>
                         {job.time}
                       </InfoItem>
-                      <InfoItem
-                        icon={<Timer size={14} className="text-white" />}
-                      >
+                      <InfoItem icon={<Timer size={14} className="text-white" />}>
                         {job.duration}
                       </InfoItem>
                     </div>
@@ -208,7 +224,6 @@ const JobDetailComponent = ({ order }) => {
               </div>
             </div>
 
-            {/* Customer information */}
             <div className="rounded-xl border border-gray-100 shadow-lg bg-white p-4 sm:p-5">
               <h2 className="text-lg font-bold text-gray-900 mb-3">
                 Customer Information
@@ -224,10 +239,7 @@ const JobDetailComponent = ({ order }) => {
                         {job.customer.name}
                       </span>
                       <span className="inline-flex items-center gap-1 text-xs text-amber-600">
-                        <Star
-                          size={14}
-                          className="fill-amber-400 text-amber-400"
-                        />
+                        <Star size={14} className="fill-amber-400 text-amber-400" />
                         {job.customer.rating}
                       </span>
                     </div>
@@ -250,7 +262,6 @@ const JobDetailComponent = ({ order }) => {
               </div>
             </div>
 
-            {/* Job Description */}
             <div className="rounded-xl border border-gray-100 shadow-lg bg-white p-4 sm:p-5">
               <h2 className="text-lg font-bold text-gray-900 mb-2">
                 Job Description
@@ -258,7 +269,6 @@ const JobDetailComponent = ({ order }) => {
               <p className="text-sm text-gray-700 leading-relaxed">
                 {job.description}
               </p>
-              {/* Requirements & Instructions */}
               <h2 className="text-lg font-bold text-gray-900 my-2">
                 Requirements & Instructions
               </h2>
@@ -269,7 +279,6 @@ const JobDetailComponent = ({ order }) => {
               </ul>
             </div>
 
-            {/* Attachments */}
             <div className="rounded-xl border border-gray-100 shadow-sm bg-white p-4 sm:p-5">
               <h2 className="text-sm font-semibold text-gray-900 mb-3">
                 Attachments ({job.attachments.length})
@@ -281,7 +290,6 @@ const JobDetailComponent = ({ order }) => {
               </div>
             </div>
 
-            {/* Bottom action bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between sm:gap-3 ">
               <ActionButton variant="solid" icon={<Check size={14} />}>
                 Accept Job
@@ -289,22 +297,15 @@ const JobDetailComponent = ({ order }) => {
               <ActionButton variant="outlineRed" icon={<X size={14} />}>
                 Decline Job
               </ActionButton>
-              <ActionButton
-                variant="outlineBlue"
-                icon={<RotateCcw size={14} />}
-              >
+              <ActionButton variant="outlineBlue" icon={<RotateCcw size={14} />}>
                 Reschedule
               </ActionButton>
-              <ActionButton
-                variant="ghostBlue"
-                icon={<MessageSquare size={14} />}
-              >
+              <ActionButton variant="ghostBlue" icon={<MessageSquare size={14} />}>
                 Message Customer
               </ActionButton>
             </div>
           </div>
 
-          {/* Right: Quick Details */}
           <div>
             <aside className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-5 sticky top-4">
               <h3 className="text-base font-semibold text-gray-900">
@@ -315,22 +316,29 @@ const JobDetailComponent = ({ order }) => {
                   bg="bg-emerald-50"
                   iconBg="bg-emerald-500 text-white"
                   icon={<DollarSign size={16} />}
-                  title="TZS 50,000"
-                  subtitle="Estimated earnings"
+                  title={job.price}
+                  subtitle="Job price"
                 />
                 <RowTile
                   bg="bg-sky-50"
                   iconBg="bg-sky-500 text-white"
                   icon={<Timer size={16} />}
-                  title="1 hour"
-                  subtitle="Response time"
+                  title={job.duration}
+                  subtitle="Estimated duration"
                 />
                 <RowTile
                   bg="bg-violet-50"
                   iconBg="bg-violet-500 text-white"
                   icon={<Wrench size={16} />}
-                  title="Plumbing"
+                  title={job.gigCategory}
                   subtitle="Job category"
+                />
+                <RowTile
+                  bg="bg-amber-50"
+                  iconBg="bg-amber-500 text-white"
+                  icon={<Calendar size={16} />}
+                  title={job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                  subtitle="Job status"
                 />
               </div>
             </aside>

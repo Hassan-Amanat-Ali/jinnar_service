@@ -5,7 +5,7 @@ import { useGetAllGigsQuery } from "../../services/workerApi";
 import { useGetRecommendedWorkersMutation } from "../../services/recommendationApi";
 import { useSearchParams } from "react-router-dom";
 import { useMemo, useState, useEffect, useCallback } from "react";
-import { getFullImageUrl } from "../../utils/fileUrl.js";
+
 import { Sparkles } from "lucide-react";
 
 const AllServices = () => {
@@ -83,7 +83,7 @@ const AllServices = () => {
           gigId: gig._id,
           sellerId: gig.sellerId?._id,
           name: gig.title,
-          image: getFullImageUrl(gig.images?.[0]?.url) || "https://via.placeholder.com/300x200",
+          image: gig.images?.[0]?.url,
           rating: gig.sellerId?.rating?.average || 0,
           reviews: gig.sellerId?.rating?.count || 0,
           available: true,
@@ -118,7 +118,7 @@ const AllServices = () => {
       gigId: gig._id,
       sellerId: gig.sellerId?._id,
       name: gig.title,
-      image: getFullImageUrl(gig.images?.[0]?.url) || "https://via.placeholder.com/300x200",
+      image: gig.images?.[0]?.url,
       rating: gig.sellerId?.rating?.average || 0,
       reviews: gig.sellerId?.rating?.count || 0,
       available: true,

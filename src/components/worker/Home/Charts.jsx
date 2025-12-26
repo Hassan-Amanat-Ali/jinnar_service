@@ -3,18 +3,20 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { Wallet, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const Charts = ({ walletData }) => {
+const Charts = ({ walletData, earningsData }) => {
   const navigate = useNavigate();
   
-  // Get wallet balance and earnings from API
+  // Get wallet balance from API
   const balance = walletData?.balance || walletData?.data?.balance || 0;
-  const monthlyEarnings = walletData?.monthlyEarnings || walletData?.data?.monthlyEarnings || 0;
-  const weeklyEarnings = walletData?.weeklyEarnings || walletData?.data?.weeklyEarnings || [];
+  
+  // Get earnings data from the new API endpoint
+  const monthlyEarnings = earningsData?.data?.monthlyEarnings || 0;
+  const weeklyEarnings = earningsData?.data?.weeklyEarnings || [];
   
   // Format earnings data for chart
-  const earningsData = weeklyEarnings.length > 0 
-    ? weeklyEarnings.map((earning, index) => ({
-        week: `W${index + 1}`,
+  const earningsChartData = weeklyEarnings.length > 0 
+    ? weeklyEarnings.map((earning) => ({
+        week: `W${earning.week}`,
         earnings: earning.amount || 0
       }))
     : [
@@ -48,7 +50,7 @@ const Charts = ({ walletData }) => {
           <div className="h-68">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={earningsData}
+                data={earningsChartData}
                 margin={{ top: 10, right: 10, left: 10, bottom: 5 }}
               >
                 <defs>

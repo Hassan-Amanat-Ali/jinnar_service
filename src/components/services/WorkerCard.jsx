@@ -2,6 +2,8 @@ import React from "react";
 import { Star, Clock, MapPin, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+import OptimizedImage from "../common/OptimizedImage";
+
 const WorkerCard = ({
   name,
   image,
@@ -22,7 +24,7 @@ const WorkerCard = ({
     <div className="w-full max-w-sm rounded-2xl shadow p-4 text-gray-800 text-sm bg-white border border-gray-300 flex flex-col">
       {/* Top Section */}
       <div className="flex items-start gap-3 flex-shrink-0">
-        <img
+        <OptimizedImage
           src={image}
           alt={name}
           className="w-15 h-15 rounded-lg object-cover flex-shrink-0"
@@ -70,7 +72,7 @@ const WorkerCard = ({
           {skills.slice(0, 4).map((skill, idx) => (
             <span
               key={idx}
-              className="px-2 py-1.5 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white text-xs rounded-lg whitespace-nowrap"
+              className="px-2 py-1.5 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white text-xs rounded-lg whitespace-nowrap capitalize"
             >
               {skill}
             </span>

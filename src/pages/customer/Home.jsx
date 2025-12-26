@@ -452,16 +452,15 @@ const CustomerHome = () => {
                       <ChevronDown size={16} />
                     </div>
                   </div>
-                </div>
-
-                {/* Search Button */}
-                <div className="mt-3">
-                  <button
-                    type="submit"
-                    className="w-full h-10 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white rounded-lg text-sm font-medium hover:from-[#74C7F2] hover:to-[#B6E0FE] transition-all duration-200 shadow-md hover:shadow-lg"
-                  >
-                    Search Services
-                  </button>
+                  {/* Search Button */}
+                  <div className="sm:col-span-2 lg:col-span-2">
+                    <button
+                      type="submit"
+                      className="w-full h-10 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white rounded-lg text-sm font-medium hover:from-[#74C7F2] hover:to-[#B6E0FE] transition-all duration-200 shadow-md hover:shadow-lg"
+                    >
+                      Search Services
+                    </button>
+                  </div>
                 </div>
               </div>
             </form>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import OptimizedImage from "../../components/common/OptimizedImage";
 import Hero from "../../components/common/Hero";
 import {
   Star,
@@ -19,7 +20,7 @@ import {
   useCompleteOrderMutation,
   useRateAndReviewOrderMutation,
 } from "../../services/customerApi";
-import { getFullImageUrl, reverseGeocode } from "../../utils/fileUrl.js";
+import { reverseGeocode } from "../../utils/fileUrl.js";
 import { toast } from "react-hot-toast";
 
 const BookingDetail = () => {
@@ -176,8 +177,8 @@ const BookingDetail = () => {
           <div className="rounded-2xl border border-neutral-200 shadow-sm bg-white p-6 sticky top-6">
             <div className="flex flex-col items-center text-center">
               {worker.profilePicture ? (
-                <img
-                  src={getFullImageUrl(worker.profilePicture)}
+                <OptimizedImage
+                  src={worker.profilePicture}
                   alt={worker.name}
                   className="w-20 h-20 rounded-full object-cover"
                 />
@@ -277,7 +278,7 @@ const BookingDetail = () => {
               </button>
             )}
 
-            {order.status === "completed" && !order.review && (
+            {order.status === "completed" && !order.rating && (
               <button
                 onClick={() => setShowReviewModal(true)}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 mt-4"
@@ -340,23 +341,33 @@ const BookingDetail = () => {
             </div>
           )}
 
-          {order.review && (
-            <div className="rounded-2xl border border-neutral-200 shadow-sm bg-white p-5">
-              <h4 className="text-lg font-semibold mb-3">Your Review</h4>
-              <div className="flex items-center gap-1 mb-2">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-5 h-5 ${
-                      i < order.review.rating
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300 fill-gray-300"
-                    }`}
-                  />
-                ))}
+          {order.rating && (
+            <div className="rounded-2xl border border-neutral-100 shadow-sm bg-white p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-semibold text-gray-900">Your Review</h4>
+                <div className="flex gap-1" aria-label={`Rating: ${order.rating} out of 5 stars`}>
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-5 h-5 ${
+                        i < order.rating
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-gray-200 fill-gray-200"
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
-              {order.review.comment && (
-                <p className="text-sm text-gray-600">{order.review.comment}</p>
+              
+              {order.review && (
+                <div className="relative mt-2">
+                  <div className="absolute -top-3 -left-2 text-6xl text-blue-100 font-serif opacity-50 select-none">"</div>
+                  <blockquote className="relative z-10 px-4 py-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <p className="text-gray-700 italic leading-relaxed text-[15px]">
+                      {order.review}
+                    </p>
+                  </blockquote>
+                </div>
               )}
             </div>
           )}

@@ -53,8 +53,6 @@ const ContactItem = ({
     publicProfile?.profile?.name || otherParticipant?.name || "Unknown User";
   const displayPicture =
     publicProfile?.profile?.profilePicture || otherParticipant?.profilePicture;
-  const displayRole =
-    publicProfile?.profile?.role || otherParticipant?.role || "User";
 
   const lastMessage = conversation?.lastMessage;
   const lastTime = conversation?.lastTime;
@@ -294,7 +292,7 @@ const Chat = () => {
   const {
     data: messagesData,
     isLoading: messagesLoading,
-    refetch: refetchMessages,
+    // refetch: refetchMessages,
   } = useGetMessagesQuery(
     { userId: otherParticipantId },
     { skip: !otherParticipantId }

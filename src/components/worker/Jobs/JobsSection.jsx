@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   MapPin,
   Calendar,
@@ -11,6 +11,7 @@ import {
   Eye,
   Calendar1,
   DollarSign,
+  CheckCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -20,8 +21,9 @@ import {
   useDeclineJobMutation,
   useGetSellerStatsQuery,
 } from "../../../services/workerApi";
+import { reverseGeocode } from "../../../utils/fileUrl";
 
-const StatItem = ({ rowBg, iconBg, icon, value, label }) => (
+const StatItem = React.memo(({ rowBg, iconBg, icon, value, label }) => (
   <div className={`flex items-center gap-3 px-3 py-2 rounded-lg ${rowBg}`}>
     <div
       className={`h-9 w-9 rounded-md flex items-center justify-center ${iconBg}`}
@@ -33,17 +35,21 @@ const StatItem = ({ rowBg, iconBg, icon, value, label }) => (
       <div className="text-xs text-gray-600">{label}</div>
     </div>
   </div>
-);
+));
 
-const Badge = ({ children, color = "bg-gray-100 text-gray-700" }) => (
+StatItem.displayName = 'StatItem';
+
+const Badge = React.memo(({ children, color = "bg-gray-100 text-gray-700" }) => (
   <span
     className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${color}`}
   >
     {children}
   </span>
-);
+));
 
-const ActionButton = ({ variant = "solid", icon, children, onClick, disabled }) => {
+Badge.displayName = 'Badge';
+
+const ActionButton = React.memo(({ variant = "solid", icon, children, onClick, disabled }) => {
   const base =
     "w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-md text-xs font-medium px-3 py-1.5 border disabled:opacity-50 disabled:cursor-not-allowed";
   const styles = {
@@ -61,59 +67,78 @@ const ActionButton = ({ variant = "solid", icon, children, onClick, disabled }) 
       {children}
     </button>
   );
-};
+});
 
-const JobCard = ({ job }) => {
+ActionButton.displayName = 'ActionButton';
+
+const JobCard = React.memo(({ job }) => {
   const navigate = useNavigate();
   const [acceptJob, { isLoading: isAccepting }] = useAcceptJobMutation();
   const [declineJob, { isLoading: isDeclining }] = useDeclineJobMutation();
+  const [locationAddress, setLocationAddress] = useState('Loading location...');
 
-  const handleAccept = async () => {
+  // Fetch location address on mount
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchLocation = async () => {
+      if (job.location?.lat && job.location?.lng) {
+        const address = await reverseGeocode(job.location.lat, job.location.lng);
+        if (isMounted) {
+          setLocationAddress(address || `${job.location.lat.toFixed(2)}, ${job.location.lng.toFixed(2)}`);
+        }
+      } else {
+        if (isMounted) {
+          setLocationAddress('Location not specified');
+        }
+      }
+    };
+
+    fetchLocation();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [job.location?.lat, job.location?.lng]);
+
+  const handleAccept = useCallback(async () => {
     try {
       await acceptJob({ id: job._id }).unwrap();
       toast.success('Job accepted successfully!');
     } catch (error) {
       toast.error('Failed to accept job: ' + (error?.data?.message || 'Unknown error'));
     }
-  };
+  }, [acceptJob, job._id]);
 
-  const handleDecline = async () => {
+  const handleDecline = useCallback(async () => {
     try {
       await declineJob({ id: job._id }).unwrap();
       toast.success('Job declined successfully!');
     } catch (error) {
       toast.error('Failed to decline job: ' + (error?.data?.message || 'Unknown error'));
     }
-  };
+  }, [declineJob, job._id]);
 
-  const handleReschedule = () => {
+  const handleReschedule = useCallback(() => {
     console.log(`Rescheduling job ${job._id}`);
     // Add reschedule job logic here
-  };
+  }, [job._id]);
 
-  const handleViewDetails = () => {
+  const handleViewDetails = useCallback(() => {
     navigate(`/job/${job._id}`);
-  };
+  }, [navigate, job._id]);
 
-  // Helper function to get initials from customer name
-  const getInitials = (name) => {
+  // Memoize computed values
+  const initials = useMemo(() => {
+    const name = job.buyerId?.name;
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-  };
+  }, [job.buyerId?.name]);
 
-  // Format date from API
-  const formatDate = (dateString) => {
-    if (!dateString) return 'TBD';
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  // Format location
-  const formatLocation = () => {
-    if (job.location?.lat && job.location?.lng) {
-      return `${job.location.lat.toFixed(2)}, ${job.location.lng.toFixed(2)}`;
-    }
-    return 'Location not specified';
-  };
+  const formattedDate = useMemo(() => {
+    if (!job.date) return 'TBD';
+    return new Date(job.date).toLocaleDateString();
+  }, [job.date]);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
@@ -123,7 +148,7 @@ const JobCard = ({ job }) => {
           {/* Header */}
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-xs sm:text-sm font-semibold">
-              {getInitials(job.buyerId?.name)}
+              {initials}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-1.5">
@@ -132,7 +157,7 @@ const JobCard = ({ job }) => {
                 </h3>
                 <Badge>
                   <Star size={12} className="text-yellow-300" fill="yellow" />{" "}
-                  {job.buyerId?.rating?.average || 'N/A'}
+                  {job.buyerId?.rating?.average ?? 'N/A'}
                 </Badge>
                 {job.emergency && (
                   <Badge color="bg-[#EF4444] text-white">
@@ -146,11 +171,12 @@ const JobCard = ({ job }) => {
 
               {/* Meta */}
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-gray-600">
-                <span className="inline-flex items-center gap-1">
-                  <MapPin size={14} className="text-sky-500" /> {formatLocation()}
+                <span className="inline-flex items-center gap-1 max-w-[200px]">
+                  <MapPin size={14} className="text-sky-500 flex-shrink-0" /> 
+                  <span className="truncate">{locationAddress}</span>
                 </span>
                 <span className="inline-flex items-center gap-1">
-                  <Calendar size={14} className="text-sky-500" /> {formatDate(job.date)}
+                  <Calendar size={14} className="text-sky-500" /> {formattedDate}
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <Clock size={14} className="text-sky-500" /> {job.timeSlot || 'TBD'}
@@ -161,8 +187,9 @@ const JobCard = ({ job }) => {
               <p className="mt-2 text-[13px] text-gray-600 leading-relaxed">
                 {job.jobDescription || 'No description provided'}
               </p>
-              <div className="mt-2 text-emerald-600 font-semibold text-sm sm:text-base">
-                Price to be negotiated
+              <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+                <DollarSign size={14} className="text-emerald-600" />
+                <span className="text-sm font-medium text-emerald-700">Price to be negotiated</span>
               </div>
             </div>
           </div>
@@ -208,21 +235,24 @@ const JobCard = ({ job }) => {
       </div>
     </div>
   );
-};
+});
 
-const QuickStats = () => {
+JobCard.displayName = 'JobCard';
+
+const QuickStats = React.memo(() => {
   const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading, error: statsError } = useGetSellerStatsQuery();
 
-  const handleViewDashboard = () => {
+  const handleViewDashboard = useCallback(() => {
     navigate("/worker-home");
-  };
+  }, [navigate]);
 
-  // Format currency in TZS
-  const formatCurrency = (amount) => {
+  // Memoize formatted currency
+  const formattedPendingEarning = useMemo(() => {
+    const amount = stats?.pendingEarning;
     if (!amount) return "TZS 0";
     return `TZS ${amount.toLocaleString()}`;
-  };
+  }, [stats?.pendingEarning]);
 
   if (statsLoading) {
     return (
@@ -283,7 +313,7 @@ const QuickStats = () => {
         <StatItem
           rowBg="bg-emerald-50"
           iconBg="bg-emerald-600 text-white"
-          icon={<div className="h-3.5 w-3.5 bg-white/0 rounded-sm" />}
+          icon={<CheckCircle size={16} />}
           value={stats?.completedJobs || 0}
           label="Total Completed"
         />
@@ -291,7 +321,7 @@ const QuickStats = () => {
           rowBg="bg-amber-50"
           iconBg="bg-amber-500 text-white"
           icon={<DollarSign size={16} />}
-          value={formatCurrency(stats?.pendingEarning)}
+          value={formattedPendingEarning}
           label="Pending Earnings"
         />
       </div>
@@ -303,10 +333,14 @@ const QuickStats = () => {
       </button>
     </aside>
   );
-};
+});
+
+QuickStats.displayName = 'QuickStats';
 
 const JobsSection = () => {
   const { data: jobRequests, isLoading, error } = useGetNewJobRequestsQuery();
+
+  const jobs = useMemo(() => jobRequests?.jobs || [], [jobRequests]);
 
   if (isLoading) {
     return (
@@ -331,8 +365,6 @@ const JobsSection = () => {
       </section>
     );
   }
-
-  const jobs = jobRequests?.jobs || [];
 
   return (
     <section className="w-full">

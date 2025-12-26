@@ -321,8 +321,11 @@ const BookingDetail = () => {
                     <div className="flex items-center gap-1 mt-1">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                       <span className="text-sm font-semibold">
-                        {customer.rating}
+                        {typeof customer.rating === 'object' ? customer.rating.average : customer.rating}
                       </span>
+                      {typeof customer.rating === 'object' && customer.rating.count && (
+                        <span className="text-xs text-gray-500">({customer.rating.count} reviews)</span>
+                      )}
                     </div>
                   )}
                 </div>
@@ -514,28 +517,30 @@ const BookingDetail = () => {
                     </div>
                   </div>
                   {order.rating && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <span className="text-gray-600">Rating:</span>
-                      <div className="flex items-center gap-1 mt-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`w-4 h-4 ${
-                              star <= order.rating
-                                ? "text-yellow-400 fill-current"
-                                : "text-gray-300"
-                            }`}
-                          />
-                        ))}
-                        <span className="ml-2 text-sm font-medium">
-                          {order.rating}/5
-                        </span>
+                    <div className="mt-3 pt-3 border-t border-gray-200 text-sm">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-gray-900">Rating:</span>
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`w-3.5 h-3.5 ${
+                                star <= order.rating
+                                  ? "text-yellow-400 fill-current"
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="font-medium text-gray-900">{order.rating}/5</span>
+                        
+                        {order.review && (
+                          <div className="flex items-center gap-2 ml-1">
+                            <span className="text-gray-300 hidden sm:inline">|</span>
+                            <span className="text-gray-600 italic">"{order.review}"</span>
+                          </div>
+                        )}
                       </div>
-                      {order.review && (
-                        <p className="text-sm text-gray-600 mt-2">
-                          {order.review}
-                        </p>
-                      )}
                     </div>
                   )}
                 </div>

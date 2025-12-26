@@ -467,10 +467,34 @@ const Chat = () => {
     socket.on("updateMessage", handleOfferUpdate);
     socket.on("updateChatList", handleChatListUpdate);
 
+    // Listen for new offers (sent by sellers). Append to messages if relevant and refresh sidebar.
+    const handleNewOffer = (offer) => {
+      const messageSenderId = offer.sender?._id || offer.senderId;
+      const messageReceiverId = offer.receiver?._id || offer.receiverId;
+
+      const isRelevant =
+        (messageSenderId === currentUserId &&
+          messageReceiverId === otherParticipantId) ||
+        (messageSenderId === otherParticipantId &&
+          messageReceiverId === currentUserId);
+
+      if (isRelevant) {
+        setLocalMessages((prev) => {
+          const exists = prev.some((m) => m._id === offer._id || m.id === offer.id);
+          if (exists) return prev;
+          return [...prev, offer];
+        });
+        refetchConversations();
+      }
+    };
+
+    socket.on("newOffer", handleNewOffer);
+
     return () => {
       socket.off("newMessage", handleNewMessage);
       socket.off("updateMessage", handleOfferUpdate);
       socket.off("updateChatList", handleChatListUpdate);
+      socket.off("newOffer", handleNewOffer);
     };
   }, [
     socket,
