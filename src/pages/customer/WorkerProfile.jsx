@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   ArrowLeft,
   Star,
@@ -6,6 +7,9 @@ import {
   MessageCircle,
   Award,
   Clock,
+  Calendar,
+  Briefcase,
+  X,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetPublicProfileQuery } from "../../services/workerApi";
@@ -41,6 +45,7 @@ const WorkerProfile = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { data, isLoading, error } = useGetPublicProfileQuery(id);
+  const [isGigModalOpen, setIsGigModalOpen] = useState(false);
 
   /* ---------------- Loading State ---------------- */
   if (isLoading) {
@@ -164,6 +169,14 @@ const WorkerProfile = () => {
 
   const profile = data.profile;
 
+  const getGigPrice = (pricing) => {
+    if (!pricing) return "N/A";
+    if (pricing.method === "hourly") {
+      return `$${pricing.hourly?.rate || 0}/hr`;
+    }
+    return `$${pricing.fixed?.price || pricing.price || 0}`;
+  };
+
   return (
     <main className="section-container pt-24 pb-6 max-w-7xl px-10">
       {/* ---------------- Top Navigation ---------------- */}
@@ -228,14 +241,20 @@ const WorkerProfile = () => {
                 )}
               </div>
 
-              <button
-                className="mt-6 w-full border border-[#74C7F2] text-[#74C7F2] py-3 rounded-md flex items-center justify-center gap-2"
-                onClick={() =>
-                  navigate(`/customer-chat?conversation=${profile._id || id}`)
-                }
-              >
-                <MessageCircle size={18} /> Message
-              </button>
+              <div className="mt-6 w-full space-y-3">
+                <button
+                  className="w-full bg-[#74C7F2] text-white py-3 rounded-md flex items-center justify-center gap-2 hover:bg-[#5dbbe8] transition-colors"
+                  onClick={() => setIsGigModalOpen(true)}
+                >
+                  <Calendar size={18} /> Book Now
+                </button>
+                <button
+                  className="w-full border border-[#74C7F2] text-[#74C7F2] py-3 rounded-md flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors"
+                  onClick={() => navigate(`/customer-chat?conversation=${profile._id || id}`)}
+                >
+                  <MessageCircle size={18} /> Message
+                </button>
+              </div>
 
               <div className="mt-4 flex justify-around w-full bg-gray-50 rounded-xl py-3">
                 <div className="text-center">
@@ -260,6 +279,49 @@ const WorkerProfile = () => {
               {profile.bio || "No bio available"}
             </p>
           </div>
+
+          {/* Services / Gigs */}
+          {(profile.activeGigs?.length > 0 || profile.subcategories?.length > 0 || profile.categories?.length > 0) && (
+            <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <Briefcase size={20} className="text-[#74C7F2]" />
+                Services & Gigs
+              </h2>
+              <div className="mt-4 grid gap-3">
+                {profile.activeGigs?.length > 0 ? (
+                  profile.activeGigs.map((gig, idx) => (
+                    <div key={idx} className="p-4 border border-gray-100 rounded-xl bg-gray-50 flex justify-between items-center">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{gig.title || gig.name}</h3>
+                        {gig.description && <p className="text-sm text-gray-600 mt-1">{gig.description}</p>}
+                        <p className="text-[#74C7F2] font-bold mt-2">{getGigPrice(gig.pricing)}</p>
+                      </div>
+                      <button 
+                        onClick={() => navigate(`/book-worker/${profile._id || id}/${gig._id}`)}
+                        className="px-4 py-2 bg-white text-[#74C7F2] border border-[#74C7F2] rounded-lg text-sm font-medium hover:bg-blue-50"
+                      >
+                        Book
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  (profile.subcategories?.length > 0 ? profile.subcategories : profile.categories).map((service, idx) => (
+                    <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-between">
+                      <span className="font-medium text-gray-900">
+                        {typeof service === 'object' ? (service.name || "Service") : service}
+                      </span>
+                      <button 
+                        onClick={() => navigate(`/book-service?workerId=${profile._id || id}&service=${typeof service === 'object' ? service._id : service}`)}
+                        className="text-sm text-[#74C7F2] font-medium hover:underline"
+                      >
+                        Book
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Skills */}
           {profile.skills?.length > 0 && (
@@ -328,6 +390,63 @@ const WorkerProfile = () => {
           )}
         </section>
       </div>
+
+      {/* Gig Selection Modal */}
+      {isGigModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">
+                {profile.activeGigs?.length > 0 ? "Select a Service" : "Service Unavailable"}
+              </h3>
+              <button 
+                onClick={() => setIsGigModalOpen(false)}
+                className="rounded-full p-1 hover:bg-gray-100 transition-colors"
+              >
+                <X size={24} className="text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="max-h-[60vh] overflow-y-auto pr-1">
+              {profile.activeGigs?.length > 0 ? (
+                <div className="space-y-3">
+                  {profile.activeGigs.map((gig) => (
+                    <div 
+                      key={gig._id}
+                      className="group relative flex flex-col gap-2 rounded-xl border border-gray-200 p-4 hover:border-[#74C7F2] hover:bg-blue-50/30 transition-all cursor-pointer"
+                      onClick={() => navigate(`/book-worker/${profile._id || id}/${gig._id}`)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <h4 className="font-semibold text-gray-900">{gig.title || gig.name}</h4>
+                        <span className="font-bold text-[#74C7F2] text-lg">{getGigPrice(gig.pricing)}</span>
+                      </div>
+                      {gig.description && <p className="text-sm text-gray-600 line-clamp-2">{gig.description}</p>}
+                      <button className="mt-2 w-full rounded-lg bg-[#74C7F2] py-2 text-sm font-medium text-white hover:bg-[#5dbbe8]">
+                        Select & Book
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-gray-600 mb-4">
+                    This worker hasn't set up any specific gigs yet.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setIsGigModalOpen(false);
+                      navigate(`/customer-chat?conversation=${profile._id || id}`);
+                    }}
+                    className="w-full border border-[#74C7F2] text-[#74C7F2] py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors"
+                  >
+                    Message Worker
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 };
