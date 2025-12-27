@@ -43,6 +43,7 @@ const BookWorker = () => {
     emergency: false,
     location: null,
     image: "",
+    selectedPricingMethod: "", // Customer's chosen pricing option
   });
 
   const [showLocationPicker, setShowLocationPicker] =
@@ -80,6 +81,9 @@ const BookWorker = () => {
     if (!formData.location) {
       newErrors.location = "Location is required";
     }
+    if (!formData.selectedPricingMethod) {
+      newErrors.selectedPricingMethod = "Please select a pricing option";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -98,6 +102,7 @@ const BookWorker = () => {
         lat: formData.location.lat,
         lng: formData.location.lng,
         emergency: formData.emergency,
+        selectedPricingMethod: formData.selectedPricingMethod,
       };
 
       const result = await createOrder(orderData).unwrap();
@@ -183,33 +188,69 @@ const BookWorker = () => {
                   {profile.bio || "Experienced professional"}
                 </p>
 
-                <div className="bg-gradient-to-b from-[#DBF0FF] to-[#DBF0FF]/60 h-fit w-[90%] px-4 py-4 text-center rounded-lg">
+                <div className="bg-gradient-to-b from-[#DBF0FF] to-[#DBF0FF]/60 h-fit w-[90%] px-4 py-4 rounded-lg">
                   {gigLoading ? (
                       <div className="animate-pulse">
-                        <div className="h-6 w-32 bg-gray-200 rounded mx-auto" />
+                        <div className="h-6 w-32 bg-gray-200 rounded mx-auto mb-2" />
+                        <div className="h-4 w-24 bg-gray-200 rounded mx-auto" />
                       </div>
                   ) : gig ? (
                       <>
-                        <p className="text-xl font-bold">
-                          {gig.pricing.method === "negotiable"
-                              ? "Negotiable"
-                              : gig.pricing.method === "hourly"
-                                  ? `TZS ${gig.pricing.price}/hour`
-                                  : `TZS ${gig.pricing.price}`}
+                        <p className="text-xs font-semibold text-gray-700 mb-2 text-center">
+                          Available Pricing Options
                         </p>
-                        <p className="text-sm text-gray-500">
-                          {gig.pricing.method === "negotiable" ||
-                          gig.pricing.method === "hourly"
-                              ? "Final price negotiable with worker"
-                              : "Fixed price"}
+                        <div className="space-y-2">
+                          {/* Fixed Price Badge */}
+                          {gig.pricing?.fixed?.enabled && (
+                            <div className="bg-white rounded-lg px-3 py-2 border border-blue-200">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-gray-600">Fixed Price</span>
+                                <span className="text-sm font-bold text-[#74C7F2]">
+                                  TZS {gig.pricing.fixed.price?.toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Hourly Rate Badge */}
+                          {gig.pricing?.hourly?.enabled && (
+                            <div className="bg-white rounded-lg px-3 py-2 border border-blue-200">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-gray-600">Hourly Rate</span>
+                                <span className="text-sm font-bold text-[#74C7F2]">
+                                  TZS {gig.pricing.hourly.rate?.toLocaleString()}/hr
+                                </span>
+                              </div>
+                              {gig.pricing.hourly.minHours && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Min {gig.pricing.hourly.minHours} hours
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Inspection-Based Badge */}
+                          {gig.pricing?.inspection?.enabled && (
+                            <div className="bg-white rounded-lg px-3 py-2 border border-orange-200">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-gray-600">Inspection</span>
+                                <span className="text-xs font-semibold text-orange-600">
+                                  Quote After Visit
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-3 text-center">
+                          Choose your preferred option below
                         </p>
                       </>
                   ) : (
                       <>
-                        <p className="text-xl font-bold">
+                        <p className="text-sm font-bold text-gray-900">
                           Price not available
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-xs text-gray-500 mt-1">
                           Contact worker for pricing
                         </p>
                       </>
@@ -394,6 +435,130 @@ const BookWorker = () => {
                   )}
                 </section>
 
+                {/* Pricing Option Selector */}
+                <section className="bg-white rounded-2xl border border-neutral-200 p-4 sm:p-5 shadow-sm">
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Select Pricing Option *
+                  </label>
+                  
+                  {gigLoading ? (
+                    <div className="animate-pulse space-y-3">
+                      <div className="h-20 bg-gray-200 rounded-lg" />
+                      <div className="h-20 bg-gray-200 rounded-lg" />
+                    </div>
+                  ) : gig ? (
+                    <div className="space-y-3">
+                      {/* Fixed Price Option */}
+                      {gig.pricing?.fixed?.enabled && (
+                        <label className={`block p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          formData.selectedPricingMethod === "fixed"
+                            ? "border-[#74C7F2] bg-blue-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}>
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="radio"
+                              name="selectedPricingMethod"
+                              value="fixed"
+                              checked={formData.selectedPricingMethod === "fixed"}
+                              onChange={handleInputChange}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-semibold text-gray-900">Fixed Price</span>
+                                <span className="text-lg font-bold text-[#74C7F2]">
+                                  TZS {gig.pricing.fixed.price?.toLocaleString()}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600">
+                                Pay a fixed total price for the entire job
+                              </p>
+                            </div>
+                          </div>
+                        </label>
+                      )}
+
+                      {/* Hourly Rate Option */}
+                      {gig.pricing?.hourly?.enabled && (
+                        <label className={`block p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          formData.selectedPricingMethod === "hourly"
+                            ? "border-[#74C7F2] bg-blue-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}>
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="radio"
+                              name="selectedPricingMethod"
+                              value="hourly"
+                              checked={formData.selectedPricingMethod === "hourly"}
+                              onChange={handleInputChange}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-semibold text-gray-900">Hourly Rate</span>
+                                <span className="text-lg font-bold text-[#74C7F2]">
+                                  TZS {gig.pricing.hourly.rate?.toLocaleString()}/hr
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600">
+                                Pay based on actual hours worked
+                                {gig.pricing.hourly.minHours && (
+                                  <span className="font-medium text-gray-700">
+                                    {" "}(Minimum {gig.pricing.hourly.minHours} hours)
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        </label>
+                      )}
+
+                      {/* Inspection-Based Option */}
+                      {gig.pricing?.inspection?.enabled && (
+                        <label className={`block p-4 border-2 rounded-xl cursor-pointer transition-all ${
+                          formData.selectedPricingMethod === "inspection"
+                            ? "border-[#74C7F2] bg-blue-50"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}>
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="radio"
+                              name="selectedPricingMethod"
+                              value="inspection"
+                              checked={formData.selectedPricingMethod === "inspection"}
+                              onChange={handleInputChange}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="font-semibold text-gray-900">Inspection-Based</span>
+                                <span className="text-sm font-semibold text-orange-600">
+                                  Quote After Inspection
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600">
+                                Worker will inspect the job site and provide a custom quote
+                              </p>
+                            </div>
+                          </div>
+                        </label>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-gray-500">
+                      No pricing options available
+                    </div>
+                  )}
+                  
+                  {errors.selectedPricingMethod && (
+                    <p className="mt-2 text-xs text-red-600">
+                      {errors.selectedPricingMethod}
+                    </p>
+                  )}
+                </section>
+
                 {/* Price Estimate & Payment */}
                 <section className="bg-white rounded-2xl border border-neutral-200 p-4 sm:p-5 shadow-sm">
                   <label className="block text-sm font-semibold text-gray-900 mb-3">
@@ -404,21 +569,29 @@ const BookWorker = () => {
                         <div className="animate-pulse">
                           <div className="h-8 w-32 bg-gray-200 rounded mx-auto" />
                         </div>
-                    ) : gig ? (
+                    ) : gig && formData.selectedPricingMethod ? (
                         <>
                           <p className="text-xs text-gray-600 mb-1">
                             Estimated Total
                           </p>
                           <p className="text-2xl font-bold text-gray-900 mb-1">
-                            {gig.pricing.method === "negotiable"
-                                ? "Negotiable"
-                                : `TZS ${gig.pricing.price}`}
+                            {formData.selectedPricingMethod === "inspection"
+                                ? "Quote After Inspection"
+                                : formData.selectedPricingMethod === "hourly"
+                                    ? `TZS ${gig.pricing.hourly.rate?.toLocaleString()}/hr`
+                                    : `TZS ${gig.pricing.fixed.price?.toLocaleString()}`}
                           </p>
+                          {formData.selectedPricingMethod === "hourly" && gig.pricing.hourly.minHours && (
+                            <p className="text-xs text-gray-600 mb-1">
+                              Minimum {gig.pricing.hourly.minHours} hours = TZS {(gig.pricing.hourly.rate * gig.pricing.hourly.minHours).toLocaleString()}
+                            </p>
+                          )}
                           <p className="text-xs text-gray-600">
-                            {gig.pricing.method === "negotiable" ||
-                            gig.pricing.method === "hourly"
-                                ? "Final price negotiable with worker"
-                                : "Fixed price for this service"}
+                            {formData.selectedPricingMethod === "inspection"
+                                ? "Worker will provide quote after inspection"
+                                : formData.selectedPricingMethod === "hourly"
+                                    ? "Final price based on actual hours worked"
+                                    : "Fixed price for this service"}
                           </p>
                         </>
                     ) : (
@@ -427,10 +600,10 @@ const BookWorker = () => {
                             Estimated Total
                           </p>
                           <p className="text-2xl font-bold text-gray-900 mb-1">
-                            Not Available
+                            Select Pricing Option
                           </p>
                           <p className="text-xs text-gray-600">
-                            Contact worker for pricing
+                            Choose a pricing method above to see estimate
                           </p>
                         </>
                     )}

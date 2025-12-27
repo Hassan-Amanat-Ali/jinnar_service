@@ -219,11 +219,26 @@ const BookingDetail = () => {
               </p>
             )}
             <div className="bg-gradient-to-b from-[#DBF0FF] to-[#DBF0FF]/60 rounded-xl text-center py-4 mt-4">
-              <p className="text-xl font-bold">
-                TZS {order.price?.toLocaleString() || "0"}
+              <p className="text-xs text-gray-600 mb-1">
+                {order.selectedPricingMethod === "fixed" ? "Fixed Price" :
+                 order.selectedPricingMethod === "hourly" ? "Hourly Rate" :
+                 order.selectedPricingMethod === "inspection" ? "Inspection-Based" :
+                 "Pricing Method"}
               </p>
-              <p className="text-sm text-gray-500">
-                {order.pricingType || "Fixed Price"}
+              <p className="text-xl font-bold">
+                {order.selectedPricingMethod === "inspection" ? (
+                  "Quote After Inspection"
+                ) : order.selectedPricingMethod === "hourly" ? (
+                  order.price > 0 ? `TZS ${order.price?.toLocaleString()}` : "TBD"
+                ) : (
+                  `TZS ${order.price?.toLocaleString() || "0"}`
+                )}
+              </p>
+              <p className="text-sm text-gray-500 mt-1">
+                {order.selectedPricingMethod === "fixed" ? "Total fixed price" :
+                 order.selectedPricingMethod === "hourly" ? "Based on hours worked" :
+                 order.selectedPricingMethod === "inspection" ? "Worker will provide quote" :
+                 "Service pricing"}
               </p>
             </div>
             <div className="mt-4 space-y-2">
@@ -290,51 +305,102 @@ const BookingDetail = () => {
           </div>
 
           <div className="rounded-2xl border border-neutral-200 shadow-sm bg-white p-5">
-            <h4 className="text-lg font-semibold mb-3">Job Summary</h4>
-            <h3 className="font-semibold text-xl">{gig.title || "Service"}</h3>
+            <h4 className="text-lg font-semibold mb-4 pb-3 border-b border-gray-100">Booking Summary</h4>
+            
+            {/* Service Title */}
+            <div className="mb-4">
+              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Service</p>
+              <h3 className="font-bold text-xl text-gray-900">{gig.title || "Service"}</h3>
+            </div>
+
+            {/* Job Description */}
             {order.jobDescription && (
-              <p className="text-sm text-gray-600 mt-2">
-                {order.jobDescription}
-              </p>
-            )}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
-              <div className="rounded-xl bg-[#DBF0FF] border border-[#74C7F2]/30 p-3 text-center">
-                <Calendar className="w-5 h-5 mx-auto text-[#74C7F2]" />
-                <p className="text-xs mt-1 text-gray-600">Date</p>
-                <p className="text-sm font-semibold">
-                  {formatDate(order.date)}
+              <div className="mb-4 p-4 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Job Description</p>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  {order.jobDescription}
                 </p>
               </div>
-              <div className="rounded-xl bg-[#DBF0FF] border border-[#74C7F2]/30 p-3 text-center">
-                <Clock className="w-5 h-5 mx-auto text-[#74C7F2]" />
-                <p className="text-xs mt-1 text-gray-600">Time</p>
-                <p className="text-sm font-semibold">
+            )}
+
+            {/* Schedule & Pricing Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+              {/* Date Card */}
+              <div className="rounded-xl bg-[#F0F9FF] border border-[#BFDBFE] p-4 text-center">
+                <Calendar className="w-5 h-5 mx-auto text-[#74C7F2] mb-2" />
+                <p className="text-xs text-gray-500 mb-1">Date</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {new Date(order.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric"
+                  })}
+                </p>
+              </div>
+
+              {/* Time Card */}
+              <div className="rounded-xl bg-[#F0F9FF] border border-[#BFDBFE] p-4 text-center">
+                <Clock className="w-5 h-5 mx-auto text-[#74C7F2] mb-2" />
+                <p className="text-xs text-gray-500 mb-1">Time Slot</p>
+                <p className="text-sm font-medium text-gray-900 capitalize">
                   {order.timeSlot || "TBD"}
                 </p>
               </div>
-              <div className="rounded-xl bg-[#DBF0FF] border border-[#74C7F2]/30 p-3 text-center">
-                <DollarSign className="w-5 h-5 mx-auto text-[#74C7F2]" />
-                <p className="text-xs mt-1 text-gray-600">Price</p>
-                <p className="text-sm font-semibold">
-                  TZS {order.price?.toLocaleString() || "0"}
+
+              {/* Pricing Card */}
+              <div className="rounded-xl bg-[#F0F9FF] border border-[#BFDBFE] p-4 text-center">
+                <DollarSign className="w-5 h-5 mx-auto text-[#74C7F2] mb-2" />
+                <p className="text-xs text-gray-500 mb-1">
+                  {order.selectedPricingMethod === "fixed" ? "Fixed Price" :
+                   order.selectedPricingMethod === "hourly" ? "Hourly Rate" :
+                   order.selectedPricingMethod === "inspection" ? "Inspection" :
+                   "Pricing"}
                 </p>
+                <p className="text-sm font-semibold text-gray-900">
+                  {order.selectedPricingMethod === "inspection" ? (
+                    "Quote TBD"
+                  ) : (
+                    `TZS ${order.price?.toLocaleString() || "0"}`
+                  )}
+                </p>
+              </div>
+            </div>
+
+            {/* Pricing Method Info */}
+            <div className="mt-4 p-3 bg-[#F0F9FF] border border-[#BFDBFE] rounded-lg">
+              <div className="flex items-start gap-2">
+                <div className="mt-0.5">
+                  <div className="w-5 h-5 rounded-full bg-[#74C7F2] flex items-center justify-center">
+                    <span className="text-white text-xs">ℹ</span>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-gray-700 mb-1">Pricing Information</p>
+                  <p className="text-xs text-gray-600">
+                    {order.selectedPricingMethod === "fixed" 
+                      ? "This is a fixed price booking. The total amount shown is final."
+                      : order.selectedPricingMethod === "hourly"
+                      ? "Hourly rate pricing - Final amount will be calculated based on actual hours worked."
+                      : order.selectedPricingMethod === "inspection"
+                      ? "Inspection-based pricing - Worker will provide a quote after visiting the job site."
+                      : "Standard pricing applies for this service."}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
+          {/* Location Section */}
           {order.location && (
             <div className="rounded-2xl border border-neutral-200 shadow-sm bg-white p-5">
-              <h4 className="text-lg font-semibold mb-3">Location</h4>
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-blue-600 mt-1" />
+              <h4 className="text-lg font-semibold mb-4 pb-3 border-b border-gray-100">Service Location</h4>
+              <div className="flex items-start gap-3 p-4 bg-[#F0F9FF] border border-[#BFDBFE] rounded-xl">
+                <div className="mt-0.5">
+                  <MapPin className="w-5 h-5 text-[#74C7F2]" />
+                </div>
                 <div className="flex-1">
-                  <p className="font-semibold">Service Address</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {locationAddress ||
-                      order.location.address ||
-                      `Lat: ${order.location.lat?.toFixed(
-                        4
-                      )}, Lng: ${order.location.lng?.toFixed(4)}`}
+                  <p className="text-sm text-gray-700">
+                    {locationAddress || order.location.address || "Location coordinates provided"}
                   </p>
                 </div>
               </div>

@@ -549,14 +549,41 @@ const BookingDetail = () => {
               <SectionCard title="Pricing Details">
                 <div className="space-y-3">
                   <LabelValue
-                    label="Pricing Type"
-                    value={order.pricingType || "Fixed Price"}
+                    label="Pricing Method"
+                    value={
+                      order.selectedPricingMethod === "fixed" ? "Fixed Price" :
+                      order.selectedPricingMethod === "hourly" ? "Hourly Rate" :
+                      order.selectedPricingMethod === "inspection" ? "Inspection-Based" :
+                      "Fixed Price"
+                    }
                   />
                   <LabelValue
-                    label="Service Fee"
-                    value={order.price}
+                    label={
+                      order.selectedPricingMethod === "inspection" ? "Quote Status" :
+                      order.selectedPricingMethod === "hourly" ? "Hourly Rate" :
+                      "Service Fee"
+                    }
+                    value={
+                      order.selectedPricingMethod === "inspection" ? (
+                        "To Be Determined"
+                      ) : order.selectedPricingMethod === "hourly" ? (
+                        order.price > 0 ? `TZS ${order.price?.toLocaleString()}` : "TBD"
+                      ) : (
+                        `TZS ${order.price?.toLocaleString() || "0"}`
+                      )
+                    }
                     valueClass="text-lg font-bold text-[#80CBF4]"
                   />
+                  {order.selectedPricingMethod === "hourly" && (
+                    <div className="text-xs text-gray-500 italic">
+                      Final price based on actual hours worked
+                    </div>
+                  )}
+                  {order.selectedPricingMethod === "inspection" && (
+                    <div className="text-xs text-gray-500 italic">
+                      Provide quote after on-site inspection
+                    </div>
+                  )}
                   {order.paymentMethod && (
                     <LabelValue
                       label="Payment Method"

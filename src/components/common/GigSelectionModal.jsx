@@ -118,9 +118,21 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
                         <div className="flex items-center gap-4 text-sm text-gray-500">
                           <div className="flex items-center gap-1">
                             <DollarSign className="w-4 h-4" />
-                            <span className="font-medium text-gray-900">
-                              TZS {formatPrice(gig.pricing)}
-                            </span>
+                            {gig.pricing.method === "negotiable" ? (
+                              <span className="font-medium text-gray-900">
+                                Inspection Required
+                              </span>
+                            ) : (
+                              <span className="font-medium text-gray-900">
+                                TZS {formatPrice(gig.pricing)}
+                                {gig.pricing.method === "hourly" && "/hr"}
+                                {gig.pricing.method === "hourly" && gig.pricing.minHours && (
+                                  <span className="text-xs text-gray-600 ml-1">
+                                    (min {gig.pricing.minHours} hrs)
+                                  </span>
+                                )}
+                              </span>
+                            )}
                           </div>
 
                           {gig.deliveryTime && (

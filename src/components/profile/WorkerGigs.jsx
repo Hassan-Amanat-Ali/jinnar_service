@@ -58,8 +58,13 @@ const WorkerGigs = () => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    pricingMethod: "fixed",
-    price: "",
+    // Multi-option pricing
+    fixedEnabled: false,
+    fixedPrice: "",
+    hourlyEnabled: false,
+    hourlyRate: "",
+    minHours: "",
+    inspectionEnabled: true,
     images: [],
     categoryId: "",
     primarySubcategory: "",
@@ -168,8 +173,12 @@ const WorkerGigs = () => {
     setFormData({
       title: "",
       description: "",
-      pricingMethod: "fixed",
-      price: "",
+      fixedEnabled: false,
+      fixedPrice: "",
+      hourlyEnabled: false,
+      hourlyRate: "",
+      minHours: "",
+      inspectionEnabled: true,
       images: [],
       categoryId: "",
       primarySubcategory: "",
@@ -185,8 +194,12 @@ const WorkerGigs = () => {
     setFormData({
       title: gig.title,
       description: gig.description,
-      pricingMethod: gig.pricing.method,
-      price: gig.pricing.price || "",
+      fixedEnabled: gig.pricing.fixed?.enabled || false,
+      fixedPrice: gig.pricing.fixed?.price || "",
+      hourlyEnabled: gig.pricing.hourly?.enabled || false,
+      hourlyRate: gig.pricing.hourly?.rate || "",
+      minHours: gig.pricing.hourly?.minHours || "",
+      inspectionEnabled: gig.pricing.inspection?.enabled !== false,
       images: [],
       categoryId: gig.category?._id || gig.category || "",
       primarySubcategory:
@@ -210,8 +223,19 @@ const WorkerGigs = () => {
       toast.error("Description is required");
       return;
     }
-    if (!formData.price) {
-      toast.error("Price is required");
+    // At least one pricing option must be enabled
+    if (!formData.fixedEnabled && !formData.hourlyEnabled && !formData.inspectionEnabled) {
+      toast.error("Please enable at least one pricing option");
+      return;
+    }
+    // Validate fixed pricing
+    if (formData.fixedEnabled && !formData.fixedPrice) {
+      toast.error("Fixed price is required when fixed pricing is enabled");
+      return;
+    }
+    // Validate hourly pricing
+    if (formData.hourlyEnabled && !formData.hourlyRate) {
+      toast.error("Hourly rate is required when hourly pricing is enabled");
       return;
     }
     if (!formData.categoryId) {
@@ -231,8 +255,12 @@ const WorkerGigs = () => {
       const gigData = {
         title: formData.title,
         description: formData.description,
-        pricingMethod: "fixed",
-        price: Number(formData.price),
+        fixedEnabled: formData.fixedEnabled,
+        fixedPrice: formData.fixedEnabled ? Number(formData.fixedPrice) : undefined,
+        hourlyEnabled: formData.hourlyEnabled,
+        hourlyRate: formData.hourlyEnabled ? Number(formData.hourlyRate) : undefined,
+        minHours: formData.hourlyEnabled && formData.minHours ? Number(formData.minHours) : undefined,
+        inspectionEnabled: formData.inspectionEnabled,
         categoryId: formData.categoryId,
         primarySubcategory: formData.primarySubcategory,
         extraSubcategories: formData.extraSubcategories,
@@ -283,8 +311,12 @@ const WorkerGigs = () => {
       setFormData({
         title: "",
         description: "",
-        pricingMethod: "fixed",
-        price: "",
+        fixedEnabled: false,
+        fixedPrice: "",
+        hourlyEnabled: false,
+        hourlyRate: "",
+        minHours: "",
+        inspectionEnabled: true,
         images: [],
         categoryId: "",
         primarySubcategory: "",
@@ -441,19 +473,45 @@ const WorkerGigs = () => {
               {/* Pricing Badge */}
               <div className="absolute top-3 right-3 bg-white px-3 py-1.5 rounded-full shadow-md">
                 <div className="flex items-center gap-1">
-                  {gig.pricing.method === "negotiable" ? (
-                    <span className="text-sm font-bold text-gray-900">
-                      Negotiable
-                    </span>
-                  ) : (
-                    <>
-                      <DollarSign size={14} className="text-green-600" />
-                      <span className="text-sm font-bold text-gray-900">
-                        TZS {gig.pricing.price?.toLocaleString()}
-                        {gig.pricing.method === "hourly" && "/hr"}
-                      </span>
-                    </>
-                  )}
+                  {(() => {
+                    const enabledOptions = [
+                      gig.pricing?.fixed?.enabled && 'fixed',
+                      gig.pricing?.hourly?.enabled && 'hourly',
+                      gig.pricing?.inspection?.enabled && 'inspection'
+                    ].filter(Boolean);
+                    
+                    if (enabledOptions.length > 1) {
+                      return (
+                        <span className="text-sm font-bold text-gray-900">
+                          {enabledOptions.length} Pricing Options
+                        </span>
+                      );
+                    } else if (gig.pricing?.fixed?.enabled) {
+                      return (
+                        <>
+                          <DollarSign size={14} className="text-green-600" />
+                          <span className="text-sm font-bold text-gray-900">
+                            TZS {gig.pricing.fixed.price?.toLocaleString()}
+                          </span>
+                        </>
+                      );
+                    } else if (gig.pricing?.hourly?.enabled) {
+                      return (
+                        <>
+                          <DollarSign size={14} className="text-green-600" />
+                          <span className="text-sm font-bold text-gray-900">
+                            TZS {gig.pricing.hourly.rate?.toLocaleString()}/hr
+                          </span>
+                        </>
+                      );
+                    } else {
+                      return (
+                        <span className="text-sm font-bold text-gray-900">
+                          Inspection Required
+                        </span>
+                      );
+                    }
+                  })()}
                 </div>
               </div>
             </div>
@@ -793,30 +851,174 @@ const WorkerGigs = () => {
                 </div>
               )}
 
-              {/* Price */}
+              {/* Pricing Options */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Price (TZS) <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Pricing Options <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <DollarSign
-                    size={18}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  />
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    placeholder="Enter amount"
-                    min={0}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                    required
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Total price for the service
+                <p className="text-xs text-gray-600 mb-4">
+                  Select one or more pricing options to offer customers flexibility
                 </p>
+                
+                <div className="space-y-4">
+                  {/* Fixed Price Option */}
+                  <div className={`border-2 rounded-lg p-4 transition-all ${
+                    formData.fixedEnabled
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200"
+                  }`}>
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.fixedEnabled}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          fixedEnabled: e.target.checked
+                        }))}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">Fixed Price</div>
+                        <div className="text-sm text-gray-600">Standard pricing for repeatable jobs</div>
+                      </div>
+                    </label>
+                    
+                    {formData.fixedEnabled && (
+                      <div className="mt-3 pl-7">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Price (TZS) <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                          <DollarSign
+                            size={18}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                          />
+                          <input
+                            type="number"
+                            name="fixedPrice"
+                            value={formData.fixedPrice}
+                            onChange={handleInputChange}
+                            placeholder="e.g., 50000"
+                            min={0}
+                            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Total fixed price for the service
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Hourly Rate Option */}
+                  <div className={`border-2 rounded-lg p-4 transition-all ${
+                    formData.hourlyEnabled
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200"
+                  }`}>
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.hourlyEnabled}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          hourlyEnabled: e.target.checked
+                        }))}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">Hourly Rate</div>
+                        <div className="text-sm text-gray-600">Time-based pricing with optional minimum hours</div>
+                      </div>
+                    </label>
+                    
+                    {formData.hourlyEnabled && (
+                      <div className="mt-3 pl-7 space-y-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Hourly Rate (TZS) <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <DollarSign
+                              size={18}
+                              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                            />
+                            <input
+                              type="number"
+                              name="hourlyRate"
+                              value={formData.hourlyRate}
+                              onChange={handleInputChange}
+                              placeholder="e.g., 15000"
+                              min={0}
+                              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Amount charged per hour of work
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Minimum Hours (Optional)
+                          </label>
+                          <div className="relative">
+                            <Clock
+                              size={18}
+                              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                            />
+                            <input
+                              type="number"
+                              name="minHours"
+                              value={formData.minHours}
+                              onChange={handleInputChange}
+                              placeholder="e.g., 2"
+                              min={0}
+                              step="0.5"
+                              className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                            />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Minimum hours required (leave empty if no minimum)
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Inspection-Based Option */}
+                  <div className={`border-2 rounded-lg p-4 transition-all ${
+                    formData.inspectionEnabled
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200"
+                  }`}>
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.inspectionEnabled}
+                        onChange={(e) => setFormData(prev => ({
+                          ...prev,
+                          inspectionEnabled: e.target.checked
+                        }))}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">Inspection-Based</div>
+                        <div className="text-sm text-gray-600">Final price determined after on-site inspection</div>
+                      </div>
+                    </label>
+                    
+                    {formData.inspectionEnabled && (
+                      <div className="mt-3 pl-7">
+                        <div className="bg-white border border-blue-200 rounded-lg p-3">
+                          <p className="text-sm text-blue-800">
+                            <strong>Note:</strong> You'll visit the job site to assess the work before providing a final quote to the customer.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Images */}
