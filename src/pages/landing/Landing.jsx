@@ -32,13 +32,9 @@ const AllServicesLanding = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [userLocation, setUserLocation] = useState(null);
   const [userAddress, setUserAddress] = useState(null);
-  const [locationStatus, setLocationStatus] = useState("loading"); // "loading" | "granted" | "denied"
+  const [locationStatus, setLocationStatus] = useState("loading"); 
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
-
-  // State for dropdowns
   const [openDropdown, setOpenDropdown] = useState(null);
-
-  // Local state for all filters to stage changes before search submission
   const [searchTerm, setSearchTerm] = useState(
     searchParams.get("search") || ""
   );
@@ -63,11 +59,9 @@ const AllServicesLanding = () => {
   const { suggestions: locationSuggestions, isLoading: locationLoading } =
     useGeocoding(searchLocation);
 
-  // Fetch categories to resolve names from IDs
   const { data: categoriesData, isLoading: categoriesLoading } =
     useGetCategoriesQuery();
 
-  // Get user's current location on mount
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -78,7 +72,6 @@ const AllServicesLanding = () => {
           };
           setUserLocation(coords);
 
-          // Convert coordinates to address
           const address = await reverseGeocode(
             coords.latitude,
             coords.longitude
@@ -103,7 +96,6 @@ const AllServicesLanding = () => {
     }
   }, []);
 
-  // Fetch subcategories when a category is selected
   const { data: subcategoriesData, isLoading: subcategoriesLoading } =
     useGetSubcategoriesQuery(categoryId, {
       skip: !categoryId,
@@ -369,16 +361,16 @@ const AllServicesLanding = () => {
         // This page's search is now handled by the form below.
       /> */}
 
-      <div className="my-6 mt-16 max-w-[1200px] mx-auto px-4">
+      <div className="my-6 mt-24 max-w-[1200px] mx-auto px-4">
         {/* Location Status Banner */}
         {locationStatus === "granted" && userLocation && (
-          <div className="mb-4 flex items-center gap-2 text-sm text-green-700 bg-green-50 px-4 py-2 rounded-lg">
+          <div className="mb-3 flex items-center gap-2 text-sm text-green-700 bg-green-50 px-4 py-2 rounded-lg">
             <MapPin size={16} />
             <span>Showing services near your location</span>
           </div>
         )}
         {locationStatus === "denied" && (
-          <div className="mb-4 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 px-4 py-2 rounded-lg">
+          <div className="mb-3 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 px-4 py-2 rounded-lg">
             <MapPin size={16} />
             <span>Enable location to see nearby services</span>
           </div>
@@ -386,29 +378,31 @@ const AllServicesLanding = () => {
 
         <form onSubmit={handleSearchSubmit}>
           {/* SEARCH & FILTERS SECTION */}
-          <div className="mb-8 p-4 sm:p-5 md:p-7 bg-white/95 rounded-2xl sm:rounded-[28px] shadow-xl border border-gray-100">
-            {/* Search Input */}
-            <div className="mb-4">
-              <label className="text-lg sm:text-xl font-semibold text-black mb-2 sm:mb-3 block">
+          <div className="mb-6 p-4 sm:p-5 bg-white/95 rounded-2xl sm:rounded-[24px] shadow-xl border border-gray-100">
+            {/* Row 1: Search Input */}
+            <div className="mb-3">
+              <label className="text-base sm:text-lg font-semibold text-black mb-1.5 block">
                 What service are you looking for?
               </label>
               <input
                 type="text"
-              value={searchTerm}
+                value={searchTerm}
                 onChange={handleSearchInputChange}
                 placeholder="Search for services like 'plumber', 'electrician'..."
-                className="w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                className="w-full h-10 sm:h-11 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
               />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+            {/* Row 2: Location, Category, Subcategory */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
               {/* Location Input */}
               <div className="relative">
                 <label className="text-xs font-semibold text-gray-600 mb-1 block">
                   Location
                 </label>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    <MapPin size={18} />
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <MapPin size={16} />
                   </div>
                   <input
                     type="text"
@@ -421,7 +415,7 @@ const AllServicesLanding = () => {
                       setTimeout(() => setShowLocationSuggestions(false), 200)
                     }
                     placeholder={userAddress || "Enter location..."}
-                    className="w-full h-11 sm:h-12 rounded-xl border border-border pl-11 pr-4 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                    className="w-full h-10 sm:h-11 rounded-xl border border-border pl-10 pr-4 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
                   />
                 </div>
                 {showLocationSuggestions && searchLocation.length > 2 && (
@@ -459,7 +453,7 @@ const AllServicesLanding = () => {
                     setSubcategoryId(""); // Reset subcategory when category changes
                   }}
                   disabled={categoriesLoading}
-                  className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                  className="appearance-none w-full h-10 sm:h-11 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
                 >
                   <option value="">All Categories</option>
                   {categories.map((cat) => (
@@ -468,8 +462,8 @@ const AllServicesLanding = () => {
                     </option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 pt-2 flex items-center px-3 text-gray-700">
-                  <ChevronDown size={20} />
+                <div className="pointer-events-none absolute inset-y-0 right-0 pt-5 flex items-center px-3 text-gray-700">
+                  <ChevronDown size={18} />
                 </div>
               </div>
 
@@ -482,7 +476,7 @@ const AllServicesLanding = () => {
                   value={subcategoryId}
                   onChange={(e) => setSubcategoryId(e.target.value)}
                   disabled={!categoryId || subcategoriesLoading}
-                  className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200 disabled:bg-gray-200"
+                  className="appearance-none w-full h-10 sm:h-11 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200 disabled:bg-gray-200"
                 >
                   <option value="">All Subcategories</option>
                   {subcategories.map((sub) => (
@@ -491,31 +485,14 @@ const AllServicesLanding = () => {
                     </option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 pt-2 flex items-center px-3 text-gray-700">
-                  <ChevronDown size={20} />
+                <div className="pointer-events-none absolute inset-y-0 right-0 pt-5 flex items-center px-3 text-gray-700">
+                  <ChevronDown size={18} />
                 </div>
               </div>
+            </div>
 
-              {/* Budget Filter - Hidden for now */}
-              {/* <div className="relative">
-              <label className="text-xs font-semibold text-gray-600 mb-1 block">Budget (TZS)</label>
-              <select
-                value={localBudget}
-                onChange={(e) => setLocalBudget(e.target.value)}
-                className="appearance-none w-full bg-gray-50 border border-gray-200 text-gray-800 py-3 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-              >
-                <option value="">Any Budget</option>
-                {budgetOptions.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 pt-5 flex items-center px-2 text-gray-700">
-                <ChevronDown size={20} />
-              </div>
-            </div> */}
-
+            {/* Row 3: Sort By, Minimum Rating, and Search Button */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
               {/* Sort By Filter */}
               <div className="relative">
                 <label className="text-xs font-semibold text-gray-600 mb-1 block">
@@ -524,7 +501,7 @@ const AllServicesLanding = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                  className="appearance-none w-full h-10 sm:h-11 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
                 >
                   <option value="">Relevance</option>
                   {Object.entries(sortOptions).map(([value, label]) => (
@@ -533,13 +510,11 @@ const AllServicesLanding = () => {
                     </option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 pt-2 flex items-center px-3 text-gray-700">
-                  <ChevronDown size={20} />
+                <div className="pointer-events-none absolute inset-y-0 right-0 pt-5 flex items-center px-3 text-gray-700">
+                  <ChevronDown size={18} />
                 </div>
               </div>
-            </div>
-            {/* More Filters */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+
               {/* Minimum Rating Filter */}
               <div className="relative">
                 <label className="text-xs font-semibold text-gray-600 mb-1 block">
@@ -548,7 +523,7 @@ const AllServicesLanding = () => {
                 <select
                   value={minRating}
                   onChange={(e) => setMinRating(e.target.value)}
-                  className="appearance-none w-full h-11 sm:h-12 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                  className="appearance-none w-full h-10 sm:h-11 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
                 >
                   <option value="">Any Rating</option>
                   {[4, 3, 2, 1].map((r) => (
@@ -557,18 +532,17 @@ const AllServicesLanding = () => {
                     </option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 pt-5 flex items-center px-2 text-gray-700">
-                  <ChevronDown size={20} />
+                <div className="pointer-events-none absolute inset-y-0 right-0 pt-5 flex items-center px-3 text-gray-700">
+                  <ChevronDown size={18} />
                 </div>
               </div>
 
-              {/* Other filters like minExperience can be added here following the same pattern */}
-            </div>
-            {/* Search Button */}
-            <div className="mt-6 text-right">
-              <button type="submit" className="btn-primary">
-                Search
-              </button>
+              {/* Search Button */}
+              <div className="flex items-end">
+                <button type="submit" className="btn-primary w-full h-10 sm:h-11">
+                  Search
+                </button>
+              </div>
             </div>
           </div>
         </form>

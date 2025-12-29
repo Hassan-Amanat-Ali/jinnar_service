@@ -27,6 +27,7 @@ import Card from "../common/Card";
 import { useNavigate } from "react-router-dom";
 import {
   useSearchGigsQuery,
+  useGetGigsQuery,
   useGetMyOrdersQuery,
   useGetMyProfileQuery,
   useFindWorkersQuery,
@@ -118,17 +119,22 @@ const CustomerHome = () => {
     }
   }, []);
 
-  // API Queries - Use searchGigs with location
+  // API Queries - Use simple getGigs endpoint for home page
+  // The /gigs endpoint returns all gigs without strict search filtering
   const {
     data: gigsData,
     isLoading: gigsLoading,
     error: gigsError,
-  } = useSearchGigsQuery({
+  } = useGetGigsQuery({
     limit: 8,
-    ...(userAddress && {
-      address: userAddress,
-      radius: 50, // 50km radius
-    }),
+  });
+
+  console.log("🔍 Gigs Debug Info:", {
+    gigsData,
+    gigsLoading,
+    gigsError,
+    userAddress,
+    gigsCount: gigsData?.gigs?.length || 0,
   });
 
   const gigs = gigsData?.gigs || [];
@@ -235,6 +241,8 @@ const CustomerHome = () => {
       category: gig.category?.name || null,
       subcategories: gig.subcategories || [],
     })) || [];
+
+  console.log("📊 Display Gigs:", displayGigs);
 
   const handleDropdownToggle = (dropdownName) => {
     setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);
@@ -559,6 +567,7 @@ const CustomerHome = () => {
             View All Services
           </button>
         </div>
+      
         {gigsLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5 md:gap-4 lg:gap-6 justify-items-center place-items-center">
             {/* Loading skeletons */}
