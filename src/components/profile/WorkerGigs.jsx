@@ -21,6 +21,7 @@ import {
   useDeleteGigImageMutation,
   useGetCategoriesQuery,
   useGetSubcategoriesQuery,
+  useGetMyProfileQuery,
 } from "../../services/workerApi";
 import toast from "react-hot-toast";
 import { getFullImageUrl } from "../../utils/fileUrl.js";
@@ -37,6 +38,7 @@ const formatName = (name) => {
 
 const WorkerGigs = () => {
   const { data, isLoading, error } = useGetMyGigsQuery();
+  const { data: profileData } = useGetMyProfileQuery();
   const [createGig, { isLoading: isCreating }] = useCreateGigMutation();
   const [updateGig, { isLoading: isUpdating }] = useUpdateGigMutation();
   const [deleteGig, { isLoading: isDeleting }] = useDeleteGigMutation();
@@ -606,6 +608,28 @@ const WorkerGigs = () => {
           Manage your service offerings and pricing
         </p>
       </div>
+
+      {/* Verification Warning Banner */}
+      {profileData?.profile?.verificationStatus !== "approved" && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-5">
+          <div className="flex gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-yellow-500 rounded-lg flex items-center justify-center">
+                <AlertTriangle className="text-white" size={20} />
+              </div>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-2">Verification Required</h4>
+              <p className="text-sm text-gray-700 mb-2">
+                Your gigs are currently hidden from customers. Complete your document verification to make your services visible and start receiving bookings.
+              </p>
+              <p className="text-xs text-gray-600">
+                Status: <span className="font-medium">{profileData?.profile?.verificationStatus || "Not submitted"}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Gigs List - Dynamic Content with Shimmer */}
       {renderGigsGrid()}

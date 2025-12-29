@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Star,
@@ -13,7 +13,8 @@ import {
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetPublicProfileQuery } from "../../services/workerApi";
-import { getFullImageUrl } from "../../utils/fileUrl.js";
+import { getFullImageUrl, reverseGeocode } from "../../utils/fileUrl.js";
+import OptimizedImage from "../../components/common/OptimizedImage";
 
 /* ---------------- Rating Stars ---------------- */
 const RatingStars = ({ value = 5, outOf = 5, size = 16 }) => {
@@ -36,7 +37,7 @@ const RatingStars = ({ value = 5, outOf = 5, size = 16 }) => {
 /* ---------------- Portfolio Thumb ---------------- */
 const Thumb = ({ src, alt }) => (
   <figure className="aspect-video w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
-    <img src={src} alt={alt} className="h-full w-full object-cover" />
+    <OptimizedImage src={src} alt={alt} className="h-full w-full object-cover" />
   </figure>
 );
 
@@ -46,11 +47,22 @@ const WorkerProfile = () => {
   const { id } = useParams();
   const { data, isLoading, error } = useGetPublicProfileQuery(id);
   const [isGigModalOpen, setIsGigModalOpen] = useState(false);
+  const [locationAddress, setLocationAddress] = useState("Loading location...");
+
+  // Fetch location address when profile data is available
+  useEffect(() => {
+    const fetchLocation = async () => {
+      const address = await reverseGeocode(data?.profile?.selectedAreas?.coordinates[1], data?.profile?.selectedAreas?.coordinates[0]);
+      setLocationAddress(address || "Location unavailable");
+    };
+
+    fetchLocation();
+  }, [data]);
 
   /* ---------------- Loading State ---------------- */
   if (isLoading) {
     return (
-      <main className="section-container pt-24 pb-6 max-w-7xl px-10">
+      <main className="section-container pt-8 pb-6 max-w-7xl px-10">
         {/* Top nav skeleton */}
         <nav className="relative flex items-center justify-between mb-6">
           <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
@@ -178,7 +190,7 @@ const WorkerProfile = () => {
   };
 
   return (
-    <main className="section-container pt-24 pb-6 max-w-7xl px-10">
+    <main className="section-container pt-8  pb-6 max-w-7xl px-10">
       {/* ---------------- Top Navigation ---------------- */}
       <nav className="relative flex items-center justify-between mb-6">
         <button
@@ -200,14 +212,13 @@ const WorkerProfile = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ---------------- Sidebar ---------------- */}
         <aside className="lg:col-span-1">
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex flex-col items-center text-center">
-              <img
-                src={getFullImageUrl(
-                  profile.profilePicture || "https://via.placeholder.com/150"
-                )}
-                alt={profile.name}
-                className="h-24 w-24 rounded-full object-cover border"
+              <OptimizedImage
+                src={profile.profilePicture}
+                alt={profile.name || "Worker profile"}
+                fallbackSrc="/placeholder-avatar.jpg"
+                className="h-24 w-24 rounded-full object-cover border-2 border-gray-200"
               />
 
               <h2 className="mt-3 text-lg font-semibold">{profile.name}</h2>
@@ -236,7 +247,7 @@ const WorkerProfile = () => {
                 {profile.selectedAreas?.length > 0 && (
                   <div className="flex items-center justify-center gap-2 bg-gray-100 rounded-full py-2 text-sm">
                     <MapPin size={16} />
-                    {profile.selectedAreas.length} locations
+                    {locationAddress}
                   </div>
                 )}
               </div>
@@ -273,7 +284,7 @@ const WorkerProfile = () => {
         {/* ---------------- Main Content ---------------- */}
         <section className="lg:col-span-2 space-y-6">
           {/* About */}
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-bold">About Me</h2>
             <p className="mt-3 text-gray-700">
               {profile.bio || "No bio available"}
@@ -282,7 +293,7 @@ const WorkerProfile = () => {
 
           {/* Services / Gigs */}
           {(profile.activeGigs?.length > 0 || profile.subcategories?.length > 0 || profile.categories?.length > 0) && (
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <h2 className="text-lg font-bold flex items-center gap-2">
                 <Briefcase size={20} className="text-[#74C7F2]" />
                 Services & Gigs
@@ -325,7 +336,7 @@ const WorkerProfile = () => {
 
           {/* Skills */}
           {profile.skills?.length > 0 && (
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <h2 className="text-lg font-bold">Skills</h2>
               <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {profile.skills.map((skill, idx) => (
@@ -345,7 +356,7 @@ const WorkerProfile = () => {
 
           {/* Portfolio */}
           {profile.portfolioImages?.length > 0 && (
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <h2 className="text-lg font-bold">Portfolio</h2>
               <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
                 {profile.portfolioImages.map((img, idx) => (
@@ -361,13 +372,13 @@ const WorkerProfile = () => {
 
           {/* Availability */}
           {profile.availability?.length > 0 && (
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <h2 className="text-lg font-bold">Availability</h2>
               <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {profile.availability.map((slot, idx) => (
                   <div
                     key={idx}
-                    className="bg-blue-50 rounded-xl p-4 border border-neutral-200"
+                    className="bg-blue-50 rounded-xl p-4 border border-gray-200"
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <Clock size={16} />

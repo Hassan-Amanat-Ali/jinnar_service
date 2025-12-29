@@ -884,8 +884,8 @@ const Wallet = () => {
         place="wallet"
         title="Wallet"
         subtitle="Manage your earnings and payments"
-        className="h-28 sm:h-32 md:h-48 lg:h-48"
-      />
+       className="h-48 sm:h-48 md:h-64 lg:h-64" />
+      
 
       <section className="w-full">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 mb-10">
