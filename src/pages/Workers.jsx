@@ -221,7 +221,7 @@ const Workers = ({ isLanding = false }) => {
                     onClick={() => {
                       navigate(
                         isLanding
-                          ? `/landing-worker-profile/${worker.id}`
+                          ? `/worker-profile/${worker.id}`
                           : `/worker-profile/${worker.id}`
                       );
                     }}

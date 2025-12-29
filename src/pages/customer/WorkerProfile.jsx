@@ -371,44 +371,28 @@ const WorkerProfile = () => {
 )}
 
           {/* Services / Gigs */}
-          {(profile.activeGigs?.length > 0 || profile.subcategories?.length > 0 || profile.categories?.length > 0) && (
+          {profile.activeGigs?.length > 0 && (
             <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <h2 className="text-lg font-bold flex items-center gap-2">
                 <Briefcase size={20} className="text-[#74C7F2]" />
                 Services & Gigs
               </h2>
               <div className="mt-4 grid gap-3">
-                {profile.activeGigs?.length > 0 ? (
-                  profile.activeGigs.map((gig, idx) => (
-                    <div key={idx} className="p-4 border border-gray-100 rounded-xl bg-gray-50 flex justify-between items-center">
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{gig.title || gig.name}</h3>
-                        {gig.description && <p className="text-sm text-gray-600 mt-1">{gig.description}</p>}
-                        <p className="text-[#74C7F2] font-bold mt-2">{getGigPrice(gig.pricing)}</p>
-                      </div>
-                      <button 
-                        onClick={() => navigate(`/book-worker/${profile._id || id}/${gig._id}`)}
-                        className="px-4 py-2 bg-white text-[#74C7F2] border border-[#74C7F2] rounded-lg text-sm font-medium hover:bg-blue-50"
-                      >
-                        Book
-                      </button>
+                {profile.activeGigs.map((gig, idx) => (
+                  <div key={idx} className="p-4 border border-gray-100 rounded-xl bg-gray-50 flex justify-between items-center">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{gig.title || gig.name}</h3>
+                      {gig.description && <p className="text-sm text-gray-600 mt-1">{gig.description}</p>}
+                      <p className="text-[#74C7F2] font-bold mt-2">{getGigPrice(gig.pricing)}</p>
                     </div>
-                  ))
-                ) : (
-                  (profile.subcategories?.length > 0 ? profile.subcategories : profile.categories).map((service, idx) => (
-                    <div key={idx} className="p-3 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-between">
-                      <span className="font-medium text-gray-900">
-                        {typeof service === 'object' ? (service.name || "Service") : service}
-                      </span>
-                      <button 
-                        onClick={() => navigate(`/book-service?workerId=${profile._id || id}&service=${typeof service === 'object' ? service._id : service}`)}
-                        className="text-sm text-[#74C7F2] font-medium hover:underline"
-                      >
-                        Book
-                      </button>
-                    </div>
-                  ))
-                )}
+                    <button 
+                      onClick={() => navigate(`/book-worker/${profile._id || id}/${gig._id}`)}
+                      className="px-4 py-2 bg-white text-[#74C7F2] border border-[#74C7F2] rounded-lg text-sm font-medium hover:bg-blue-50"
+                    >
+                      Book
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           )}
