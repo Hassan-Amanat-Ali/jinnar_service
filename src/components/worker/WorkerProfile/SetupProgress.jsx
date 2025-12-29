@@ -33,7 +33,7 @@ const Connector = ({ active }) => (
 const SetupProgress = ({ current = 1, steps = defaultSteps }) => {
   return (
     <div className="px-4 sm:px-6 py-4">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Desktop Progress - Hidden on mobile */}
         <div className="hidden md:flex items-center justify-between">
           {steps.map((s, idx) => {

@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useFindWorkersQuery } from "../services/workerApi";
-import { getFullImageUrl } from "../utils/fileUrl.js";
 import { Search, ChevronLeft, ChevronRight, X } from "lucide-react";
+import OptimizedImage from "../components/common/OptimizedImage";
 import star from "../assets/icons/star.png";
 import worker from "../assets/images/worker.jpg";
 import worker2 from "../assets/images/worker2.jpg";
@@ -10,13 +10,29 @@ import worker3 from "../assets/images/worker3.jpg";
 import worker4 from "../assets/images/worker4.jpg";
 import SiteFooter from "../components/Landing/SiteFooter.jsx"
 
-const Workers = () => {
+const Workers = ({ isLanding = false }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Detect if user came from landing page
+  const [isFromLanding, setIsFromLanding] = useState(isLanding);
+  
+  useEffect(() => {
+    // Check if we're on the landing layout (no authentication required)
+    // The /workers route under LandingLayout means we came from landing
+    const fromLanding = location.state?.fromLanding || isLanding || window.location.pathname === "/workers";
+    setIsFromLanding(fromLanding);
+  }, [location, isLanding]);
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const itemsPerPage = 12;
 
-  // Fetch workers using the API
+  // Reset page to 1 when search term changes
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
+
+  // Fetch workers using the API with search parameter
   const {
     data: apiData,
     isLoading,
@@ -26,6 +42,7 @@ const Workers = () => {
     sortOrder: "desc",
     page,
     limit: itemsPerPage,
+    ...(searchTerm && { search: searchTerm }), // Add search parameter if searchTerm exists
   });
 
   // Fallback data
@@ -75,27 +92,17 @@ const Workers = () => {
           name: worker.name || "Unknown Worker",
           profession: worker.categories?.[0]?.name || worker.skills?.[0] || worker.profession || "Professional",
           rating: (typeof worker.rating === 'number' ? worker.rating : worker.rating?.average) || 4.5,
-          image:
-            getFullImageUrl(worker.profilePicture) ||
-            getFullImageUrl(worker.profileImage?.url) ||
-            (worker.image && typeof worker.image === 'string' && worker.image.startsWith('/') ? worker.image : null) ||
-            worker.image ||
-            fallbackWorkers[0].image,
+          profilePicture: worker.profilePicture || worker.profileImage?.url || null,
+          fallbackImage: worker.image || fallbackWorkers[0].image,
           skills: worker.skills?.slice(0, 2) || [],
         }));
 
-  const workersToShow = mappedWorkers.filter((worker) => {
-    if (!searchTerm) return true;
-    const term = searchTerm.toLowerCase();
-    return (
-      worker.name.toLowerCase().includes(term) ||
-      worker.profession.toLowerCase().includes(term)
-    );
-  });
+  // No client-side filtering - backend handles search
+  const workersToShow = mappedWorkers;
 
   return (
-    <div className="mt-[60px] min-h-screen bg-gray-50 py-8 md:py-12 ">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+    <div className="rounded-xl min-h-screen bg-gray-50 py-8 md:py-12 ">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-10">
         <div className="text-center mb-8 md:mb-12">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Find Skilled Workers
@@ -162,9 +169,10 @@ const Workers = () => {
               >
                 {/* Worker Image */}
                 <div className="w-full flex justify-center mb-4">
-                  <img
-                    src={worker.image}
-                    alt={worker.name}
+                  <OptimizedImage
+                    src={worker.profilePicture}
+                    alt={worker.name || "Worker profile"}
+                    fallbackSrc="/placeholder-avatar.jpg"
                     className="rounded-full h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 object-cover border-4 border-blue-100"
                   />
                 </div>
@@ -211,7 +219,11 @@ const Workers = () => {
                   <button
                     className="border-1 border-[#74C7F2] text-[#74C7F2] hover:bg-[#74C7F2] hover:text-black transition-colors duration-300 text-xs px-4 sm:px-6 lg:px-8 py-1 rounded-md font-medium w-full sm:w-auto cursor-pointer"
                     onClick={() => {
-                      navigate(`/worker-profile/${worker.id}`);
+                      navigate(
+                        isLanding
+                          ? `/landing-worker-profile/${worker.id}`
+                          : `/worker-profile/${worker.id}`
+                      );
                     }}
                   >
                     View Profile
@@ -232,7 +244,7 @@ const Workers = () => {
 
         {/* Pagination */}
         {!isLoading && !error && !shouldUseFallback && displayWorkers.length > 0 && (
-          <div className="mt-12 flex justify-center items-center gap-4">
+          <div className="p-10 flex justify-center items-center gap-4">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}

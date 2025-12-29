@@ -10,6 +10,7 @@ import { Sparkles } from "lucide-react";
 
 const AllServices = () => {
   const { data, isLoading, error } = useGetAllGigsQuery();
+  console
   const [
     getRecommendations,
     { data: recommendedData, isLoading: isRecommending },

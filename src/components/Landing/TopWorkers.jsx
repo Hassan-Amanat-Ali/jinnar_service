@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useFindWorkersQuery } from "../../services/workerApi";
-import { getFullImageUrl } from "../../utils/fileUrl.js";
 import Button from "../common/Button";
+import OptimizedImage from "../common/OptimizedImage";
 import star from "../../assets/icons/star.png";
 
 const TopWorkers = ({ isLanding }) => {
@@ -19,7 +19,6 @@ const TopWorkers = ({ isLanding }) => {
 
   const workers = apiData?.data || [];
 
-  console.log(workers);
 
   return (
     <section id="top-workers" className="py-8 md:py-10 lg:py-12">
@@ -80,13 +79,10 @@ const TopWorkers = ({ isLanding }) => {
                 >
                   {/* Image */}
                   <div className="flex justify-center mb-4">
-                    <img
-                      src={
-                        worker.profilePicture
-                          ? getFullImageUrl(worker.profilePicture)
-                          : "/placeholder-avatar.jpg"
-                      }
-                      alt={worker.name}
+                    <OptimizedImage
+                      src={worker.profilePicture}
+                      alt={worker.name || "Worker profile"}
+                      fallbackSrc="/placeholder-avatar.jpg"
                       className="rounded-full h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 object-cover border-4 border-blue-100"
                     />
                   </div>
@@ -153,7 +149,7 @@ const TopWorkers = ({ isLanding }) => {
         )}
 
         {/* View All */}
-        <div className="text-center mt-8" onClick={() => navigate("/workers")}>
+        <div className="text-center mt-8" onClick={() => navigate(`${isLanding ? "landing-workers" : "workers"}`)}>
           <Button title="View All Workers" />
         </div>
       </div>

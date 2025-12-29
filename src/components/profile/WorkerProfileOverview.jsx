@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Star,
@@ -23,7 +23,8 @@ import {
   Shield,
 } from "lucide-react";
 import { useGetMyProfileQuery } from "../../services/workerApi";
-import { getFullImageUrl } from "../../utils/fileUrl.js";
+import { getFullImageUrl, reverseGeocode } from "../../utils/fileUrl.js";
+import OptimizedImage from "../common/OptimizedImage";
 
 // Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
@@ -90,6 +91,29 @@ const WorkerProfileOverview = () => {
   console.log("Profile data:", data);
 
   const profile = data?.profile;
+  const [locationAddress, setLocationAddress] = useState("Loading location...");
+
+  // Fetch location address when profile data is available
+  useEffect(() => {
+    const fetchLocation = async () => {
+      if (profile?.selectedAreas && profile.selectedAreas.length > 0) {
+        const firstArea = profile.selectedAreas[0];
+        if (firstArea?.coordinates && firstArea.coordinates.length === 2) {
+          const [lng, lat] = firstArea.coordinates; // GeoJSON format is [lng, lat]
+          const address = await reverseGeocode(lat, lng);
+          setLocationAddress(address || "Location unavailable");
+        } else {
+          setLocationAddress("Location not set");
+        }
+      } else {
+        setLocationAddress("No location added");
+      }
+    };
+
+    if (profile) {
+      fetchLocation();
+    }
+  }, [profile]);
 
   // Handler for edit profile button
   const handleEditProfile = () => {
@@ -419,7 +443,7 @@ const WorkerProfileOverview = () => {
     }+ Years`,
     rating: profile.rating?.average || 0,
     reviewCount: profile.rating?.count || 0,
-    completedJobs: profile.orderHistory?.length || 0,
+    completedJobs: profile.completedJobs || 0,
     joinDate: formatDate(profile.createdAt),
     isVerified: profile.isVerified || false,
     isAvailable: availabilityData.hasSchedule,
@@ -448,9 +472,10 @@ const WorkerProfileOverview = () => {
             {console.log("Rendering profile:", profile)}
             <div className="shrink-0">
               {profile.profilePicture ? (
-                <img
-                  src={getFullImageUrl(profile.profilePicture)}
-                  alt={profile.name}
+                <OptimizedImage
+                  src={profile.profilePicture}
+                  alt={profile.name || "Worker profile"}
+                  fallbackSrc="/placeholder-avatar.jpg"
                   className="w-20 h-20 rounded-full object-cover"
                 />
               ) : (
@@ -487,6 +512,7 @@ const WorkerProfileOverview = () => {
                     ({worker.reviewCount} reviews)
                   </span>
                 </div>
+             
                 <span className="text-sm text-gray-500">•</span>
                 <span className="text-sm text-gray-500">
                   {worker.completedJobs} jobs completed
@@ -512,8 +538,9 @@ const WorkerProfileOverview = () => {
                 {profile.selectedAreas && profile.selectedAreas.length > 0 && (
                   <Badge variant="location">
                     <MapPin size={12} />
-                    {profile.selectedAreas.length} service area
-                    {profile.selectedAreas.length !== 1 ? "s" : ""}
+                    {locationAddress !== "Loading location..." && locationAddress !== "No location added" 
+                      ? locationAddress.split(",")[0] // Show only city name
+                      : `${profile.selectedAreas.length} service area${profile.selectedAreas.length !== 1 ? "s" : ""}`}
                   </Badge>
                 )}
               </div>
@@ -609,14 +636,13 @@ const WorkerProfileOverview = () => {
                   Location & Service Area
                 </h4>
                 <div className="space-y-3">
-                  {getLocationString(profile.selectedAreas) ? (
+                  {profile.selectedAreas && profile.selectedAreas.length > 0 ? (
                     <div>
                       <div className="text-sm font-medium text-gray-900 mb-1">
-                        {getLocationString(profile.selectedAreas)}
+                        {locationAddress}
                       </div>
                       <div className="text-xs text-gray-500">
-                        Service Radius:{" "}
-                        {getServiceRadius(profile.selectedAreas)}
+                        Service Areas: {profile.selectedAreas.length} location{profile.selectedAreas.length !== 1 ? "s" : ""}
                       </div>
                     </div>
                   ) : (
@@ -736,9 +762,10 @@ const WorkerProfileOverview = () => {
                     key={idx}
                     className="aspect-square bg-gray-200 rounded-lg overflow-hidden"
                   >
-                    <img
-                      src={getFullImageUrl(image.url)}
+                    <OptimizedImage
+                      src={image.url}
                       alt={`Portfolio ${idx + 1}`}
+                      fallbackSrc="/placeholder-avatar.jpg"
                       className="w-full h-full object-cover"
                     />
                   </div>

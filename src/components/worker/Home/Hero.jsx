@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { CheckCircle, Briefcase, Check, DollarSign, Star } from "lucide-react";
+import { CheckCircle, Briefcase, Check, DollarSign, Star, AlertTriangle } from "lucide-react";
 import bag from "../../../assets/icons/worker-bag.png";
 import check from "../../../assets/icons/check.png";
-import { useGetMyProfileQuery, useGetMyOrdersQuery, useGetNewJobRequestsQuery, useGetWalletQuery, useGetSellerStatsQuery } from "../../../services/workerApi";
+import { useGetMyProfileQuery, useGetMyOrdersQuery, useGetNewJobRequestsQuery, useGetWalletQuery, useGetSellerStatsQuery, useGetMyGigsQuery } from "../../../services/workerApi";
 import { getFullImageUrl } from "../../../utils/fileUrl.js";
 
 const Hero = () => {
@@ -16,6 +16,7 @@ const Hero = () => {
   const { data: newJobsData } = useGetNewJobRequestsQuery();
   const { data: walletData } = useGetWalletQuery();
   const { data: sellerStats } = useGetSellerStatsQuery();
+  const { data: gigsData } = useGetMyGigsQuery();
   
   // Calculate real stats
   const allOrders = ordersData || [];
@@ -96,6 +97,9 @@ const Hero = () => {
   };
 
   const completionPercentage = calculateProfileCompletion();
+  
+  // Calculate number of gigs
+  const gigsCount = gigsData?.gigs?.length || 0;
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -144,6 +148,50 @@ const Hero = () => {
           </Link>
         </div>
       </div>
+
+      {/* Gig Status Notification */}
+      {gigsCount === 0 ? (
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 rounded-xl p-4 sm:p-5 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm sm:text-base font-semibold text-amber-900 mb-1">
+                No Active Gigs Found
+              </h3>
+              <p className="text-xs sm:text-sm text-amber-800 leading-relaxed mb-3">
+                You need to create at least one gig to start receiving job requests from customers. 
+                Gigs showcase your services and help customers find you.
+              </p>
+              <Link
+                to="/worker-setup-gig"
+                className="inline-flex items-center gap-2 bg-amber-600 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-amber-700 transition-colors shadow-sm"
+              >
+                <Briefcase className="w-4 h-4" />
+                Create Your First Gig
+              </Link>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 text-green-600" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm font-medium text-green-900">
+                <span className="font-semibold">{gigsCount}</span> Active Gig{gigsCount > 1 ? 's' : ''} • Ready to receive job requests
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Profile Completion Section */}
       <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-100">

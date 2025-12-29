@@ -12,15 +12,15 @@ const ProfileSetupAvailability = () => {
   // Fetch profile data
   const { data: profileData, isLoading, error } = useGetMyProfileQuery();
 
-  const handleFinish = async () => {
-    // Save data before finishing
+  const handleNext = async () => {
+    // Save data before navigating to Step 6
     if (step5FormRef.current) {
       const saved = await step5FormRef.current.handleSave();
       if (saved) {
-        navigate("/worker-home");
+        navigate("/worker-setup-gig");
       }
     } else {
-      navigate("/worker-home");
+      navigate("/worker-setup-gig");
     }
   };
 
@@ -63,7 +63,7 @@ const ProfileSetupAvailability = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <div className="text-center mb-6 sm:mb-8">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-            Step 5 of 5: Set your working hours
+            Step 5 of 6: Set your working hours
           </h2>
         </div>
 
@@ -99,10 +99,10 @@ const ProfileSetupAvailability = () => {
               Save & Exit
             </button>
             <button
-              onClick={handleFinish}
+              onClick={handleNext}
               className="w-full sm:w-auto px-8 py-2.5 sm:py-2 bg-[#74C7F2] text-white rounded-lg font-medium hover:bg-[#5ba8e0] transition-colors text-sm sm:text-xs"
             >
-              Finish Setup
+              Next: Create Your Gig
             </button>
           </div>
         </div>

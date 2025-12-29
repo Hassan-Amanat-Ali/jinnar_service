@@ -799,7 +799,7 @@ const CustomerWallet = () => {
   if (walletLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Hero title="Wallet" subtitle="Manage your payments and transactions" place="Customer" />
+        <Hero title="Wallet" subtitle="Manage your payments and transactions" place="Customer" className="h-28 sm:h-32 md:h-48 lg:h-48"/>
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="animate-pulse space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -816,7 +816,7 @@ const CustomerWallet = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Hero title="Wallet" subtitle="Manage your payments and transactions" place="Customer" />
+      <Hero title="Wallet" subtitle="Manage your payments and transactions" place="Customer" className="h-48 sm:h-48 md:h-64 lg:h-64" />
       
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Stats Cards */}

@@ -32,6 +32,7 @@ import ProfileSetupServices from "../pages/worker/ProfileSetupServices.jsx";
 import ProfileSetupLocation from "../pages/worker/ProfileSetupPricing.jsx";
 import ProfileSetupAvailability from "../pages/worker/ProfileSetupAvailability.jsx";
 import ProfileSetupExperience from "../pages/worker/ProfileSetupExperience.jsx";
+import ProfileSetupGig from "../pages/worker/ProfileSetupGig.jsx";
 import Jobs from "../pages/worker/Jobs.jsx";
 import JobDetail from "../pages/worker/JobDetail.jsx";
 import WorkerBookings from "../pages/worker/MyBookings.jsx";
@@ -73,7 +74,7 @@ const router = createBrowserRouter([
           { path: "privacy-policy", element: <PrivacyPolicies /> },
           { path: "terms-condition", element: <Terms /> },
           { path: "about-us", element: <AboutUs /> },
-          { path: "workers", element: <Workers /> },
+          { path: "landing-workers", element: <Workers isLanding={true} /> },
           {
             path: "landing-worker-profile/:id",
             element: <WorkerView />,
@@ -138,6 +139,10 @@ const router = createBrowserRouter([
             <CustomerHome />
           </RoleGuard>
         ),
+      },
+      {
+        path: "customer-home/workers",
+        element: <Workers isLanding={false} />,
       },
       { path: "worker-profile/:id", element: <WorkerPublicProfile /> },
       {
@@ -220,6 +225,7 @@ const router = createBrowserRouter([
         path: "worker-setup-availability",
         element: <ProfileSetupAvailability />,
       },
+      { path: "worker-setup-gig", element: <ProfileSetupGig /> },
     ],
   },
   {
