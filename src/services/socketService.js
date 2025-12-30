@@ -120,9 +120,19 @@ class SocketService {
     this.socket.on('newMessage', callback); // Match working example event name
   }
 
+  offNewMessage(callback) {
+    if (!this.socket) return;
+    this.socket.off('newMessage', callback);
+  }
+
   onMessageStatus(callback) {
     if (!this.socket) return;
     this.socket.on('message_status', callback);
+  }
+
+  offMessageStatus(callback) {
+    if (!this.socket) return;
+    this.socket.off('message_status', callback);
   }
 
   onConversationUpdate(callback) {
@@ -130,14 +140,29 @@ class SocketService {
     this.socket.on('conversation_update', callback);
   }
 
+  offConversationUpdate(callback) {
+    if (!this.socket) return;
+    this.socket.off('conversation_update', callback);
+  }
+
   onTyping(callback) {
     if (!this.socket) return;
     this.socket.on('userTyping', callback); // Match working example event name
   }
 
+  offTyping(callback) {
+    if (!this.socket) return;
+    this.socket.off('userTyping', callback);
+  }
+
   onStopTyping(callback) {
     if (!this.socket) return;
     this.socket.on('userTyping', callback); // Same event, different isTyping value
+  }
+
+  offStopTyping(callback) {
+    if (!this.socket) return;
+    this.socket.off('userTyping', callback);
   }
 
   // Online users handling - from working example
@@ -146,9 +171,19 @@ class SocketService {
     this.socket.on('getOnlineUsers', callback);
   }
 
+  offOnlineUsers(callback) {
+    if (!this.socket) return;
+    this.socket.off('getOnlineUsers', callback);
+  }
+
   onUserStatusChange(callback) {
     if (!this.socket) return;
     this.socket.on('userOnlineStatus', callback);
+  }
+
+  offUserStatusChange(callback) {
+    if (!this.socket) return;
+    this.socket.off('userOnlineStatus', callback);
   }
 
   emitTyping(receiverId, isTyping = true) {

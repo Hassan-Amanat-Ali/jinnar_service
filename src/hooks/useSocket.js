@@ -104,6 +104,35 @@ export const useSocket = () => {
   };
 };
 
+// Helper functions for useChat
+const getParticipantId = (p) => {
+  if (!p) return null;
+  if (typeof p === "string") return p;
+  return p._id || p.id;
+};
+
+const normalizeOfferMessage = (offer) => {
+  const senderId = getParticipantId(offer.sender) || offer.senderId;
+  const receiverId = getParticipantId(offer.receiver) || offer.receiverId;
+
+  let customOfferData = offer.customOffer || offer;
+  if (customOfferData.customOffer) {
+      customOfferData = customOfferData.customOffer;
+  }
+
+  return {
+    _id: offer._id || `temp-offer-${Date.now()}-${Math.random()}`,
+    createdAt: offer.createdAt || new Date().toISOString(),
+    senderId,
+    receiverId,
+    sender: typeof offer.sender === 'object' ? offer.sender : { _id: senderId },
+    receiver: typeof offer.receiver === 'object' ? offer.receiver : { _id: receiverId },
+    customOffer: customOfferData,
+    message: "",
+    content: "",
+  };
+};
+
 export const useChat = (conversationId) => {
   const [messages, setMessages] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
@@ -136,6 +165,43 @@ export const useChat = (conversationId) => {
       }
     };
 
+    const handleNewOffer = (offer) => {
+      console.log('🏷️ ── NEW OFFER EVENT RECEIVED ──', {
+        rawOffer: offer,
+        has_customOffer: !!offer.customOffer,
+        offer_id: offer._id,
+        sender: offer.sender?._id || offer.senderId,
+        receiver: offer.receiver?._id || offer.receiverId,
+        conversationId_we_are_listening: conversationId,
+      });
+
+      const normalized = normalizeOfferMessage(offer);
+
+      console.log('Normalized offer →', {
+        _id: normalized._id,
+        senderId: normalized.senderId,
+        receiverId: normalized.receiverId,
+        isRelevantCheck: (normalized.senderId === conversationId || normalized.receiverId === conversationId),
+      });
+
+      const isRelevant = (normalized.senderId === conversationId || normalized.receiverId === conversationId);
+
+      if (isRelevant) {
+        setMessages((prev) => {
+          const alreadyExists = prev.some(m => m._id === normalized._id);
+          console.log('Adding to messages?', {
+            willAdd: !alreadyExists,
+            currentMessagesCountBefore: prev.length,
+            existingIds: prev.map(m => m._id).slice(-3), // last 3 for quick view
+          });
+          if (alreadyExists) return prev;
+          return [...prev, normalized];
+        });
+      } else {
+        console.warn('Offer ignored - not relevant to this conversationId');
+      }
+    };
+
     const handleTyping = ({ senderId, isTyping }) => {
       console.log('⌨️ Typing event:', { senderId, isTyping, conversationId });
       if (senderId === conversationId) {
@@ -155,9 +221,21 @@ export const useChat = (conversationId) => {
     socketService.onNewMessage(handleNewMessage);
     socketService.onTyping(handleTyping);
     socketService.onStopTyping(handleTyping); // Same handler, different isTyping value
+    
+    // Listen for newOffer directly on socket instance since socketService wrapper might not have it
+    const socket = socketService.getSocket();
+    if (socket) {
+      socket.on('newOffer', handleNewOffer);
+    }
 
     return () => {
-      socketService.removeAllListeners();
+      socketService.offNewMessage(handleNewMessage);
+      socketService.offTyping(handleTyping);
+      socketService.offStopTyping(handleTyping);
+      
+      if (socket) {
+        socket.off('newOffer', handleNewOffer);
+      }
     };
   }, [isConnected, conversationId]);
 

@@ -324,9 +324,36 @@ const Chat = () => {
   } = useChat(socketConversationId);
 
   // Sync messages from API to local state
+// Sync messages from API to local state with Merge Logic
   useEffect(() => {
-    if (messages.length > 0) {
-      setLocalMessages(messages);
+    // Only proceed if we have API messages
+    if (messages && messages.length > 0) {
+      setLocalMessages((prev) => {
+        // If local state is empty, just accept the API data
+        if (prev.length === 0) return messages;
+
+        // 1. Get a Set of all IDs currently returned by the API
+        const apiMessageIds = new Set(messages.map((m) => m._id));
+
+        // 2. Find messages in our Local State that are MISSING from the API.
+        //    These are likely:
+        //    - Optimistic updates (temp-*)
+        //    - New socket messages/offers that arrived *after* the API fetch started
+        const missingLocalMessages = prev.filter((localMsg) => {
+          // Keep temp messages
+          if (localMsg._id?.startsWith("temp-")) return true;
+          
+          // Keep real messages that the API doesn't know about yet
+          return !apiMessageIds.has(localMsg._id);
+        });
+
+        // 3. Combine API messages + the preserved local messages
+        const mergedMessages = [...messages, ...missingLocalMessages].sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
+
+        return mergedMessages;
+      });
     }
   }, [messages]);
 
@@ -410,6 +437,7 @@ const Chat = () => {
   ]);
 
   // Listen for new offers from socket
+ // Listen for new offers from socket
   useEffect(() => {
     if (!socket) return;
 
@@ -424,8 +452,19 @@ const Chat = () => {
           messageReceiverId === currentUserId);
 
       if (isRelevant) {
-        setLocalMessages((prev) => [...prev, offer]);
-        refetchConversations(); // update sidebar last message
+        // Ensure the offer has the structure of a Message (MessageBubble checks message.customOffer)
+        // If the socket sends the raw Offer object, we might need to wrap it or ensure 'customOffer' exists
+        const formattedOffer = offer.customOffer 
+          ? offer 
+          : { ...offer, customOffer: offer }; // Fallback if backend sends raw offer data
+
+        setLocalMessages((prev) => {
+            // Avoid duplicates if this offer is already in the list
+            if (prev.some(m => m._id === formattedOffer._id)) return prev;
+            return [...prev, formattedOffer]
+        });
+        
+        refetchConversations(); 
       }
     };
 
@@ -1003,10 +1042,17 @@ const Chat = () => {
         receiverName={otherParticipant?.name}
         selectedGig={selectedGig}
         onOfferSent={(offer, tempId) => {
+          // Ensure structure is correct for rendering immediately
+const offerMessage = normalizeOfferMessage(
+  offer,
+  currentUser._id,
+  otherParticipant?._id
+);
+          
           setLocalMessages((prev) =>
             tempId
-              ? prev.map((m) => (m._id === tempId ? offer : m))
-              : [...prev, offer]
+              ? prev.map((m) => (m._id === tempId ? offerMessage : m))
+              : [...prev, offerMessage]
           );
         }}
         socket={socket}
@@ -1015,5 +1061,17 @@ const Chat = () => {
     </main>
   );
 };
+
+const normalizeOfferMessage = (offer, currentUserId, receiverId) => ({
+  _id: offer._id || `temp-offer-${Date.now()}`,
+  createdAt: offer.createdAt || new Date().toISOString(),
+  senderId: currentUserId,
+  receiverId,
+  customOffer: offer.customOffer || offer,
+  sender: offer.sender || {
+    _id: currentUserId,
+  },
+});
+
 
 export default Chat;

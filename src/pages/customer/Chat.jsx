@@ -366,11 +366,16 @@ const Chat = () => {
   } = useChat(socketConversationId);
 
   // Sync messages from API to local state
-  useEffect(() => {
-    if (messages.length > 0) {
-      setLocalMessages(messages);
-    }
-  }, [messages]);
+useEffect(() => {
+  if (!messages.length) return;
+
+  const normalized = messages.map((msg) =>
+    msg.customOffer ? msg : msg.offerId ? normalizeOfferMessage(msg) : msg
+  );
+
+  setLocalMessages(normalized);
+}, [messages]);
+
 
   // Update temporary conversation with fetched profile data
   useEffect(() => {
@@ -453,17 +458,23 @@ const Chat = () => {
     };
 
     const handleOfferUpdate = (updatedMessage) => {
-      setLocalMessages((prev) =>
-        prev.map((msg) =>
-          msg._id === updatedMessage._id ? updatedMessage : msg
-        )
-      );
-      setSocketMessages((prev) =>
-        prev.map((msg) =>
-          msg._id === updatedMessage._id ? updatedMessage : msg
-        )
-      );
-    };
+  const normalized = updatedMessage.customOffer
+    ? updatedMessage
+    : normalizeOfferMessage(updatedMessage);
+
+  setLocalMessages((prev) =>
+    prev.map((msg) =>
+      msg._id === normalized._id ? normalized : msg
+    )
+  );
+
+  setSocketMessages((prev) =>
+    prev.map((msg) =>
+      msg._id === normalized._id ? normalized : msg
+    )
+  );
+};
+
 
     const handleChatListUpdate = () => {
       refetchConversations();
@@ -475,25 +486,25 @@ const Chat = () => {
     console.log("✅ Registered newMessage, updateMessage, updateChatList listeners");
 
     // Listen for new offers (sent by sellers). Append to messages if relevant and refresh sidebar.
+   
     const handleNewOffer = (offer) => {
-      const messageSenderId = offer.sender?._id || offer.senderId;
-      const messageReceiverId = offer.receiver?._id || offer.receiverId;
+      const senderId = offer.sender?._id || offer.senderId;
+      const receiverId = offer.receiver?._id || offer.receiverId;
 
       const isRelevant =
-        (messageSenderId === currentUserId &&
-          messageReceiverId === otherParticipantId) ||
-        (messageSenderId === otherParticipantId &&
-          messageReceiverId === currentUserId);
+        (senderId === currentUserId && receiverId === otherParticipantId) ||
+        (senderId === otherParticipantId && receiverId === currentUserId);
 
       if (isRelevant) {
+        const normalized = normalizeOfferMessage(offer);
         setLocalMessages((prev) => {
-          const exists = prev.some((m) => m._id === offer._id || m.id === offer.id);
-          if (exists) return prev;
-          return [...prev, offer];
+          const alreadyExists = prev.some((m) => m._id === normalized._id);
+          if (alreadyExists) return prev;
+          return [...prev, normalized];
         });
-        refetchConversations();
       }
     };
+
 
 
     socket.on("newOffer", handleNewOffer);
@@ -511,6 +522,7 @@ const Chat = () => {
     otherParticipantId,
     refetchConversations,
     setSocketMessages,
+    conversationId,
   ]);
 
   useEffect(() => {
@@ -1061,5 +1073,23 @@ const Chat = () => {
     </main>
   );
 };
+
+const normalizeOfferMessage = (offer) => {
+  const senderId = offer.sender?._id || offer.senderId;
+  const receiverId = offer.receiver?._id || offer.receiverId;
+
+  return {
+    _id: offer._id || `temp-offer-${Date.now()}`,
+    createdAt: offer.createdAt || new Date().toISOString(),
+    senderId,
+    receiverId,
+    sender: offer.sender || { _id: senderId },
+    receiver: offer.receiver || { _id: receiverId },
+    customOffer: offer.customOffer || offer,
+    message: "", // keep MessageBubble safe
+    content: "",
+  };
+};
+
 
 export default Chat;
