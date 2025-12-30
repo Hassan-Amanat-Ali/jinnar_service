@@ -37,13 +37,15 @@ const getStatusBadge = (status) => {
   const statusMap = {
     pending: { color: "bg-yellow-100 text-yellow-800", text: "Pending" },
     accepted: { color: "bg-blue-100 text-blue-800", text: "Accepted" },
+    offer_pending: { color: "bg-orange-100 text-orange-800", text: "Offer Pending" },
     "in-progress": {
       color: "bg-purple-100 text-purple-800",
       text: "In Progress",
     },
     completed: { color: "bg-green-100 text-green-800", text: "Completed" },
     cancelled: { color: "bg-red-100 text-red-800", text: "Cancelled" },
-    declined: { color: "bg-gray-100 text-gray-800", text: "Declined" },
+    declined: { color: "bg-red-100 text-red-800", text: "Declined" },
+    rejected: { color: "bg-red-100 text-red-800", text: "Rejected" },
   };
   const badge = statusMap[status?.toLowerCase()] || statusMap.pending;
   return (
@@ -54,6 +56,8 @@ const getStatusBadge = (status) => {
     </span>
   );
 };
+  
+
 
 const SectionCard = ({ title, children, className = "", badge }) => (
   <div
@@ -129,6 +133,7 @@ const BookingDetail = () => {
     refetch,
     error,
   } = useGetOrderByIdQuery(id, { skip: !id || id.length !== 24 });
+  console.log("Order", order);
 
   // When the `order` data changes, resolve a readable address if coordinates are available
   useEffect(() => {
@@ -564,12 +569,12 @@ const BookingDetail = () => {
                       "Service Fee"
                     }
                     value={
-                      order.selectedPricingMethod === "inspection" ? (
+                      order.price > 0 ? (
+                        `TZS ${order.price?.toLocaleString()}`
+                      ) : order.selectedPricingMethod === "inspection" ? (
                         "To Be Determined"
-                      ) : order.selectedPricingMethod === "hourly" ? (
-                        order.price > 0 ? `TZS ${order.price?.toLocaleString()}` : "TBD"
                       ) : (
-                        `TZS ${order.price?.toLocaleString() || "0"}`
+                        "TBD"
                       )
                     }
                     valueClass="text-lg font-bold text-[#80CBF4]"
