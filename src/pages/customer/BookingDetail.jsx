@@ -31,7 +31,11 @@ const BookingDetail = () => {
   const { data, isLoading, error, refetch } = useGetOrderByIdQuery(id, {
     skip: !id || id.length !== 24,
   });
+
+
   const order = data?.order || data;
+
+  console.log("Order", order);
 
   const [cancelOrder, { isLoading: isCancelling }] = useCancelOrderMutation();
   const [completeOrder, { isLoading: isCompleting }] =
@@ -118,6 +122,7 @@ const BookingDetail = () => {
   const getStatusBadge = (status) => {
     const statusMap = {
       pending: { color: "bg-yellow-100 text-yellow-800", text: "Pending" },
+      offer_pending: { color: "bg-orange-100 text-orange-800", text: "Offer Pending" },
       accepted: { color: "bg-blue-100 text-blue-800", text: "Accepted" },
       "in-progress": {
         color: "bg-purple-100 text-purple-800",
@@ -125,6 +130,7 @@ const BookingDetail = () => {
       },
       completed: { color: "bg-green-100 text-green-800", text: "Completed" },
       cancelled: { color: "bg-red-100 text-red-800", text: "Cancelled" },
+      rejected: { color: "bg-red-100 text-red-800", text: "Rejected" },
     };
     const badge = statusMap[status?.toLowerCase()] || statusMap.pending;
     return (
@@ -226,16 +232,16 @@ const BookingDetail = () => {
                  "Pricing Method"}
               </p>
               <p className="text-xl font-bold">
-                {order.selectedPricingMethod === "inspection" ? (
+                {order.price > 0 ? (
+                  `TZS ${order.price?.toLocaleString()}`
+                ) : order.selectedPricingMethod === "inspection" ? (
                   "Quote After Inspection"
-                ) : order.selectedPricingMethod === "hourly" ? (
-                  order.price > 0 ? `TZS ${order.price?.toLocaleString()}` : "TBD"
                 ) : (
-                  `TZS ${order.price?.toLocaleString() || "0"}`
+                  "TBD"
                 )}
               </p>
               <p className="text-sm text-gray-500 mt-1">
-                {order.selectedPricingMethod === "fixed" ? "Total fixed price" :
+                {order.price > 0 ? "Total amount" :
                  order.selectedPricingMethod === "hourly" ? "Based on hours worked" :
                  order.selectedPricingMethod === "inspection" ? "Worker will provide quote" :
                  "Service pricing"}
@@ -357,10 +363,12 @@ const BookingDetail = () => {
                    "Pricing"}
                 </p>
                 <p className="text-sm font-semibold text-gray-900">
-                  {order.selectedPricingMethod === "inspection" ? (
+                  {order.price > 0 ? (
+                    `TZS ${order.price?.toLocaleString()}`
+                  ) : order.selectedPricingMethod === "inspection" ? (
                     "Quote TBD"
                   ) : (
-                    `TZS ${order.price?.toLocaleString() || "0"}`
+                    "TBD"
                   )}
                 </p>
               </div>
