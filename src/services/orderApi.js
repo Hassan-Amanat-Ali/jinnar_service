@@ -22,6 +22,8 @@ export const orderApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (result, error, { messageId }) => [
         { type: "CustomOffer", id: messageId },
+        "Message", // Invalidate all messages to trigger refetch
+        "Conversation", // Update conversation list
       ],
     }),
 
@@ -34,6 +36,8 @@ export const orderApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (result, error, { messageId }) => [
         { type: "CustomOffer", id: messageId },
+        "Message", // Invalidate all messages to trigger refetch
+        "Conversation", // Update conversation list
       ],
     }),
   }),

@@ -5,6 +5,7 @@ import { useGetAllGigsQuery } from "../../services/workerApi";
 import { useGetRecommendedWorkersMutation } from "../../services/recommendationApi";
 import { useSearchParams } from "react-router-dom";
 import { useMemo, useState, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
 
 import { Sparkles } from "lucide-react";
 
@@ -19,6 +20,7 @@ const AllServices = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
 
   const categoryId = searchParams.get("category");
   const subcategoryId = searchParams.get("subcategory");
@@ -68,6 +70,90 @@ const AllServices = () => {
     setSearchParams({});
   }, [setSearchParams]);
 
+  // Get user's current location on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Error getting location:", error.message);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000, // Cache location for 5 minutes
+        }
+      );
+    }
+  }, []);
+
+  // Handle enable location button click
+  const handleEnableLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          toast.success('Location enabled! You can now see exact distances.');
+        },
+        (error) => {
+          if (error.code === error.PERMISSION_DENIED) {
+            toast.error('Location access denied. Please enable it in your browser settings to see distances.', {
+              duration: 5000,
+            });
+          } else if (error.code === error.TIMEOUT) {
+            toast.error('Location request timed out. Please try again.', {
+              duration: 4000,
+            });
+          } else {
+            toast.error('Unable to get your location. Please try again.', {
+              duration: 4000,
+            });
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+        }
+      );
+    } else {
+      toast.error('Geolocation is not supported by your browser.', {
+        duration: 4000,
+      });
+    }
+  };
+
+  // Helper function to calculate distance using Haversine formula
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    
+    const R = 6371; // Radius of the Earth in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) *
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    
+    // Return formatted distance
+    if (distance < 1) {
+      return `${Math.round(distance * 1000)}m Away`;
+    } else {
+      return `${distance.toFixed(1)}km Away`;
+    }
+  };
+
   // Skeleton Component
   const Skeleton = ({ className = "" }) => (
     <div className={`bg-gray-200 rounded animate-pulse ${className}`}>
@@ -75,10 +161,57 @@ const AllServices = () => {
     </div>
   );
 
+  // Helper function to format pricing display
+  const formatPricing = (pricing) => {
+    if (!pricing) return "N/A";
+    
+    // Check which pricing options are enabled
+    const options = [];
+    
+    if (pricing.fixed?.enabled && pricing.fixed?.price) {
+      options.push(`TZS ${pricing.fixed.price.toLocaleString()}`);
+    }
+    
+    if (pricing.hourly?.enabled && pricing.hourly?.rate) {
+      options.push(`TZS ${pricing.hourly.rate.toLocaleString()}/hr`);
+    }
+    
+    if (pricing.inspection?.enabled && options.length === 0) {
+      return "Inspection Required";
+    }
+    
+    // If multiple options, show the first one with a note
+    if (options.length > 1) {
+      return `From ${options[0]}`;
+    } else if (options.length === 1) {
+      return options[0];
+    }
+    
+    return "Contact for pricing";
+  };
+
   // Transform API data to match WorkerCard component format with gig info
   const allGigsData = useMemo(
     () =>
       data?.gigs?.map((gig) => {
+        const rate = formatPricing(gig.pricing);
+        
+        // Calculate distance from user to gig seller
+        // Sellers store their work locations in selectedAreas array
+        let distance = "Nearby";
+        if (userLocation && gig.sellerId?.selectedAreas?.length > 0) {
+          const firstArea = gig.sellerId.selectedAreas[0];
+          if (firstArea?.coordinates?.length === 2) {
+            const [sellerLng, sellerLat] = firstArea.coordinates;
+            distance = calculateDistance(
+              userLocation.latitude,
+              userLocation.longitude,
+              sellerLat,
+              sellerLng
+            ) || "Nearby";
+          }
+        }
+        
         const mappedGig = {
           id: gig._id,
           gigId: gig._id,
@@ -89,66 +222,72 @@ const AllServices = () => {
           reviews: gig.sellerId?.rating?.count || 0,
           available: true,
           experience: gig.sellerId?.yearsOfExperience || 0,
-          distance:
-            gig.pricing?.method === "negotiable"
-              ? "Negotiable"
-              : gig.pricing?.method === "hourly"
-              ? `TZS ${gig.pricing?.price}/hr`
-              : `TZS ${gig.pricing?.price}`,
+          distance: distance,
           bio: gig.description,
           skills: gig.sellerId?.skills?.slice(0, 4) || [],
           jobsCompleted: gig.sellerId?.ordersCompleted || 0,
-          rate:
-            gig.pricing?.method === "negotiable"
-              ? "Negotiable"
-              : gig.pricing?.price || 0,
+          rate: rate,
           sellerSkills: gig.sellerId?.skills || [],
           sellerAreas: gig.sellerId?.selectedAreas || [],
         };
         return mappedGig;
       }) || [],
-    [data]
+    [data, userLocation]
   );
 
   // Transform recommended gigs data from the new API response structure
   const recommendedGigsData = useMemo(() => {
     if (!recommendedData) return { topRecommended: [], otherGigs: [] };
 
-    const transformGig = (gig) => ({
-      id: gig._id,
-      gigId: gig._id,
-      sellerId: gig.sellerId?._id,
-      name: gig.title,
-      image: gig.images?.[0]?.url,
-      rating: gig.sellerId?.rating?.average || 0,
-      reviews: gig.sellerId?.rating?.count || 0,
-      available: true,
-      experience: gig.sellerId?.yearsOfExperience || 0,
-      distance: gig.pricing?.method === "negotiable" 
-        ? "Negotiable" 
-        : gig.pricing?.method === "hourly"
-        ? `TZS ${gig.pricing?.price}/hr`
-        : `TZS ${gig.pricing?.price}`,
-      bio: gig.description,
-      skills: gig.skills?.slice(0, 4) || [],
-      jobsCompleted: gig.sellerId?.ordersCompleted || 0,
-      rate: gig.pricing?.method === "negotiable" 
-        ? "Negotiable" 
-        : gig.pricing?.price || 0,
-      sellerSkills: gig.sellerId?.skills || [],
-      sellerAreas: gig.sellerId?.selectedAreas || [],
-      matchScore: gig.matchScore || 0,
-      isRecommended: true,
-      isTopRecommended: gig.isTopRecommended || false,
-      sellerName: gig.sellerId?.name || "Unknown Seller",
-      sellerVerified: gig.sellerId?.isVerified || false,
-    });
+    const transformGig = (gig) => {
+      const rate = formatPricing(gig.pricing);
+      
+      // Calculate distance from user to gig seller
+      // Sellers store their work locations in selectedAreas array
+      let distance = "Nearby";
+      if (userLocation && gig.sellerId?.selectedAreas?.length > 0) {
+        const firstArea = gig.sellerId.selectedAreas[0];
+        if (firstArea?.coordinates?.length === 2) {
+          const [sellerLng, sellerLat] = firstArea.coordinates;
+          distance = calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            sellerLat,
+            sellerLng
+          ) || "Nearby";
+        }
+      }
+      
+      return {
+        id: gig._id,
+        gigId: gig._id,
+        sellerId: gig.sellerId?._id,
+        name: gig.title,
+        image: gig.images?.[0]?.url,
+        rating: gig.sellerId?.rating?.average || 0,
+        reviews: gig.sellerId?.rating?.count || 0,
+        available: true,
+        experience: gig.sellerId?.yearsOfExperience || 0,
+        distance: distance,
+        bio: gig.description,
+        skills: gig.skills?.slice(0, 4) || [],
+        jobsCompleted: gig.sellerId?.ordersCompleted || 0,
+        rate: rate,
+        sellerSkills: gig.sellerId?.skills || [],
+        sellerAreas: gig.sellerId?.selectedAreas || [],
+        matchScore: gig.matchScore || 0,
+        isRecommended: true,
+        isTopRecommended: gig.isTopRecommended || false,
+        sellerName: gig.sellerId?.name || "Unknown Seller",
+        sellerVerified: gig.sellerId?.isVerified || false,
+      };
+    };
 
     return {
       topRecommended: recommendedData.topRecommended?.map(transformGig) || [],
       otherGigs: recommendedData.otherGigs?.map(transformGig) || [],
     };
-  }, [recommendedData]);
+  }, [recommendedData, userLocation]);
 
   // Filter gigs based on search params and search term
   const gigsData = useMemo(() => {
@@ -216,6 +355,30 @@ const AllServices = () => {
       <Nav />
 
       <div className="my-6 mt-16 max-w-[1200px] mx-auto">
+        {/* Location Permission Banner */}
+        {!userLocation && (
+          <div className="mb-6 bg-gradient-to-r from-[#82CCF4]/10 to-[#82CCF4]/5 border border-[#82CCF4]/30 rounded-lg p-4 flex items-start gap-3 shadow-sm">
+            <div className="flex-shrink-0 mt-0.5">
+              <svg className="w-5 h-5 text-[#82CCF4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-gray-900 mb-1">Enable Location for Better Results</h3>
+              <p className="text-xs text-gray-600 mb-2">
+                Allow location access to see exact distances and find services near you.
+              </p>
+              <button
+                onClick={handleEnableLocation}
+                className="text-xs font-medium text-[#82CCF4] hover:text-[#74C7F2] underline"
+              >
+                Enable Location
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Recommended Gigs Section */}
         {showRecommendations && (recommendedGigsData.topRecommended.length > 0 || recommendedGigsData.otherGigs.length > 0) && (
           <div className="mb-8">

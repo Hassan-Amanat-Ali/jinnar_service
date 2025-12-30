@@ -304,7 +304,7 @@ const WorkerProfile = () => {
           </div>
 
      {/* Services & Pricing */}
-{profile.activeGigs?.length > 0 && (
+{/* {profile.activeGigs?.length > 0 && (
   <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
     <h2 className="text-lg font-bold flex items-center gap-2">
       <Briefcase size={20} className="text-[#74C7F2]" />
@@ -345,7 +345,7 @@ const WorkerProfile = () => {
       ))}
     </div>
   </div>
-)}
+)} */}
 {/* Expertise */}
 {(profile.subcategories?.length > 0 || profile.categories?.length > 0) && (
   <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">

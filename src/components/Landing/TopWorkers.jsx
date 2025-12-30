@@ -134,7 +134,7 @@ const TopWorkers = ({ isLanding }) => {
                       onClick={() =>
                         navigate(
                           isLanding
-                     ?    `/worker-profile/${worker.id}`
+                     ?    `/landing-worker-profile/${worker.id}`
                             : `/worker-profile/${worker.id}`
                         )
                       }

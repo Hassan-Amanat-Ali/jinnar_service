@@ -260,9 +260,8 @@ const Chat = () => {
   const userId = searchParams.get("user");
   const targetUserId = conversationId || userId;
   const otherParticipantId =
-    targetUserId ||
     selectedConversation?.participants?.find((p) => p._id !== currentUserId)
-      ?._id;
+      ?._id || targetUserId;
 
   // Ensure we have otherParticipant available before using it for header display
   const otherParticipant = selectedConversation?.participants?.find(

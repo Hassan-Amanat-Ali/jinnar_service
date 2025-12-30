@@ -48,7 +48,7 @@ const WorkerNavbar = () => {
 
   const workerNavItems = [
     { to: "/worker-home", label: "Home", icon: FiHome },
-    { to: "/jobs", label: "Jobs", icon: BriefcaseBusiness },
+
     { to: "/worker-bookings", label: "My Bookings", icon: FiCalendar },
     { to: "/wallet", label: "Wallet", icon: Wallet },
     { to: "/worker/profile", label: "Profile", icon: FiUser },

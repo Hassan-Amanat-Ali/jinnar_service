@@ -16,7 +16,7 @@ import {
   useInitiateContactChangeMutation,
   useVerifyContactChangeMutation,
 } from "../../services/authApi";
-import { getFullImageUrl } from "../../utils/fileUrl";
+import { getFullImageUrl, reverseGeocode } from "../../utils/fileUrl";
 import { ROLES } from "../../constants/roles";
 
 const ProfileOverview = () => {
@@ -34,6 +34,7 @@ const ProfileOverview = () => {
     profilePicture: null,
   });
   const [profileImagePreview, setProfileImagePreview] = useState(null);
+  const [locationAddresses, setLocationAddresses] = useState({});
 
   // Contact change verification state
   const [showContactModal, setShowContactModal] = useState(false);
@@ -96,8 +97,28 @@ const ProfileOverview = () => {
       if (profile.profilePicture) {
         setProfileImagePreview(getFullImageUrl(profile.profilePicture));
       }
+
+      // Reverse geocode all location coordinates to get readable addresses
+      const fetchAddresses = async () => {
+        const areas = isCustomer ? profile.preferredAreas : profile.selectedAreas;
+        if (areas && areas.length > 0) {
+          const addresses = {};
+          for (let i = 0; i < areas.length; i++) {
+            const area = areas[i];
+            if (area.coordinates && area.coordinates.length === 2) {
+              const [lng, lat] = area.coordinates;
+              const address = await reverseGeocode(lat, lng);
+              addresses[i] = address || area.address || "Location on map";
+            } else {
+              addresses[i] = area.address || "Location on map";
+            }
+          }
+          setLocationAddresses(addresses);
+        }
+      };
+      fetchAddresses();
     }
-  }, [profileData]);
+  }, [profileData, isCustomer]);
 
   const getInitials = (name) => {
     if (!name) return "U";
@@ -603,12 +624,9 @@ const ProfileOverview = () => {
                                   />
                                   <div className="flex-1">
                                     <p className="text-sm font-medium text-gray-900">
-                                      {area.address || "Location on map"}
+                                      {locationAddresses[index] || area.address || "Location on map"}
                                     </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                      Lat: {area.coordinates?.[1]?.toFixed(6)},
-                                      Lng: {area.coordinates?.[0]?.toFixed(6)}
-                                    </p>
+                                  
                                   </div>
                                   <div className="flex gap-2">
                                     <button
@@ -656,19 +674,12 @@ const ProfileOverview = () => {
                                     key={index}
                                     className="flex gap-3 items-start bg-gray-50 p-3 rounded-lg"
                                   >
-                                    <MapPin
-                                      className="text-[#74C7F2] mt-1 flex-shrink-0"
-                                      size={18}
-                                    />
+                                
                                     <div>
                                       <p className="text-sm font-medium text-gray-900">
-                                        {area.address || "Location on map"}
+                                        {locationAddresses[index] || area.address || "Location on map"}
                                       </p>
-                                      <p className="text-xs text-gray-500 mt-1">
-                                        Lat: {area.coordinates?.[1]?.toFixed(6)}
-                                        , Lng:{" "}
-                                        {area.coordinates?.[0]?.toFixed(6)}
-                                      </p>
+                                     
                                     </div>
                                   </div>
                                 ))}

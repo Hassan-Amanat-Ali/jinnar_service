@@ -27,9 +27,24 @@ const CustomOfferModal = ({
   const [sendOffer, { isLoading: isSending }] = useSendCustomOfferMutation();
 
   const getPriceValue = (pricing) => {
+    if (!pricing) return 0;
+    
+    // Handle new nested pricing structure
     if (typeof pricing === "object" && pricing !== null) {
-      return pricing.price || 0;
+      // Try fixed price first
+      if (pricing.fixed?.enabled && pricing.fixed?.price) {
+        return pricing.fixed.price;
+      }
+      // Then hourly rate
+      if (pricing.hourly?.enabled && pricing.hourly?.rate) {
+        return pricing.hourly.rate;
+      }
+      // Old structure fallback
+      if (pricing.price) {
+        return pricing.price;
+      }
     }
+    
     return pricing || 0;
   };
 

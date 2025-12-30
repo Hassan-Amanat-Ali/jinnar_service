@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   Star,
@@ -6,15 +7,14 @@ import {
   MessageCircle,
   Award,
   Clock,
+  Briefcase,
 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetPublicProfileQuery } from "../../services/workerApi";
-import { getFullImageUrl, reverseGeocode } from "../../utils/fileUrl.js";
-import { useEffect, useState } from "react";
+import { reverseGeocode } from "../../utils/fileUrl.js";
 import OptimizedImage from "../../components/common/OptimizedImage";
 
 /* ---------------- Rating Stars ---------------- */
-
 const RatingStars = ({ value = 5, outOf = 5, size = 16 }) => {
   const stars = Array.from({ length: outOf }, (_, i) => i < Math.round(value));
   return (
@@ -38,7 +38,7 @@ const Thumb = ({ src, alt }) => (
     <OptimizedImage 
       src={src} 
       alt={alt} 
-      className="h-full w-full object-cover" 
+      className="h-full w-full object-cover"
       fallbackSrc="https://via.placeholder.com/400x225"
     />
   </figure>
@@ -49,12 +49,18 @@ const WorkerView = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { data, isLoading, error } = useGetPublicProfileQuery(id);
-  console.log(data);
+  const [locationAddress, setLocationAddress] = useState("Loading location...");
 
-  const [location, setLocation] = useState(null);
-
+  // Fetch location address when profile data is available
   useEffect(() => {
-    setLocation(reverseGeocode(data?.profile?.selectedAreas.coordinates));
+    const fetchLocation = async () => {
+      const address = await reverseGeocode(data?.profile?.selectedAreas?.coordinates[1], data?.profile?.selectedAreas?.coordinates[0]);
+      setLocationAddress(address || "Location unavailable");
+    };
+
+    if (data?.profile?.selectedAreas?.coordinates) {
+      fetchLocation();
+    }
   }, [data]);
 
   /* ---------------- Loading State ---------------- */
@@ -62,91 +68,97 @@ const WorkerView = () => {
     return (
       <main className="section-container pt-20 sm:pt-24 pb-4 sm:pb-6 max-w-7xl px-4 sm:px-6 lg:px-8 xl:px-10">
         {/* Top nav skeleton */}
-        <nav className="relative flex items-center justify-between mb-4 sm:mb-6">
-          <div className="h-3 sm:h-4 w-24 sm:w-32 bg-gray-200 rounded animate-pulse" />
-          <div className="hidden sm:block absolute left-1/2 -translate-x-1/2 h-4 sm:h-5 w-32 sm:w-40 bg-gray-200 rounded animate-pulse" />
-          <div className="w-[80px] sm:w-[120px]" />
+        <nav className="relative flex items-center justify-between mb-6">
+          <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+          <div className="absolute left-1/2 -translate-x-1/2 h-5 w-40 bg-gray-200 rounded animate-pulse" />
+          <div className="w-[120px]" />
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* -------- Sidebar Skeleton -------- */}
           <aside className="lg:col-span-1">
-            <div className="rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex flex-col items-center text-center">
                 {/* Avatar */}
-                <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-gray-200 animate-pulse" />
+                <div className="h-24 w-24 rounded-full bg-gray-200 animate-pulse" />
 
                 {/* Name */}
-                <div className="mt-2 sm:mt-3 h-4 sm:h-5 w-28 sm:w-32 bg-gray-200 rounded animate-pulse" />
+                <div className="mt-3 h-5 w-32 bg-gray-200 rounded animate-pulse" />
 
                 {/* Rating */}
-                <div className="mt-1.5 sm:mt-2 h-3 sm:h-4 w-32 sm:w-40 bg-gray-200 rounded animate-pulse" />
+                <div className="mt-2 h-4 w-40 bg-gray-200 rounded animate-pulse" />
 
                 {/* Pills */}
-                <div className="mt-3 sm:mt-4 w-full space-y-1.5 sm:space-y-2">
-                  <div className="h-9 sm:h-10 w-full bg-gray-200 rounded-full animate-pulse" />
-                  <div className="h-9 sm:h-10 w-full bg-gray-200 rounded-full animate-pulse" />
-                  <div className="h-9 sm:h-10 w-full bg-gray-200 rounded-full animate-pulse" />
+                <div className="mt-4 w-full space-y-2">
+                  <div className="h-10 w-full bg-gray-200 rounded-full animate-pulse" />
+                  <div className="h-10 w-full bg-gray-200 rounded-full animate-pulse" />
+                  <div className="h-10 w-full bg-gray-200 rounded-full animate-pulse" />
                 </div>
 
                 {/* Message button */}
-                <div className="mt-4 sm:mt-6 h-11 sm:h-12 w-full bg-gray-200 rounded-lg animate-pulse" />
+                <div className="mt-6 h-12 w-full bg-gray-200 rounded-md animate-pulse" />
 
                 {/* Stats */}
-                <div className="mt-3 sm:mt-4 h-14 sm:h-16 w-full bg-gray-200 rounded-xl animate-pulse" />
+                <div className="mt-4 h-16 w-full bg-gray-200 rounded-xl animate-pulse" />
               </div>
             </div>
           </aside>
 
           {/* -------- Main Content Skeleton -------- */}
-          <section className="lg:col-span-2 space-y-4 sm:space-y-6">
+          <section className="lg:col-span-2 space-y-6">
             {/* About */}
-            <div className="rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
-              <div className="h-4 sm:h-5 w-20 sm:w-24 bg-gray-200 rounded animate-pulse" />
-              <div className="mt-2 sm:mt-3 space-y-1.5 sm:space-y-2">
-                <div className="h-3 sm:h-4 w-full bg-gray-200 rounded animate-pulse" />
-                <div className="h-3 sm:h-4 w-full bg-gray-200 rounded animate-pulse" />
-                <div className="h-3 sm:h-4 w-3/4 bg-gray-200 rounded animate-pulse" />
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="h-5 w-24 bg-gray-200 rounded animate-pulse" />
+              <div className="mt-3 space-y-2">
+                <div className="h-4 w-full bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-full bg-gray-200 rounded animate-pulse" />
+                <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse" />
               </div>
             </div>
 
             {/* Skills */}
-            <div className="rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
-              <div className="h-4 sm:h-5 w-16 sm:w-20 bg-gray-200 rounded animate-pulse" />
-              <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="h-5 w-20 bg-gray-200 rounded animate-pulse" />
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {[...Array(8)].map((_, i) => (
                   <div
                     key={i}
-                    className="h-24 sm:h-28 bg-gray-200 rounded-lg sm:rounded-xl animate-pulse"
+                    className="h-28 bg-gray-200 rounded-xl animate-pulse"
                   />
                 ))}
               </div>
             </div>
 
             {/* Portfolio */}
-            <div className="rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
-              <div className="h-4 sm:h-5 w-20 sm:w-24 bg-gray-200 rounded animate-pulse" />
-              <div className="mt-3 sm:mt-4 grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="h-5 w-24 bg-gray-200 rounded animate-pulse" />
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3">
                 {[...Array(3)].map((_, i) => (
                   <div
                     key={i}
-                    className="aspect-video bg-gray-200 rounded-lg sm:rounded-xl animate-pulse"
+                    className="aspect-video bg-gray-200 rounded-xl animate-pulse"
                   />
                 ))}
               </div>
             </div>
 
             {/* Availability */}
-            <div className="rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
-              <div className="h-4 sm:h-5 w-24 sm:w-32 bg-gray-200 rounded animate-pulse" />
-              <div className="mt-3 sm:mt-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <div className="h-5 w-32 bg-gray-200 rounded animate-pulse" />
+              <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[...Array(3)].map((_, i) => (
                   <div
                     key={i}
-                    className="h-20 sm:h-24 bg-gray-200 rounded-lg sm:rounded-xl animate-pulse"
+                    className="h-24 bg-gray-200 rounded-xl animate-pulse"
                   />
                 ))}
               </div>
+            </div>
+
+            {/* Reviews */}
+            <div className="bg-[#FFFBEA] p-5 rounded-xl">
+              <div className="h-6 w-40 bg-gray-200 rounded animate-pulse" />
+              <div className="mt-6 h-24 bg-gray-200 rounded animate-pulse" />
             </div>
           </section>
         </div>
@@ -173,6 +185,14 @@ const WorkerView = () => {
 
   const profile = data.profile;
 
+  const getGigPrice = (pricing) => {
+    if (!pricing) return "N/A";
+    if (pricing.method === "hourly") {
+      return `$${pricing.hourly?.rate || 0}/hr`;
+    }
+    return `$${pricing.fixed?.price || pricing.price || 0}`;
+  };
+
   return (
     <main className="section-container pt-20 sm:pt-24 pb-4 sm:pb-6 max-w-7xl px-4 sm:px-6 lg:px-8 xl:px-10">
       {/* ---------------- Top Navigation ---------------- */}
@@ -197,13 +217,13 @@ const WorkerView = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* ---------------- Sidebar ---------------- */}
         <aside className="lg:col-span-1">
-          <div className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5 lg:p-6 shadow-sm">
+          <div className="rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 lg:p-6 shadow-sm">
             <div className="flex flex-col items-center text-center">
               <OptimizedImage
                 src={profile.profilePicture}
-                alt={profile.name}
+                alt={profile.name || "Worker profile"}
+                fallbackSrc="/placeholder-avatar.jpg"
                 className="h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 rounded-full object-cover border-2 border-gray-100 shadow-sm"
-                fallbackSrc="https://via.placeholder.com/150"
               />
 
               <h2 className="mt-2.5 sm:mt-3 text-base sm:text-lg lg:text-xl font-semibold text-gray-900 px-2">{profile.name}</h2>
@@ -235,20 +255,20 @@ const WorkerView = () => {
                 {profile.selectedAreas?.length > 0 && (
                   <div className="flex items-center justify-center gap-1.5 sm:gap-2 bg-gray-100 text-gray-700 rounded-full py-2 sm:py-2.5 px-3 text-xs sm:text-sm font-medium">
                     <MapPin size={14} className="sm:w-4 sm:h-4 flex-shrink-0" />
-                    <span className="truncate">{location}</span>
+                    <span className="truncate">{locationAddress}</span>
                   </div>
                 )}
               </div>
 
-              <button
-                className="mt-4 sm:mt-6 w-full border-2 border-[#74C7F2] text-[#74C7F2] py-2.5 sm:py-3 rounded-lg sm:rounded-xl flex items-center justify-center gap-2 text-sm sm:text-base font-semibold hover:bg-[#74C7F2] hover:text-white transition-all duration-200 shadow-sm hover:shadow-md min-h-[44px]"
-                onClick={() =>
-                  navigate(`/customer-chat?conversation=${profile._id || id}`)
-                }
-              >
-                <MessageCircle size={18} className="flex-shrink-0" />
-                <span>Message</span>
-              </button>
+              <div className="mt-4 sm:mt-6 w-full space-y-2 sm:space-y-3">
+                <button
+                  className="w-full border-2 border-[#74C7F2] text-[#74C7F2] py-2.5 sm:py-3 rounded-lg sm:rounded-xl flex items-center justify-center gap-2 text-sm sm:text-base font-semibold hover:bg-blue-50 transition-all duration-200 shadow-sm hover:shadow-md min-h-[44px]"
+                  onClick={() => navigate(`/customer-chat?conversation=${profile._id || id}`)}
+                >
+                  <MessageCircle size={18} className="flex-shrink-0" />
+                  <span>Message</span>
+                </button>
+              </div>
 
               <div className="mt-3 sm:mt-4 flex justify-around w-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg sm:rounded-xl py-3 sm:py-4 shadow-inner">
                 <div className="text-center px-2">
@@ -268,16 +288,62 @@ const WorkerView = () => {
         {/* ---------------- Main Content ---------------- */}
         <section className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* About */}
-          <div className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5 lg:p-6 shadow-sm">
+          <div className="rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 lg:p-6 shadow-sm">
             <h2 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">About Me</h2>
             <p className="mt-2 sm:mt-3 text-sm sm:text-base text-gray-700 leading-relaxed">
               {profile.bio || "No bio available"}
             </p>
           </div>
 
+          {/* Expertise */}
+          {(profile.subcategories?.length > 0 || profile.categories?.length > 0) && (
+            <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <Award size={20} className="text-[#74C7F2]" />
+                Expertise
+              </h2>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {(profile.subcategories?.length > 0
+                  ? profile.subcategories
+                  : profile.categories
+                ).map((item, idx) => (
+                  <span
+                    key={idx}
+                    className="bg-blue-50 text-[#1f3b4d] text-sm font-medium px-4 py-2 rounded-full"
+                  >
+                    {typeof item === "object" ? item.name : item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {console.log(profile)}
+
+          {/* Services / Gigs */}
+          {profile.activeGigs?.length > 0 && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <Briefcase size={20} className="text-[#74C7F2]" />
+                Services & Gigs
+              </h2>
+              <div className="mt-4 grid gap-3">
+                {profile.activeGigs.map((gig, idx) => (
+                  <div key={idx} className="p-4 border border-gray-100 rounded-xl bg-gray-50 flex justify-between items-center">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{gig.title || gig.name}</h3>
+                      {gig.description && <p className="text-sm text-gray-600 mt-1">{gig.description}</p>}
+                      <p className="text-[#74C7F2] font-bold mt-2">{getGigPrice(gig.pricing)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Skills */}
           {profile.skills?.length > 0 && (
-            <div className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5 lg:p-6 shadow-sm">
+            <div className="rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 lg:p-6 shadow-sm">
               <h2 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">Skills</h2>
               <div className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                 {profile.skills.map((skill, idx) => (
@@ -297,7 +363,7 @@ const WorkerView = () => {
 
           {/* Portfolio */}
           {profile.portfolioImages?.length > 0 && (
-            <div className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5 lg:p-6 shadow-sm">
+            <div className="rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 lg:p-6 shadow-sm">
               <h2 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">Portfolio</h2>
               <div className="mt-3 sm:mt-4 grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
                 {profile.portfolioImages.map((img, idx) => (
@@ -313,7 +379,7 @@ const WorkerView = () => {
 
           {/* Availability */}
           {profile.availability?.length > 0 && (
-            <div className="rounded-xl sm:rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5 lg:p-6 shadow-sm">
+            <div className="rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 lg:p-6 shadow-sm">
               <h2 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900">Availability</h2>
               <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                 {profile.availability.map((slot, idx) => (

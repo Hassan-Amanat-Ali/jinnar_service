@@ -10,13 +10,56 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
   const gigs = gigsResponse?.gigs || [];
 
   const getPriceValue = (pricing) => {
+    if (!pricing) return 0;
+    
+    // Handle new nested pricing structure
     if (typeof pricing === "object" && pricing !== null) {
-      return pricing.price || 0;
+      // Try fixed price first
+      if (pricing.fixed?.enabled && pricing.fixed?.price) {
+        return pricing.fixed.price;
+      }
+      // Then hourly rate
+      if (pricing.hourly?.enabled && pricing.hourly?.rate) {
+        return pricing.hourly.rate;
+      }
+      // Old structure fallback
+      if (pricing.price) {
+        return pricing.price;
+      }
     }
+    
     return pricing || 0;
   };
 
-  const formatPrice = (pricing) => Number(getPriceValue(pricing)).toFixed(2);
+  const formatPrice = (pricing) => {
+    const price = getPriceValue(pricing);
+    return price > 0 ? Number(price).toLocaleString() : "0";
+  };
+
+  const getPricingDisplay = (pricing) => {
+    if (!pricing) return "Contact for pricing";
+    
+    if (pricing.inspection?.enabled) {
+      return { text: "Inspection Required", type: "inspection" };
+    }
+    
+    if (pricing.fixed?.enabled && pricing.fixed?.price) {
+      return { 
+        text: `TZS ${Number(pricing.fixed.price).toLocaleString()}`, 
+        type: "fixed" 
+      };
+    }
+    
+    if (pricing.hourly?.enabled && pricing.hourly?.rate) {
+      const minHours = pricing.hourly.minHours;
+      return { 
+        text: `TZS ${Number(pricing.hourly.rate).toLocaleString()}/hr${minHours ? ` (min ${minHours} hrs)` : ""}`, 
+        type: "hourly" 
+      };
+    }
+    
+    return { text: "Contact for pricing", type: "unknown" };
+  };
 
   const handleContinue = () => {
     const selectedGig = gigs.find((gig) => gig._id === selectedGigId);
@@ -36,9 +79,9 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-hidden">
+      <div className="relative bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0">
           <h2 className="text-xl font-semibold text-gray-900">
             Select Your Service
           </h2>
@@ -50,8 +93,8 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6">
+        {/* Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto p-6">
           {/* Receiver */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
             <p className="text-sm text-blue-800">
@@ -118,21 +161,9 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
                         <div className="flex items-center gap-4 text-sm text-gray-500">
                           <div className="flex items-center gap-1">
                             <DollarSign className="w-4 h-4" />
-                            {gig.pricing.method === "negotiable" ? (
-                              <span className="font-medium text-gray-900">
-                                Inspection Required
-                              </span>
-                            ) : (
-                              <span className="font-medium text-gray-900">
-                                TZS {formatPrice(gig.pricing)}
-                                {gig.pricing.method === "hourly" && "/hr"}
-                                {gig.pricing.method === "hourly" && gig.pricing.minHours && (
-                                  <span className="text-xs text-gray-600 ml-1">
-                                    (min {gig.pricing.minHours} hrs)
-                                  </span>
-                                )}
-                              </span>
-                            )}
+                            <span className="font-medium text-gray-900">
+                              {getPricingDisplay(gig.pricing).text}
+                            </span>
                           </div>
 
                           {gig.deliveryTime && (
@@ -199,9 +230,9 @@ const GigSelectionModal = ({ isOpen, onClose, onGigSelect, receiverName }) => {
           </div>
         </div>
 
-        {/* Actions */}
+        {/* Actions - Fixed at bottom */}
         {gigs.length > 0 && (
-          <div className="flex gap-3 p-6 border-t border-gray-200 bg-gray-50">
+          <div className="flex gap-3 p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
             <button
               onClick={onClose}
               className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"

@@ -279,10 +279,81 @@ const AllServicesLanding = () => {
     </div>
   );
 
+  // Helper function to calculate distance using Haversine formula
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    
+    const R = 6371; // Radius of the Earth in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) *
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    
+    // Return formatted distance
+    if (distance < 1) {
+      return `${Math.round(distance * 1000)}m Away`;
+    } else {
+      return `${distance.toFixed(1)}km Away`;
+    }
+  };
+
+  // Helper function to format pricing display
+  const formatPricing = (pricing) => {
+    if (!pricing) return "N/A";
+    
+    // Check which pricing options are enabled
+    const options = [];
+    
+    if (pricing.fixed?.enabled && pricing.fixed?.price) {
+      options.push(`TZS ${pricing.fixed.price.toLocaleString()}`);
+    }
+    
+    if (pricing.hourly?.enabled && pricing.hourly?.rate) {
+      options.push(`TZS ${pricing.hourly.rate.toLocaleString()}/hr`);
+    }
+    
+    if (pricing.inspection?.enabled && options.length === 0) {
+      return "Inspection Required";
+    }
+    
+    // If multiple options, show the first one with a note
+    if (options.length > 1) {
+      return `From ${options[0]}`;
+    } else if (options.length === 1) {
+      return options[0];
+    }
+    
+    return "Contact for pricing";
+  };
+
   // Transform API data to match WorkerCard component format with gig info
   const gigsData = useMemo(
     () =>
       data?.gigs?.map((gig) => {
+        const rate = formatPricing(gig.pricing);
+
+        // Calculate distance from user to gig seller
+        // Sellers store their work locations in selectedAreas array
+        let distance = "Nearby";
+        if (userLocation && gig.sellerId?.selectedAreas?.length > 0) {
+          const firstArea = gig.sellerId.selectedAreas[0];
+          if (firstArea?.coordinates?.length === 2) {
+            const [sellerLng, sellerLat] = firstArea.coordinates;
+            distance = calculateDistance(
+              userLocation.latitude,
+              userLocation.longitude,
+              sellerLat,
+              sellerLng
+            ) || "Nearby";
+          }
+        }
+
         const mappedGig = {
           id: gig._id,
           gigId: gig._id,
@@ -295,28 +366,26 @@ const AllServicesLanding = () => {
           reviews: gig.sellerId?.rating?.count || 0,
           available: true,
           experience: gig.sellerId?.yearsOfExperience || 0,
-          distance:
-            gig.pricing?.method === "negotiable"
-              ? "Negotiable"
-              : gig.pricing?.method === "hourly"
-              ? `TZS ${gig.pricing?.price?.toLocaleString()}/hr`
-              : `TZS ${gig.pricing?.price?.toLocaleString()}`,
+          distance: distance,
           bio: gig.description,
           skills:
             gig.subcategories?.map((s) => s.name)?.slice(0, 4) ||
             gig.sellerId?.skills?.slice(0, 4) ||
             [],
-          jobsCompleted: gig.sellerId?.ordersCompleted || 0,
-          rate:
-            gig.pricing?.method === "negotiable"
-              ? "Negotiable"
-              : gig.pricing?.price || 0,
+          jobsCompleted:
+            gig.sellerId?.ordersCompleted ||
+            gig.sellerId?.jobsCompleted ||
+            gig.seller?.ordersCompleted ||
+            gig.ordersCompleted ||
+            0,
+          rate: rate,
+          
           category: gig.category?.name || null,
           subcategories: gig.subcategories || [],
         };
         return mappedGig;
       }) || [],
-    [data]
+    [data, userLocation]
   );
 
   // Find category and subcategory names from their IDs for display
@@ -378,7 +447,7 @@ const AllServicesLanding = () => {
 
         <form onSubmit={handleSearchSubmit}>
           {/* SEARCH & FILTERS SECTION */}
-          <div className="mb-6 p-4 sm:p-5 bg-white/95 rounded-2xl sm:rounded-[24px] shadow-xl border border-gray-100">
+          <div className="mb-6 p-4 sm:p-5 bg-white/95 rounded-xl shadow-sm border border-gray-200 hover:border-gray-300 transition-colors">
             {/* Row 1: Search Input */}
             <div className="mb-3">
               <label className="text-base sm:text-lg font-semibold text-black mb-1.5 block">
@@ -389,7 +458,7 @@ const AllServicesLanding = () => {
                 value={searchTerm}
                 onChange={handleSearchInputChange}
                 placeholder="Search for services like 'plumber', 'electrician'..."
-                className="w-full h-10 sm:h-11 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                className="w-full h-10 sm:h-11 rounded-lg border border-gray-200 pl-4 pr-10 text-left text-sm bg-gray-50/50 hover:bg-white focus:bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#82CCF4]/20 focus:border-[#82CCF4] transition-all duration-200"
               />
             </div>
 
@@ -415,7 +484,7 @@ const AllServicesLanding = () => {
                       setTimeout(() => setShowLocationSuggestions(false), 200)
                     }
                     placeholder={userAddress || "Enter location..."}
-                    className="w-full h-10 sm:h-11 rounded-xl border border-border pl-10 pr-4 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                    className="w-full h-10 sm:h-11 rounded-lg border border-gray-200 pl-10 pr-4 text-left text-sm bg-gray-50/50 hover:bg-white focus:bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#82CCF4]/20 focus:border-[#82CCF4] transition-all duration-200"
                   />
                 </div>
                 {showLocationSuggestions && searchLocation.length > 2 && (
@@ -453,7 +522,7 @@ const AllServicesLanding = () => {
                     setSubcategoryId(""); // Reset subcategory when category changes
                   }}
                   disabled={categoriesLoading}
-                  className="appearance-none w-full h-10 sm:h-11 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                  className="appearance-none w-full h-10 sm:h-11 rounded-lg border border-gray-200 pl-4 pr-10 text-left text-sm bg-gray-50/50 hover:bg-white focus:bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#82CCF4]/20 focus:border-[#82CCF4] transition-all duration-200"
                 >
                   <option value="">All Categories</option>
                   {categories.map((cat) => (
@@ -476,7 +545,7 @@ const AllServicesLanding = () => {
                   value={subcategoryId}
                   onChange={(e) => setSubcategoryId(e.target.value)}
                   disabled={!categoryId || subcategoriesLoading}
-                  className="appearance-none w-full h-10 sm:h-11 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200 disabled:bg-gray-200"
+                  className="appearance-none w-full h-10 sm:h-11 rounded-lg border border-gray-200 pl-4 pr-10 text-left text-sm bg-gray-50/50 hover:bg-white focus:bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#82CCF4]/20 focus:border-[#82CCF4] transition-all duration-200 disabled:bg-gray-100 disabled:text-gray-400"
                 >
                   <option value="">All Subcategories</option>
                   {subcategories.map((sub) => (
@@ -501,7 +570,7 @@ const AllServicesLanding = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="appearance-none w-full h-10 sm:h-11 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                  className="appearance-none w-full h-10 sm:h-11 rounded-lg border border-gray-200 pl-4 pr-10 text-left text-sm bg-gray-50/50 hover:bg-white focus:bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#82CCF4]/20 focus:border-[#82CCF4] transition-all duration-200"
                 >
                   <option value="">Relevance</option>
                   {Object.entries(sortOptions).map(([value, label]) => (
@@ -523,7 +592,7 @@ const AllServicesLanding = () => {
                 <select
                   value={minRating}
                   onChange={(e) => setMinRating(e.target.value)}
-                  className="appearance-none w-full h-10 sm:h-11 rounded-xl border border-border pl-4 pr-10 text-left text-sm bg-muted hover:border-secondary/50 focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-all duration-200"
+                  className="appearance-none w-full h-10 sm:h-11 rounded-lg border border-gray-200 pl-4 pr-10 text-left text-sm bg-gray-50/50 hover:bg-white focus:bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#82CCF4]/20 focus:border-[#82CCF4] transition-all duration-200"
                 >
                   <option value="">Any Rating</option>
                   {[4, 3, 2, 1].map((r) => (
@@ -711,6 +780,7 @@ const AllServicesLanding = () => {
             ))}
           </div>
         )}
+        
       </div>
       <SiteFooter />
     </>

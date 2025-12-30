@@ -126,39 +126,61 @@ const Step6Gig = forwardRef((props, ref) => {
     const loadingToast = toast.loading("Creating your gig...");
 
     try {
-      const gigData = {
-        title: formData.title,
-        description: formData.description,
-        fixedEnabled: formData.fixedEnabled,
-        fixedPrice: formData.fixedEnabled ? Number(formData.fixedPrice) : undefined,
-        hourlyEnabled: formData.hourlyEnabled,
-        hourlyRate: formData.hourlyEnabled ? Number(formData.hourlyRate) : undefined,
-        minHours: formData.hourlyEnabled && formData.minHours ? Number(formData.minHours) : undefined,
-        inspectionEnabled: formData.inspectionEnabled,
-        categoryId: formData.categoryId,
-        primarySubcategory: formData.primarySubcategory,
-        extraSubcategories: [],
-      };
-
-      const newGig = await createGig(gigData).unwrap();
-
-      // Upload images if any
-      if (formData.images.length > 0 && newGig.gig?._id) {
-        toast.loading("Uploading images...", { id: loadingToast });
-        const imageFormData = new FormData();
+      // Create FormData to match backend middleware expectations
+      const gigFormData = new FormData();
+      
+      // Add basic fields
+      gigFormData.append("title", formData.title);
+      gigFormData.append("description", formData.description);
+      
+      // Add pricing fields
+      gigFormData.append("fixedEnabled", formData.fixedEnabled);
+      if (formData.fixedEnabled && formData.fixedPrice) {
+        gigFormData.append("fixedPrice", formData.fixedPrice);
+      }
+      
+      gigFormData.append("hourlyEnabled", formData.hourlyEnabled);
+      if (formData.hourlyEnabled) {
+        if (formData.hourlyRate) {
+          gigFormData.append("hourlyRate", formData.hourlyRate);
+        }
+        if (formData.minHours) {
+          gigFormData.append("minHours", formData.minHours);
+        }
+      }
+      
+      gigFormData.append("inspectionEnabled", formData.inspectionEnabled);
+      
+      // Add category fields
+      gigFormData.append("categoryId", formData.categoryId);
+      gigFormData.append("primarySubcategory", formData.primarySubcategory);
+      
+      // Add images if any
+      if (formData.images.length > 0) {
         formData.images.forEach((imageFile) => {
-          imageFormData.append("gig_images", imageFile);
+          gigFormData.append("gig_images", imageFile);
         });
-        await uploadGigImage({
-          gigId: newGig.gig._id,
-          formData: imageFormData,
-        }).unwrap();
       }
 
+      // Send as FormData
+      const response = await fetch(`${import.meta.env.VITE_BASE_URL}api/gigs/create`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: gigFormData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create gig");
+      }
+
+      const result = await response.json();
       toast.success("Service offering created successfully", { id: loadingToast });
       return true;
     } catch (err) {
-      toast.error(err?.data?.error || "Failed to create gig", {
+      toast.error(err?.message || "Failed to create gig", {
         id: loadingToast,
       });
       return false;

@@ -48,7 +48,7 @@ const SingleCard = ({
           </p>
           {starting && (
             <p className="text-sm font-medium text-[#74C7F2]">
-              Starting from {starting}
+              Starting {starting}
             </p>
           )}
           

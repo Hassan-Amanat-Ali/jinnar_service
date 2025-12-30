@@ -279,15 +279,21 @@ const Chat = () => {
     currentUser?._id || currentUser?.id || currentUser?.userId;
 
   const { isConnected, socket } = useSocket();
+  
+  console.log("🔍 Customer Chat - Socket Status:", {
+    isConnected,
+    hasSocket: !!socket,
+    socketId: socket?.id,
+    currentUserId,
+  });
 
   const conversationId = searchParams.get("conversation");
   const userId = searchParams.get("user");
   const targetUserId = conversationId || userId;
 
   const otherParticipantId =
-    targetUserId ||
     selectedConversation?.participants?.find((p) => p._id !== currentUserId)
-      ?._id;
+      ?._id || targetUserId;
 
   // Ensure otherParticipant is available for header/profile lookups
   const otherParticipant = selectedConversation?.participants?.find(
@@ -421,7 +427,7 @@ const Chat = () => {
   // Listen for new messages from socket
   useEffect(() => {
     if (!socket) return;
-
+    
     const handleNewMessage = (newMessage) => {
       const messageSenderId = newMessage.sender?._id || newMessage.senderId;
       const messageReceiverId =
@@ -466,6 +472,7 @@ const Chat = () => {
     socket.on("newMessage", handleNewMessage);
     socket.on("updateMessage", handleOfferUpdate);
     socket.on("updateChatList", handleChatListUpdate);
+    console.log("✅ Registered newMessage, updateMessage, updateChatList listeners");
 
     // Listen for new offers (sent by sellers). Append to messages if relevant and refresh sidebar.
     const handleNewOffer = (offer) => {
@@ -488,7 +495,9 @@ const Chat = () => {
       }
     };
 
+
     socket.on("newOffer", handleNewOffer);
+ 
 
     return () => {
       socket.off("newMessage", handleNewMessage);

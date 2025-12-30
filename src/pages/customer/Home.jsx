@@ -222,6 +222,33 @@ const CustomerHome = () => {
     "Quote on request",
   ];
 
+  // Helper function to format pricing for display
+  const formatGigPricing = (pricing) => {
+    if (!pricing) return "Contact for pricing";
+    
+    const options = [];
+    
+    if (pricing.fixed?.enabled && pricing.fixed?.price) {
+      options.push(`TZS ${pricing.fixed.price.toLocaleString()}`);
+    }
+    
+    if (pricing.hourly?.enabled && pricing.hourly?.rate) {
+      options.push(`TZS ${pricing.hourly.rate.toLocaleString()}/hr`);
+    }
+    
+    if (pricing.inspection?.enabled && options.length === 0) {
+      return "Inspection Required";
+    }
+    
+    if (options.length > 1) {
+      return `From ${options[0]}`;
+    } else if (options.length === 1) {
+      return options[0];
+    }
+    
+    return "Contact for pricing";
+  };
+
   // Transform gigs data for display
   const displayGigs =
     gigs?.slice(0, 8)?.map((gig) => ({
@@ -230,10 +257,7 @@ const CustomerHome = () => {
       img: getFullImageUrl(gig.images?.[0]?.url) || service1, // Use first image or fallback
       rating: gig.sellerId?.rating?.average || gig.averageRating || "N/A",
       description: gig.description,
-      starting:
-        gig.pricing?.method === "negotiable"
-          ? "Negotiable"
-          : `TZS ${gig.pricing?.price?.toLocaleString() || 0}`,
+      starting: formatGigPricing(gig.pricing),
       status: "Available",
       gigId: gig._id,
       sellerId: gig.sellerId?._id || gig.sellerId,
@@ -241,8 +265,6 @@ const CustomerHome = () => {
       category: gig.category?.name || null,
       subcategories: gig.subcategories || [],
     })) || [];
-
-  console.log("📊 Display Gigs:", displayGigs);
 
   const handleDropdownToggle = (dropdownName) => {
     setOpenDropdown(openDropdown === dropdownName ? null : dropdownName);

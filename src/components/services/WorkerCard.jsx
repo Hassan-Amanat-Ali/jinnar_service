@@ -57,7 +57,7 @@ const WorkerCard = ({
         </span>
         <div className="bg-gray-400 h-[15px] w-[1px]"></div>
         <span className="flex items-center gap-1">
-          <MapPin size={14} color="#74C7F2" /> {distance} Away
+          <MapPin size={14} color="#74C7F2" /> {distance}
         </span>
       </div>
 

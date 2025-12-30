@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAcceptOfferMutation, useRejectOfferMutation } from "../../services";
 import Avatar from "./Avatar";
+import toast from "react-hot-toast";
 
 const OfferCard = ({ message, currentUserId, otherParticipant }) => {
   const [acceptOffer, { isLoading: isAccepting }] = useAcceptOfferMutation();
@@ -35,21 +36,28 @@ const OfferCard = ({ message, currentUserId, otherParticipant }) => {
         orderId: customOffer.orderId,
         messageId: message?._id,
       }).unwrap();
+      toast.success("Offer accepted successfully!");
     } catch (err) {
-      setError(
-        err?.status === 402
-          ? "Insufficient wallet balance."
-          : "Failed to accept offer."
-      );
+      const errorMsg = err?.status === 402
+        ? "Insufficient wallet balance."
+        : "Failed to accept offer.";
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 
   const handleReject = async () => {
     try {
       setError("");
-      await rejectOffer({ orderId: customOffer.orderId }).unwrap();
-    } catch {
-      setError("Failed to reject offer.");
+      await rejectOffer({ 
+        orderId: customOffer.orderId,
+        messageId: message?._id 
+      }).unwrap();
+      toast.success("Offer rejected successfully!");
+    } catch (err) {
+      const errorMsg = "Failed to reject offer.";
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   };
 

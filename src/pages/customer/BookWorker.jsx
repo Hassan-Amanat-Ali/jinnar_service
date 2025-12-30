@@ -8,6 +8,7 @@ import {
   useGetGigByIdQuery,
 } from "../../services/workerApi";
 import { useCreateOrderMutation } from "../../services/customerApi";
+import { useSendMessageMutation } from "../../services/chatApi";
 import { getFullImageUrl } from "../../utils/fileUrl.js";
 import LocationPicker from "../../components/common/LocationPicker";
 
@@ -31,6 +32,7 @@ const BookWorker = () => {
 
   const [createOrder, { isLoading: isCreating }] =
       useCreateOrderMutation();
+  const [sendMessage] = useSendMessageMutation();
 
   const profile = data?.profile;
   const gig = gigData?.gig;
@@ -43,7 +45,7 @@ const BookWorker = () => {
     emergency: false,
     location: null,
     image: "",
-    selectedPricingMethod: "", // Customer's chosen pricing option
+    selectedPricingMethod: "", 
   });
 
   const [showLocationPicker, setShowLocationPicker] =
@@ -113,6 +115,47 @@ const BookWorker = () => {
     } catch (err) {
       console.error("Failed to create order:", err);
       toast.error(err?.data?.error|| "Failed to create booking. Please try again.")
+    }
+  };
+
+  // Handle start chat for inspection pricing
+  const handleStartChat = async () => {
+    try {
+      // Prepare the message with job details
+      const messageContent = `Hi! I'm interested in your service: "${gig?.title || 'Service'}"
+
+📋 Job Description:
+${formData.jobDescription || 'Not provided yet'}
+
+📅 Preferred Date: ${formData.date || 'Not selected'}
+⏰ Preferred Time: ${formData.timeSlot ? formData.timeSlot.split('|').join(' - ') : 'Not selected'}
+📍 Location: ${formData.location?.address || 'Not selected'}
+
+💰 Pricing: Inspection Required
+I would like to discuss the pricing for this job. Please let me know when you can inspect and provide a quote.
+
+Thank you!`;
+
+      // Send the message
+      await sendMessage({
+        receiverId: sellerId,
+        message: messageContent,
+      }).unwrap();
+
+      // Show success toast
+      toast.success('Message sent! Redirecting to chat...');
+
+      // Small delay before redirect for better UX
+      setTimeout(() => {
+        navigate(`/customer-chat?conversation=${sellerId}`);
+      }, 500);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      toast.error('Failed to send message. Redirecting to chat...');
+      // Still redirect even if message fails
+      setTimeout(() => {
+        navigate(`/customer-chat?conversation=${sellerId}`);
+      }, 500);
     }
   };
 
@@ -564,22 +607,46 @@ const BookWorker = () => {
                   <label className="block text-sm font-semibold text-gray-900 mb-3">
                     Price Estimate & Payment
                   </label>
-                  <div className="rounded-xl p-4 text-center bg-gradient-to-r from-[#DBF0FF] to-[#DBF0FF]/70">
-                    {gigLoading ? (
+                  
+                  {formData.selectedPricingMethod === "inspection" ? (
+                    <div className="rounded-xl p-6 text-center bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200">
+                      <div className="mb-4">
+                        <svg className="w-16 h-16 mx-auto text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-2">
+                        Chat with Seller to Discuss Pricing
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        This service requires an inspection before pricing can be determined. 
+                        Connect with the seller to discuss your requirements and schedule an inspection.
+                      </p>
+                      <button
+                        onClick={handleStartChat}
+                        className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700 transition-all shadow-sm"
+                      >
+                        Start Chat with Seller
+                      </button>
+                      <p className="text-xs text-gray-500 mt-3">
+                        💡 Tip: Provide details about your job to get an accurate quote
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl p-4 text-center bg-gradient-to-r from-[#DBF0FF] to-[#DBF0FF]/70">
+                      {gigLoading ? (
                         <div className="animate-pulse">
                           <div className="h-8 w-32 bg-gray-200 rounded mx-auto" />
                         </div>
-                    ) : gig && formData.selectedPricingMethod ? (
+                      ) : gig && formData.selectedPricingMethod ? (
                         <>
                           <p className="text-xs text-gray-600 mb-1">
                             Estimated Total
                           </p>
                           <p className="text-2xl font-bold text-gray-900 mb-1">
-                            {formData.selectedPricingMethod === "inspection"
-                                ? "Quote After Inspection"
-                                : formData.selectedPricingMethod === "hourly"
-                                    ? `TZS ${gig.pricing.hourly.rate?.toLocaleString()}/hr`
-                                    : `TZS ${gig.pricing.fixed.price?.toLocaleString()}`}
+                            {formData.selectedPricingMethod === "hourly"
+                              ? `TZS ${gig.pricing.hourly.rate?.toLocaleString()}/hr`
+                              : `TZS ${gig.pricing.fixed.price?.toLocaleString()}`}
                           </p>
                           {formData.selectedPricingMethod === "hourly" && gig.pricing.hourly.minHours && (
                             <p className="text-xs text-gray-600 mb-1">
@@ -587,14 +654,12 @@ const BookWorker = () => {
                             </p>
                           )}
                           <p className="text-xs text-gray-600">
-                            {formData.selectedPricingMethod === "inspection"
-                                ? "Worker will provide quote after inspection"
-                                : formData.selectedPricingMethod === "hourly"
-                                    ? "Final price based on actual hours worked"
-                                    : "Fixed price for this service"}
+                            {formData.selectedPricingMethod === "hourly"
+                              ? "Final price based on actual hours worked"
+                              : "Fixed price for this service"}
                           </p>
                         </>
-                    ) : (
+                      ) : (
                         <>
                           <p className="text-xs text-gray-600 mb-1">
                             Estimated Total
@@ -606,8 +671,9 @@ const BookWorker = () => {
                             Choose a pricing method above to see estimate
                           </p>
                         </>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </section>
 
 
@@ -623,13 +689,15 @@ const BookWorker = () => {
                     >
                       Cancel
                     </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={isCreating}
-                        className="flex-1 bg-linear-to-r cursor-pointer from-[#DBF0FF] to-[#74C7F2] text-white py-3 rounded-xl font-medium hover:from-[#DBF0FF]/90 hover:to-[#74C7F2]/90 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isCreating ? "Creating Booking..." : "Confirm Booking"}
-                    </button>
+                    {formData.selectedPricingMethod !== "inspection" && (
+                      <button
+                          onClick={handleSubmit}
+                          disabled={isCreating}
+                          className="flex-1 bg-linear-to-r cursor-pointer from-[#DBF0FF] to-[#74C7F2] text-white py-3 rounded-xl font-medium hover:from-[#DBF0FF]/90 hover:to-[#74C7F2]/90 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isCreating ? "Creating Booking..." : "Confirm Booking"}
+                      </button>
+                    )}
                   </div>
                 </section>
               </div>
