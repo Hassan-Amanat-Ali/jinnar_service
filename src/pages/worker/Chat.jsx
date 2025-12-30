@@ -29,6 +29,7 @@ import { useGetPublicProfileQuery } from "../../services/workerApi";
 import OfferCard from "../../components/common/OfferCard";
 import styles from "./Chat.module.scss";
 import { getFullImageUrl } from "../../utils/fileUrl.js";
+import { toast } from "react-hot-toast";
 
 // Contact Item Component
 const ContactItem = ({
@@ -291,7 +292,7 @@ const Chat = () => {
   const {
     data: messagesData,
     isLoading: messagesLoading,
-    // refetch: refetchMessages,
+    refetch: refetchMessages,
   } = useGetMessagesQuery(
     { userId: otherParticipantId },
     { skip: !otherParticipantId }
@@ -342,6 +343,16 @@ const Chat = () => {
         const missingLocalMessages = prev.filter((localMsg) => {
           // Keep temp messages
           if (localMsg._id?.startsWith("temp-")) return true;
+
+          // Deduplicate offers: if a local message is an offer, check if it exists in API messages
+          // (API messages might have different _id if local was from socket offer object)
+          if (localMsg.customOffer) {
+             const localOfferId = localMsg.customOffer._id || localMsg.customOffer.id;
+             const existsInApi = messages.some(apiMsg => 
+                apiMsg.customOffer && (apiMsg.customOffer._id === localOfferId || apiMsg.customOffer.id === localOfferId)
+             );
+             if (existsInApi) return false;
+          }
           
           // Keep real messages that the API doesn't know about yet
           return !apiMessageIds.has(localMsg._id);
@@ -400,12 +411,25 @@ const Chat = () => {
             (msg) => msg._id === newMessage._id || msg.id === newMessage.id
           );
           if (exists) return prev;
+
+          // Replace temp message if it exists (deduplication for sender)
+          if (messageSenderId === currentUserId) {
+             const tempIndex = prev.findIndex(m => 
+               m._id.startsWith('temp-') &&
+               m.message === newMessage.message &&
+               !m.customOffer
+             );
+             if (tempIndex !== -1) {
+               return prev.map((m, i) => i === tempIndex ? newMessage : m);
+             }
+          }
           return [...prev, newMessage];
         });
       }
 
       // Refresh conversations list to update last message
       refetchConversations();
+      refetchMessages();
     };
 
     const handleOfferUpdate = (updatedMessage) => {
@@ -425,18 +449,57 @@ const Chat = () => {
     const handleGenericOfferUpdate = (payload) => {
       console.log("🔔 Generic Offer Update Received (Worker):", payload);
       
+      const status = payload.status || payload.customOffer?.status;
+      if (status === 'accepted') {
+        toast.success("Offer accepted");
+      }
+
       setLocalMessages((prev) => {
         return prev.map((msg) => {
           // 1. Match by Message ID
           if (payload._id && msg._id === payload._id) {
-            // If payload looks like a full message, use it
-            if (payload.customOffer) {
-              return payload; 
-            }
-            return { ...msg, ...payload };
+            // Deep merge to preserve existing fields (like sender info, other offer details)
+            return {
+              ...msg,
+              ...payload, // Update top-level fields
+              customOffer: {
+                ...(msg.customOffer || {}),
+                ...(payload.customOffer || {}), // Update offer fields
+                // Ensure status is updated if provided at top level
+                ...(payload.status ? { status: payload.status } : {})
+              }
+            };
           }
 
-          // 2. Match by Order ID
+          // 2. Match by Offer ID (Fix for rejected offer update)
+          // If payload is the offer object, payload._id is the offer ID.
+          const payloadOfferId = payload._id || payload.id;
+          if (msg.customOffer && (msg.customOffer._id === payloadOfferId || msg.customOffer.id === payloadOfferId)) {
+             return {
+               ...msg,
+               customOffer: {
+                 ...msg.customOffer,
+                 ...payload,
+                 status: payload.status || msg.customOffer.status
+               }
+             };
+          }
+
+          // 3. Match by Inner Offer ID (if payload is a Message containing the offer)
+          const payloadInnerOfferId = payload.customOffer?._id || payload.customOffer?.id;
+          if (payloadInnerOfferId && msg.customOffer && (msg.customOffer._id === payloadInnerOfferId || msg.customOffer.id === payloadInnerOfferId)) {
+             return {
+               ...msg,
+               ...payload,
+               customOffer: {
+                 ...msg.customOffer,
+                 ...(payload.customOffer || {}),
+                 status: payload.status || payload.customOffer?.status || msg.customOffer.status
+               }
+             };
+          }
+
+          // 3. Match by Order ID
           const payloadOrderId = payload.orderId || payload.customOffer?.orderId || payload.id; 
           
           if (payloadOrderId && msg.customOffer?.orderId === payloadOrderId) {
@@ -453,6 +516,8 @@ const Chat = () => {
           return msg;
         });
       });
+      refetchMessages();
+      refetchConversations();
     };
 
     socket.on("newMessage", handleNewMessage);
@@ -475,6 +540,7 @@ const Chat = () => {
     currentUserId,
     otherParticipantId,
     refetchConversations,
+    refetchMessages,
     setSocketMessages,
   ]);
 
@@ -503,17 +569,38 @@ const Chat = () => {
         setLocalMessages((prev) => {
             // Avoid duplicates if this offer is already in the list
             if (prev.some(m => m._id === formattedOffer._id)) return prev;
-            return [...prev, formattedOffer]
+
+            // Check if offer with this ID exists inside any message (deduplication by Offer ID)
+            const incomingOfferId = formattedOffer.customOffer?._id || formattedOffer.id || formattedOffer._id;
+            if (incomingOfferId && prev.some(m => m.customOffer?._id === incomingOfferId || m.customOffer?.id === incomingOfferId)) {
+                return prev;
+            }
+
+            // Replace temp offer if it exists (deduplication for sender)
+            if (messageSenderId === currentUserId) {
+                const tempIndex = prev.findIndex(m => 
+                    m._id.startsWith('temp-') && 
+                    m.customOffer &&
+                    // Match by price and description to ensure it's the same offer
+                    m.customOffer.price == formattedOffer.customOffer.price &&
+                    m.customOffer.description === formattedOffer.customOffer.description
+                );
+                if (tempIndex !== -1) {
+                    return prev.map((m, i) => i === tempIndex ? formattedOffer : m);
+                }
+            }
+            return [...prev, formattedOffer];
         });
         
         refetchConversations(); 
+        refetchMessages();
       }
     };
 
     socket.on("newOffer", handleNewOffer);
 
     return () => socket.off("newOffer", handleNewOffer);
-  }, [socket, currentUserId, otherParticipantId, refetchConversations]);
+  }, [socket, currentUserId, otherParticipantId, refetchConversations, refetchMessages]);
 
   // Listen for chat list updates
   useEffect(() => {
@@ -1084,18 +1171,8 @@ const Chat = () => {
         receiverName={otherParticipant?.name}
         selectedGig={selectedGig}
         onOfferSent={(offer, tempId) => {
-          // Ensure structure is correct for rendering immediately
-const offerMessage = normalizeOfferMessage(
-  offer,
-  currentUser._id,
-  otherParticipant?._id
-);
-          
-          setLocalMessages((prev) =>
-            tempId
-              ? prev.map((m) => (m._id === tempId ? offerMessage : m))
-              : [...prev, offerMessage]
-          );
+          // We rely on socket 'newOffer' event to update the UI to avoid duplication/state issues
+          console.log("Offer sent, waiting for socket event...");
         }}
         socket={socket}
         currentUser={currentUser}

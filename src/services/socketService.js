@@ -24,10 +24,15 @@ class SocketService {
     }
     
     // Create socket connection with token
-    this.socket = io('https://api.jinnar.com', {
+    this.socket = io(import.meta.env.VITE_BASE_URL || 'http://localhost:3000', {
       transports: ['websocket', 'polling'],
       auth: {
-        token: token || '' // Send token without Bearer prefix (backend adds it)
+        token: token || '', // Send token without Bearer prefix (backend adds it)
+        userId,
+        role: userRole
+      },
+      query: {
+        userId
       },
       reconnection: true,
       reconnectionAttempts: 5,
