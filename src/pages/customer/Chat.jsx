@@ -458,23 +458,60 @@ useEffect(() => {
     };
 
     const handleOfferUpdate = (updatedMessage) => {
-  const normalized = updatedMessage.customOffer
-    ? updatedMessage
-    : normalizeOfferMessage(updatedMessage);
+      const normalized = updatedMessage.customOffer
+        ? updatedMessage
+        : normalizeOfferMessage(updatedMessage);
 
-  setLocalMessages((prev) =>
-    prev.map((msg) =>
-      msg._id === normalized._id ? normalized : msg
-    )
-  );
+      setLocalMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === normalized._id ? normalized : msg
+        )
+      );
 
-  setSocketMessages((prev) =>
-    prev.map((msg) =>
-      msg._id === normalized._id ? normalized : msg
-    )
-  );
-};
+      setSocketMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === normalized._id ? normalized : msg
+        )
+      );
+    };
 
+    // Robust handler for various offer status update payloads
+    const handleGenericOfferUpdate = (payload) => {
+      console.log("🔔 Generic Offer Update Received:", payload);
+      
+      setLocalMessages((prev) => {
+        return prev.map((msg) => {
+          // 1. Match by Message ID
+          if (payload._id && msg._id === payload._id) {
+            // If payload looks like a full message, use it (normalized)
+            if (payload.customOffer) {
+              return payload; 
+            }
+            // If payload is partial merge, we'd need more logic, but usually it's full msg or status
+            return { ...msg, ...payload };
+          }
+
+          // 2. Match by Order ID (if payload has orderId or customOffer.orderId)
+          const payloadOrderId = payload.orderId || payload.customOffer?.orderId || payload.id; 
+          // (payload.id might be orderId in some backends)
+          
+          if (payloadOrderId && msg.customOffer?.orderId === payloadOrderId) {
+             // Create a new customOffer object with updated status
+             return {
+               ...msg,
+               customOffer: {
+                 ...msg.customOffer,
+                 status: payload.status || msg.customOffer.status, // Update status if present
+                 // Merge other fields if necessary
+                 ...payload.customOffer // If payload has nested customOffer, merge it
+               }
+             };
+          }
+
+          return msg;
+        });
+      });
+    };
 
     const handleChatListUpdate = () => {
       refetchConversations();
@@ -482,8 +519,14 @@ useEffect(() => {
 
     socket.on("newMessage", handleNewMessage);
     socket.on("updateMessage", handleOfferUpdate);
+    
+    // Listen for additional events that might trigger status changes
+    socket.on("offerAccepted", handleGenericOfferUpdate);
+    socket.on("offerRejected", handleGenericOfferUpdate);
+    socket.on("offerStatusUpdated", handleGenericOfferUpdate);
+    
     socket.on("updateChatList", handleChatListUpdate);
-    console.log("✅ Registered newMessage, updateMessage, updateChatList listeners");
+    console.log("✅ Registered socket listeners including offer updates");
 
     // Listen for new offers (sent by sellers). Append to messages if relevant and refresh sidebar.
    
@@ -513,6 +556,9 @@ useEffect(() => {
     return () => {
       socket.off("newMessage", handleNewMessage);
       socket.off("updateMessage", handleOfferUpdate);
+      socket.off("offerAccepted", handleGenericOfferUpdate);
+      socket.off("offerRejected", handleGenericOfferUpdate);
+      socket.off("offerStatusUpdated", handleGenericOfferUpdate);
       socket.off("updateChatList", handleChatListUpdate);
       socket.off("newOffer", handleNewOffer);
     };

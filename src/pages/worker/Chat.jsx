@@ -421,12 +421,54 @@ const Chat = () => {
       );
     };
 
+    // Robust handler for various offer status update payloads
+    const handleGenericOfferUpdate = (payload) => {
+      console.log("🔔 Generic Offer Update Received (Worker):", payload);
+      
+      setLocalMessages((prev) => {
+        return prev.map((msg) => {
+          // 1. Match by Message ID
+          if (payload._id && msg._id === payload._id) {
+            // If payload looks like a full message, use it
+            if (payload.customOffer) {
+              return payload; 
+            }
+            return { ...msg, ...payload };
+          }
+
+          // 2. Match by Order ID
+          const payloadOrderId = payload.orderId || payload.customOffer?.orderId || payload.id; 
+          
+          if (payloadOrderId && msg.customOffer?.orderId === payloadOrderId) {
+             return {
+               ...msg,
+               customOffer: {
+                 ...msg.customOffer,
+                 status: payload.status || msg.customOffer.status,
+                 ...payload.customOffer
+               }
+             };
+          }
+
+          return msg;
+        });
+      });
+    };
+
     socket.on("newMessage", handleNewMessage);
     socket.on("updateMessage", handleOfferUpdate);
+    
+    // Listen for additional events
+    socket.on("offerAccepted", handleGenericOfferUpdate);
+    socket.on("offerRejected", handleGenericOfferUpdate);
+    socket.on("offerStatusUpdated", handleGenericOfferUpdate);
 
     return () => {
       socket.off("newMessage", handleNewMessage);
       socket.off("updateMessage", handleOfferUpdate);
+      socket.off("offerAccepted", handleGenericOfferUpdate);
+      socket.off("offerRejected", handleGenericOfferUpdate);
+      socket.off("offerStatusUpdated", handleGenericOfferUpdate);
     };
   }, [
     socket,
