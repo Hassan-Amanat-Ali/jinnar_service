@@ -1,10 +1,10 @@
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle, ChevronRight } from "lucide-react";
 import { useEffect } from "react";
 import Charts from "../../components/worker/Home/Charts";
 import Hero from "../../components/worker/Home/Hero";
 import BookingCard from "../../components/customer/BookinCard";
 import { useNavigate } from "react-router-dom";
-import { useGetMyOrdersQuery, useGetWalletQuery, useGetEarningsQuery, useUpdateFcmTokenMutation } from "../../services/workerApi";
+import { useGetMyOrdersQuery, useGetWalletQuery, useGetEarningsQuery, useUpdateFcmTokenMutation, useGetMyProfileQuery } from "../../services/workerApi";
 import { format } from "date-fns";
 import { requestNotificationPermission } from "../../utils/fcm";
 import {useAuth} from "../../context/AuthContext.jsx";
@@ -18,6 +18,7 @@ const Home = () => {
   const { data: ordersData, isLoading: ordersLoading } = useGetMyOrdersQuery();
   const { data: walletData } = useGetWalletQuery();
   const { data: earningsData } = useGetEarningsQuery();
+  const { data: profileData } = useGetMyProfileQuery();
 
   // Request FCM permission and update token on component mount
   useEffect(() => {
@@ -60,6 +61,38 @@ const Home = () => {
       {/* Charts with wallet data */}
       <Charts walletData={walletData} earningsData={earningsData} />
 
+      {/* Verification Warning */}
+      {profileData?.profile?.verificationStatus !== "approved" && (
+        <div className="max-w-7xl mx-auto mt-6 px-4 sm:px-6 lg:px-6 xl:px-5">
+          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <div className="flex gap-4">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <AlertTriangle className="text-orange-600" size={20} />
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">
+                    Complete Verification
+                  </h4>
+                  <p className="text-sm text-gray-700">
+                    Your profile and gigs will be displayed more professionally after verification.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate("/worker/profile/verification")}
+                className="w-full sm:w-auto bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center gap-2"
+              >
+                Verify Now
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Your Bookings Section */}
       <div className="max-w-7xl mx-auto my-8 sm:my-12 lg:my-16 px-4 sm:px-6 lg:px-6 xl:px-5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
@@ -95,7 +128,16 @@ const Home = () => {
                 time={formatDate(order.createdAt)}
                 category={order.gigId?.category || 'Service'}
                 status={order.status}
-                price={order.price || order.gigId?.price || '0'}
+                price={(() => {
+                  const p = order.price || order.gigId?.price || order.gigId?.pricing || '0';
+                  if (typeof p === 'object') {
+                    if (p.fixed?.enabled && p.fixed?.price) return p.fixed.price;
+                    if (p.hourly?.enabled && p.hourly?.rate) return `${p.hourly.rate}/hr`;
+                    if (p.inspection?.enabled) return 'Quote';
+                    return '0';
+                  }
+                  return p;
+                })()}
                 onClick={() => navigate(`/worker/booking/${order._id}`)}
               />
             ))}

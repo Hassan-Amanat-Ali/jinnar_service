@@ -805,25 +805,35 @@ const WorkerProfileOverview = () => {
                 </div>
 
                 <div className="space-y-4">
-                  {profile.gigs.slice(0, 3).map((gig, idx) => (
-                    <div key={idx} className="flex justify-between items-start">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {gig.title}
+                  {profile.gigs.slice(0, 3).map((gig, idx) => {
+                    // Determine price display
+                    let priceDisplay = "Inspection Quote";
+                    let isPrice = false;
+
+                    if (gig.pricing?.fixed?.enabled && gig.pricing?.fixed?.price) {
+                      priceDisplay = `TZS ${gig.pricing.fixed.price.toLocaleString()}`;
+                      isPrice = true;
+                    } else if (gig.pricing?.hourly?.enabled && gig.pricing?.hourly?.rate) {
+                      priceDisplay = `TZS ${gig.pricing.hourly.rate.toLocaleString()}/hr`;
+                      isPrice = true;
+                    }
+
+                    return (
+                      <div key={idx} className="flex justify-between items-start">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 line-clamp-1 mr-2">
+                            {gig.title}
+                          </div>
+                          <div className="text-xs text-gray-500 capitalize">
+                            {isPrice ? "Fixed Price" : "Negotiable"}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500 capitalize">
-                          {gig.pricing?.method || "negotiable"}
+                        <div className="text-sm font-bold text-green-600 whitespace-nowrap">
+                          {priceDisplay}
                         </div>
                       </div>
-                      <div className="text-sm font-bold text-green-600">
-                        {gig.pricing?.method === "negotiable"
-                          ? "Negotiable"
-                          : `TZS ${
-                              gig.pricing?.price?.toLocaleString() || "N/A"
-                            }`}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ) : (

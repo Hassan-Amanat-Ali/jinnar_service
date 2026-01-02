@@ -40,9 +40,12 @@ const CustomOfferModal = ({
         return pricing.hourly.rate;
       }
       // Old structure fallback
-      if (pricing.price) {
+      if (typeof pricing.price === 'number') {
         return pricing.price;
       }
+      
+      // If it's an object but we couldn't find a price number (e.g. inspection only), return 0
+      return 0;
     }
     
     return pricing || 0;
