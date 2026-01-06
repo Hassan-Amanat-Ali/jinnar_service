@@ -1,0 +1,36 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+
+# Allow crawling of all public pages
+Allow: /
+Allow: /landing-services
+Allow: /what-is-jinnar
+Allow: /how-training-works
+Allow: /help
+Allow: /privacy-policy
+Allow: /terms-condition
+Allow: /about-us
+Allow: /landing-workers
+
+# Disallow authentication and protected pages
+Disallow: /login
+Disallow: /signup
+Disallow: /verify
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /role
+Disallow: /customer-home
+Disallow: /worker-home
+Disallow: /customer-*
+Disallow: /worker-*
+Disallow: /profile
+Disallow: /notifications
+Disallow: /complaint
+Disallow: /jobs
+Disallow: /wallet
+Disallow: /payment-methods
+Disallow: /booking*
+Disallow: /book-worker*
+
+# Sitemap location
+Sitemap: https://jinnar.com/sitemap.xml

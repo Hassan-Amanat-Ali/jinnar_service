@@ -106,6 +106,22 @@ const Footer = () => {
               <li>
                 <a
                   className="hover:text-secondary transition-colors"
+                  href="/landing-workers"
+                >
+                  Browse Workers
+                </a>
+              </li>
+              <li>
+                <a
+                  className="hover:text-secondary transition-colors"
+                  href="/how-training-works"
+                >
+                  Free Training
+                </a>
+              </li>
+              <li>
+                <a
+                  className="hover:text-secondary transition-colors"
                   href="/about-us"
                 >
                   About Us
@@ -114,9 +130,9 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Popular Services */}
+          {/* Resources */}
           <div className="flex flex-col">
-            <h1 className="font-semibold text-base">Popular Services</h1>
+            <h1 className="font-semibold text-base">Resources</h1>
             <ul className="text-xs sm:text-sm mt-3 space-y-2 font-light text-gray-400">
               <li>
                 <a
@@ -129,17 +145,17 @@ const Footer = () => {
               <li>
                 <a
                   className="hover:text-secondary transition-colors"
-                  href="/help"
+                  href="/what-is-jinnar"
                 >
-                  FAQ
+                  What is Jinnar?
                 </a>
               </li>
               <li>
                 <a
                   className="hover:text-secondary transition-colors"
-                  href="/what-is-jinnar"
+                  href="/what-is-jinnar/detailed"
                 >
-                  What is Jinnar?
+                  Platform Details
                 </a>
               </li>
               <li>
