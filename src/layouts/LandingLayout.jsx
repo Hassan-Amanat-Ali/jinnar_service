@@ -41,7 +41,7 @@ const LandingHeader = () => {
     { to: "/", label: "Home" },
     { to: "/what-is-jinnar", label: "What is Jinnar" },
     { to: "/landing-services", label: "Services" },
-    { to: "/#top-workers", label: "Workers" },
+    { to: "/landing-workers", label: "Workers" },
     { to: "/how-training-works", label: "Free Training" },
     { to: "/help", label: "Help" },
   ];
@@ -210,11 +210,10 @@ const LandingHeader = () => {
                         key={item.to}
                         href={item.to}
                         onClick={closeMobileMenu}
-                        className={`block px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-                          active
+                        className={`block px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${active
                             ? "bg-blue-50 text-blue-600 border border-blue-200"
                             : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
+                          }`}
                       >
                         {item.label}
                       </a>
