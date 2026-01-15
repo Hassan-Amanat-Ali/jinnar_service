@@ -1,9 +1,10 @@
 import growing from "../../assets/images/growing.jpg";
 import arrow from "../../assets/icons/arrow.png";
 import bubble1 from "../../assets/icons/bubble1.png";
-import followUs from "../../assets/icons/follow-us.png";
+
 import { Mail, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
+import { FaFacebook, FaInstagram, FaYoutube } from "react-icons/fa";
 
 const Footer = () => {
   return (
@@ -165,7 +166,32 @@ const Footer = () => {
           {/* Follow Us */}
           <div className="flex flex-col items-center md:items-start">
             <h1 className="font-semibold text-base">Follow Us</h1>
-            <img src={followUs} alt="Follow us" className="my-3 w-32 sm:w-40" />
+            <div className="flex gap-4 my-3">
+              <a
+                href="https://www.facebook.com/share/1F2AEC5cYr/?mibextid=wwXIfr"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <FaFacebook size={24} />
+              </a>
+              <a
+                href="https://www.instagram.com/ji_nnar?igsh=M3Z4cnBidDYyaHhp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <FaInstagram size={24} />
+              </a>
+              <a
+                href="https://youtube.com/@jinnarcompany?si=jfCGJtzcumw4PfGV"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <FaYoutube size={24} />
+              </a>
+            </div>
             <p className="text-xs sm:text-sm text-gray-400 max-w-xs text-center md:text-left">
               Stay updated with our latest news and features.
             </p>
