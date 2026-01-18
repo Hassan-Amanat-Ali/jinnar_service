@@ -25,6 +25,7 @@ import {
 import { useGetMyProfileQuery } from "../../services/workerApi";
 import { getFullImageUrl, reverseGeocode } from "../../utils/fileUrl.js";
 import OptimizedImage from "../common/OptimizedImage";
+import VerificationSection from "../../components/profile/VerificationSection";
 
 // Badge Component
 const Badge = ({ children, variant = "default", className = "" }) => {
@@ -75,9 +76,8 @@ const InfoRow = ({ icon, label, value, isLink = false }) => (
     <div className="flex-1">
       <span className="text-sm text-gray-600">{label}:</span>
       <span
-        className={`ml-2 text-sm font-medium ${
-          isLink ? "text-blue-600" : "text-gray-900"
-        }`}
+        className={`ml-2 text-sm font-medium ${isLink ? "text-blue-600" : "text-gray-900"
+          }`}
       >
         {value}
       </span>
@@ -121,10 +121,7 @@ const WorkerProfileOverview = () => {
     navigate("/worker-setup-basic");
   };
 
-  // Handler for verification button
-  const handleVerification = () => {
-    navigate("/worker/profile/verification");
-  };
+
 
   // Skeleton Shimmer Component
   const Skeleton = ({ className = "" }) => (
@@ -422,9 +419,8 @@ const WorkerProfileOverview = () => {
   const getLocationString = (areas) => {
     if (!areas || areas.length === 0) return null;
     // For simplicity, just show count. In production, you'd reverse geocode
-    return `${areas.length} service area${
-      areas.length !== 1 ? "s" : ""
-    } configured`;
+    return `${areas.length} service area${areas.length !== 1 ? "s" : ""
+      } configured`;
   };
 
   const getServiceRadius = (areas) => {
@@ -438,9 +434,8 @@ const WorkerProfileOverview = () => {
   const worker = {
     initials: getInitials(profile.name),
     name: profile.name || "No name",
-    title: `${profile.bio || "Service Professional"} | ${
-      profile.yearsOfExperience || 0
-    }+ Years`,
+    title: `${profile.bio || "Service Professional"} | ${profile.yearsOfExperience || 0
+      }+ Years`,
     rating: profile.rating?.average || 0,
     reviewCount: profile.rating?.count || 0,
     completedJobs: profile.completedJobs || 0,
@@ -512,7 +507,7 @@ const WorkerProfileOverview = () => {
                     ({worker.reviewCount} reviews)
                   </span>
                 </div>
-             
+
                 <span className="text-sm text-gray-500">•</span>
                 <span className="text-sm text-gray-500">
                   {worker.completedJobs} jobs completed
@@ -538,7 +533,7 @@ const WorkerProfileOverview = () => {
                 {profile.selectedAreas && profile.selectedAreas.length > 0 && (
                   <Badge variant="location">
                     <MapPin size={12} />
-                    {locationAddress !== "Loading location..." && locationAddress !== "No location added" 
+                    {locationAddress !== "Loading location..." && locationAddress !== "No location added"
                       ? locationAddress.split(",")[0] // Show only city name
                       : `${profile.selectedAreas.length} service area${profile.selectedAreas.length !== 1 ? "s" : ""}`}
                   </Badge>
@@ -556,25 +551,13 @@ const WorkerProfileOverview = () => {
               <Edit size={16} />
               Edit Profile
             </button>
-            <button
-              onClick={handleVerification}
-              className={`flex items-center justify-center gap-2 ${
-                profile.verificationStatus === "approved"
-                  ? "bg-green-100 text-green-700"
-                  : profile.verificationStatus === "pending"
-                  ? "bg-yellow-100 text-yellow-700"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              } font-medium px-4 py-2 rounded-lg transition-all text-sm`}
-            >
-              <Shield size={16} />
-              {profile.verificationStatus === "approved"
-                ? "Verified"
-                : profile.verificationStatus === "pending"
-                ? "Pending"
-                : "Get Verified"}
-            </button>
           </div>
         </div>
+      </div>
+
+      {/* Verification Section */}
+      <div className="mb-2">
+        <VerificationSection user={profile} />
       </div>
 
       {/* Two Column Layout */}
@@ -728,8 +711,8 @@ const WorkerProfileOverview = () => {
                           {profile.yearsOfExperience >= 5
                             ? "Expert"
                             : profile.yearsOfExperience >= 2
-                            ? "Advanced"
-                            : "Intermediate"}
+                              ? "Advanced"
+                              : "Intermediate"}
                         </div>
                       </div>
                     </div>

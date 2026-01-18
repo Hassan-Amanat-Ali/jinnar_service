@@ -18,6 +18,7 @@ import Chat from "../pages/customer/Chat.jsx";
 import Chat1 from "../pages/worker/Chat.jsx";
 import Profile from "../pages/common/Profile.jsx";
 import Complaint from "../pages/common/Complaint.jsx";
+import VerificationResult from "../pages/common/VerificationResult.jsx";
 import CustomerHome from "../pages/customer/Home.jsx";
 import AllServices from "../pages/customer/AllServices.jsx";
 import CustomerBookings from "../pages/customer/MyBookings.jsx";
@@ -123,6 +124,14 @@ const router = createBrowserRouter([
         element: (
           <RoleGuard allow={[ROLES.CUSTOMER, ROLES.WORKER]}>
             <Complaint />
+          </RoleGuard>
+        ),
+      },
+      {
+        path: "verification-result",
+        element: (
+          <RoleGuard allow={[ROLES.CUSTOMER, ROLES.WORKER]}>
+            <VerificationResult />
           </RoleGuard>
         ),
       },

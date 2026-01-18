@@ -214,7 +214,8 @@ const Footer = () => {
         </div>
         <div className="mt-10 pb-2 text-gray-400">
           <p className="text-xs text-center">
-            © 2025 Pan-African Marketplace. All rights reserved.
+            © 2026 Jinnar. All rights reserved.
+            Jinnar is a Pan-African marketplace platform operated by Tropina Inc., USA.
           </p>
         </div>
       </div>

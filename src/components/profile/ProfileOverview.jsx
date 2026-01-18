@@ -18,6 +18,7 @@ import {
 } from "../../services/authApi";
 import { getFullImageUrl, reverseGeocode } from "../../utils/fileUrl";
 import { ROLES } from "../../constants/roles";
+import VerificationSection from "./VerificationSection";
 
 const ProfileOverview = () => {
   const [isEditMode, setIsEditMode] = useState(false);
@@ -585,6 +586,10 @@ const ProfileOverview = () => {
             </div>
           </div>
 
+          <div className="mt-6">
+            <VerificationSection user={profileData?.profile} />
+          </div>
+
           {/* Divider */}
           <div className="border-t border-gray-200 my-6"></div>
 
@@ -626,7 +631,7 @@ const ProfileOverview = () => {
                                     <p className="text-sm font-medium text-gray-900">
                                       {locationAddresses[index] || area.address || "Location on map"}
                                     </p>
-                                  
+
                                   </div>
                                   <div className="flex gap-2">
                                     <button
@@ -674,12 +679,12 @@ const ProfileOverview = () => {
                                     key={index}
                                     className="flex gap-3 items-start bg-gray-50 p-3 rounded-lg"
                                   >
-                                
+
                                     <div>
                                       <p className="text-sm font-medium text-gray-900">
                                         {locationAddresses[index] || area.address || "Location on map"}
                                       </p>
-                                     
+
                                     </div>
                                   </div>
                                 ))}
@@ -721,8 +726,8 @@ const ProfileOverview = () => {
                     initialLocation={
                       editingLocationIndex !== null
                         ? (isCustomer
-                            ? formData.preferredAreas
-                            : formData.selectedAreas)[editingLocationIndex]
+                          ? formData.preferredAreas
+                          : formData.selectedAreas)[editingLocationIndex]
                         : null
                     }
                   />
