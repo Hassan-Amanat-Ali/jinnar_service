@@ -5,57 +5,59 @@ import bubble1 from "../../assets/icons/bubble1.png";
 import { Mail, MapPin } from "lucide-react";
 import { FaFacebook, FaInstagram, FaYoutube } from "react-icons/fa";
 
-const Footer = () => {
+const Footer = ({ showCTA = true }) => {
   return (
     <footer>
       {/* CTA Section */}
-      <div className="relative mx-auto mt-1 mb-12 sm:mb-16  sm:px-6">
-        <div className="relative  max-w-7xl mx-auto h-50 m:h-48 md:h-56 lg:h-84 rounded-xl sm:rounded-2xl overflow-hidden w-[90%] md:w-full  xl:w-[90%]">
-          {/* Background Image */}
-          <img
-            src={growing}
-            alt="Growing business"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+      {showCTA && (
+        <div className="relative mx-auto mt-1 mb-12 sm:mb-16  sm:px-6">
+          <div className="relative  max-w-7xl mx-auto h-50 m:h-48 md:h-56 lg:h-84 rounded-xl sm:rounded-2xl overflow-hidden w-[90%] md:w-full  xl:w-[90%]">
+            {/* Background Image */}
+            <img
+              src={growing}
+              alt="Growing business"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
 
-          {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0225A1]/85 to-[#8203E9]/85"></div>
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0225A1]/85 to-[#8203E9]/85"></div>
 
-          {/* Decorative Bubbles */}
-          <img
-            src={bubble1}
-            alt=""
-            className="absolute top-2 left-2 sm:top-4 sm:left-4 md:left-6 w-6 sm:w-8 md:w-10 opacity-50 animate-pulse"
-          />
-          <img
-            src={bubble1}
-            alt=""
-            className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 md:right-6 w-8 sm:w-10 md:w-12 opacity-30 animate-pulse"
-          />
+            {/* Decorative Bubbles */}
+            <img
+              src={bubble1}
+              alt=""
+              className="absolute top-2 left-2 sm:top-4 sm:left-4 md:left-6 w-6 sm:w-8 md:w-10 opacity-50 animate-pulse"
+            />
+            <img
+              src={bubble1}
+              alt=""
+              className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 md:right-6 w-8 sm:w-10 md:w-12 opacity-30 animate-pulse"
+            />
 
-          {/* Content */}
-          <div className="relative z-20 h-full flex flex-col items-center justify-center text-center px-4 sm:px-6 md:px-8">
-            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight max-w-3xl">
-              Join thousands of happy customers today!
-            </h1>
-            <p className="text-xs sm:text-sm md:text-base text-white/90 mb-4 sm:mb-5 md:mb-6 leading-relaxed max-w-xl px-2">
-              Experience the difference with our verified professionals. Quality
-              service, guaranteed satisfaction.
-            </p>
-            <a
-              href="/landing-services"
-              className="bg-white hover:bg-gray-100 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-sm md:text-base font-semibold text-gray-900 flex items-center gap-1.5 sm:gap-2 transition-all duration-300 hover:scale-105 hover:shadow-lg"
-            >
-              Start Booking Now
-              <img
-                src={arrow}
-                alt=""
-                className="w-3 sm:w-4 md:w-5 h-2.5 sm:h-3 md:h-4"
-              />
-            </a>
+            {/* Content */}
+            <div className="relative z-20 h-full flex flex-col items-center justify-center text-center px-4 sm:px-6 md:px-8">
+              <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-2 sm:mb-3 md:mb-4 leading-tight max-w-3xl">
+                Join thousands of happy customers today!
+              </h1>
+              <p className="text-xs sm:text-sm md:text-base text-white/90 mb-4 sm:mb-5 md:mb-6 leading-relaxed max-w-xl px-2">
+                Experience the difference with our verified professionals. Quality
+                service, guaranteed satisfaction.
+              </p>
+              <a
+                href="/landing-services"
+                className="bg-white hover:bg-gray-100 px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-sm md:text-base font-semibold text-gray-900 flex items-center gap-1.5 sm:gap-2 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              >
+                Start Booking Now
+                <img
+                  src={arrow}
+                  alt=""
+                  className="w-3 sm:w-4 md:w-5 h-2.5 sm:h-3 md:h-4"
+                />
+              </a>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="bg-[#F9FAFB] pt-8 sm:pt-10 text-black">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 px-8">

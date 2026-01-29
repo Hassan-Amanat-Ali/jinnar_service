@@ -84,7 +84,7 @@ const LandingHeader = () => {
 
   return (
     <>
-      <header className="absolute left-1/2 -translate-x-1/2 top-0 z-30 w-[calc(100%-12px)] sm:w-[calc(100%-24px)] md:w-[calc(100%-48px)] lg:w-[calc(100%-80px)]">
+      <header className="fixed left-1/2 -translate-x-1/2 top-0 z-30 w-[calc(100%-12px)] sm:w-[calc(100%-24px)] md:w-[calc(100%-48px)] lg:w-[calc(100%-80px)]">
         <div className="rounded-b-2xl bg-white/50 backdrop-blur shadow-sm px-3 sm:px-4 md:px-6 lg:px-8 h-[60px] sm:h-[72px] grid grid-cols-[auto_1fr_auto] items-center gap-2 sm:gap-4">
           <Link to="/" className="font-semibold tracking-tight">
             <img
@@ -211,8 +211,8 @@ const LandingHeader = () => {
                         href={item.to}
                         onClick={closeMobileMenu}
                         className={`block px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${active
-                            ? "bg-blue-50 text-blue-600 border border-blue-200"
-                            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                          ? "bg-blue-50 text-blue-600 border border-blue-200"
+                          : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                           }`}
                       >
                         {item.label}

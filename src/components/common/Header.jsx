@@ -32,8 +32,8 @@ const SwitchRoleButton = ({ role, onClick, isLoading }) => {
         {isLoading
           ? "Switching..."
           : role === "customer"
-          ? "Worker"
-          : "Customer"}
+            ? "Worker"
+            : "Customer"}
       </span>
     </button>
   );
@@ -71,7 +71,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="w-full bg-white shadow-sm rounded-b-xl">
+      <nav className="w-full bg-white shadow-sm rounded-b-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             {/* Logo */}

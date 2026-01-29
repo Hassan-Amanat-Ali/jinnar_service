@@ -63,179 +63,47 @@ const Hero = () => {
   return (
     <section className="relative overflow-visible">
       <div
-        className="relative py-28 sm:py-32 bg-cover bg-center"
+        className="relative py-24 sm:py-32 lg:py-52 bg-cover bg-top"
         style={{ backgroundImage: `url(${LandingPageHeroBg})` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-t from-primary/70 via-primary/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
 
-        <div className="relative z-10 max-w-5xl mx-auto px-4 text-white text-center flex flex-col items-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur px-3 py-1 text-xs mb-4">
-            <span className="opacity-80">
-              Your reliable connection to skilled workers
-            </span>
-          </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="max-w-3xl">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold leading-tight tracking-tight mb-8 text-white text-left drop-shadow-lg">
+              Find Trusted Professionals <br /> <i className="font-serif font-normal text-blue-400">Across Africa</i> In Minutes
+            </h1>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight tracking-tight">
-            Find Trusted Professionals Across Africa—In Minutes
-          </h1>
-
-          <div className="h-1 w-24 sm:w-40 md:w-56 lg:w-72 bg-white/80 my-2" />
-
-          <p className="mt-1 text-white/90 text-base sm:text-lg text center">
-            Explore verified workers in every service category, compare choices
-            with ease, and book confidently wherever you are on the continent.
-          </p>
-
-          <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-            <button
-              className="btn-primary"
-              onClick={() => navigate("/landing-services")}
-            >
-              Browse Services
-            </button>
-            <button
-              className="btn-outline"
-              onClick={() => navigate("/what-is-jinnar")}
-            >
-              Learn about Jinnar
-            </button>
-          </div>
-
-          {/* SEARCH CARD */}
-          <div className="mt-10 bg-white/95 rounded-2xl shadow-xl p-5 text-black">
-            {/* SEARCH INPUT */}
-            <div>
-              <label className="block text-left text-xs font-semibold mb-1">
-                Service
-              </label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-3 flex items-center text-black/60">
-                  <FiSearch />
-                </span>
+            {/* Simple Search Bar */}
+            <div className="bg-white rounded-lg p-1.5 max-w-2xl shadow-2xl mb-6">
+              <div className="flex items-center">
+                <div className="pl-4 text-gray-400">
+                  <FiSearch size={20} />
+                </div>
                 <input
-                  className="w-full h-10 sm:h-11 pl-9 pr-3 rounded-xl border border-border text-sm leading-none"
-                  placeholder="Plumber, Electrician..."
+                  className="flex-1 h-12 px-3 text-sm sm:text-base text-gray-800 placeholder-gray-500 focus:outline-none bg-transparent"
+                  placeholder="What service do you need?"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                 />
+                <button
+                  onClick={handleSearch}
+                  className="bg-blue-600 hover:bg-blue-700 text-white h-12 w-12 sm:w-auto px-0 sm:px-8 rounded-[4px] font-semibold transition-colors flex items-center justify-center sm:text-base mr-1 sm:mr-0"
+                >
+                  <span className="sm:hidden"><FiSearch size={24} /></span>
+                  <span className="hidden sm:inline">Search</span>
+                </button>
               </div>
             </div>
 
-            {/* GRID */}
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {/* LOCATION */}
-              <div>
-                <label className="block text-left text-xs font-semibold mb-1">
-                  Location
-                </label>
-                <div className="relative">
-                  <span className="absolute inset-y-0 left-3 flex items-center text-black/60">
-                    <FiMapPin />
-                  </span>
-                  <input
-                    className="w-full h-10 sm:h-11 pl-9 pr-3 rounded-xl border border-border text-sm leading-none"
-                    placeholder={userAddress || "Enter location"}
-                    value={searchLocation}
-                    onChange={(e) => {
-                      setSearchLocation(e.target.value);
-                      setShowSuggestions(true);
-                    }}
-                    onBlur={() =>
-                      setTimeout(() => setShowSuggestions(false), 150)
-                    }
-                  />
-
-                  {showSuggestions && searchLocation.length > 2 && (
-                    <div className="absolute z-20 mt-1 w-full bg-white border rounded-lg shadow max-h-52 overflow-y-auto">
-                      {locationLoading && (
-                        <div className="p-2 text-sm text-gray-500">
-                          Loading...
-                        </div>
-                      )}
-                      {suggestions.map((s) => (
-                        <div
-                          key={s.place_id}
-                          className="p-2 text-sm hover:bg-gray-100 cursor-pointer"
-                          onMouseDown={() => {
-                            setSearchLocation(s.display_name);
-                            setShowSuggestions(false);
-                          }}
-                        >
-                          {s.display_name}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* CATEGORY */}
-              <SelectBox
-                label="Category"
-                value={selectedCategory}
-                onChange={(e) => {
-                  setSelectedCategory(e.target.value);
-                  setSelectedSubcategory("");
-                }}
-                disabled={categoriesLoading}
-              >
-                <option value="">Choose category</option>
-                {categories.map((c) => (
-                  <option key={c._id} value={c._id}>
-                    {formatName(c.name)}
-                  </option>
-                ))}
-              </SelectBox>
-
-              {/* SUBCATEGORY */}
-              <SelectBox
-                label="Subcategory"
-                value={selectedSubcategory}
-                onChange={(e) => setSelectedSubcategory(e.target.value)}
-                disabled={!selectedCategory || subcategoriesLoading}
-              >
-                <option value="">All Subcategories</option>
-                {subcategories.map((s) => (
-                  <option key={s._id} value={s._id}>
-                    {formatName(s.name)}
-                  </option>
-                ))}
-              </SelectBox>
-
-              {/* SORT */}
-              <SelectBox
-                label="Sort By"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="">Relevance</option>
-                <option value="rating">Highest Rated</option>
-                <option value="experience">Most Experienced</option>
-              </SelectBox>
-
-              {/* RATING */}
-              <SelectBox
-                label="Minimum Rating"
-                value={minRating}
-                onChange={(e) => setMinRating(e.target.value)}
-              >
-                <option value="">Any Rating</option>
-                {[4, 3, 2, 1].map((r) => (
-                  <option key={r} value={r}>
-                    {r}+ Stars
-                  </option>
-                ))}
-              </SelectBox>
-
-              {/* BUTTON */}
-              <div className="flex items-end">
-                <button
-                  onClick={handleSearch}
-                  className="btn-primary w-full h-10 sm:h-11 rounded-xl"
-                >
-                  <FiSearch /> Search
-                </button>
-              </div>
+            {/* Popular Tags */}
+            <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-white/90">
+              <span>Popular:</span>
+              <button onClick={() => { setSearchTerm("Plumbing"); handleSearch(); }} className="px-3 py-1 border border-white/30 rounded-full hover:bg-white hover:text-black transition-colors text-xs">Plumbing</button>
+              <button onClick={() => { setSearchTerm("Cleaning"); handleSearch(); }} className="px-3 py-1 border border-white/30 rounded-full hover:bg-white hover:text-black transition-colors text-xs">Cleaning</button>
+              <button onClick={() => { setSearchTerm("Electrician"); handleSearch(); }} className="px-3 py-1 border border-white/30 rounded-full hover:bg-white hover:text-black transition-colors text-xs">Electrician</button>
+              <button onClick={() => { setSearchTerm("Cooking"); handleSearch(); }} className="px-3 py-1 border border-white/30 rounded-full hover:bg-white hover:text-black transition-colors text-xs">Cooking</button>
             </div>
           </div>
         </div>
