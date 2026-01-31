@@ -22,10 +22,18 @@ export const verificationApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Profile"],
     }),
+    startVerification: builder.mutation({
+      query: (args) => ({
+        url: "/verification/start",
+        method: "POST",
+        body: args || {},
+      }),
+    }),
   }),
 });
 
 export const {
   useUploadIdentityDocumentMutation,
   useSubmitForVerificationMutation,
+  useStartVerificationMutation,
 } = verificationApi;

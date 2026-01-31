@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     historyApiFallback: true,
+    allowedHosts: ["cylindrically-postrhinal-arely.ngrok-free.dev"],
   },
   preview: {
     historyApiFallback: true,

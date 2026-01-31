@@ -253,11 +253,10 @@ const Profile = () => {
                     <button
                       key={item.id}
                       onClick={() => updateActiveTab(item.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
-                        isActive
-                          ? "bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white border border-blue-200"
-                          : "text-gray-700 hover:bg-gray-50 border border-transparent"
-                      }`}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${isActive
+                        ? "bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white border border-blue-200"
+                        : "text-gray-700 hover:bg-gray-50 border border-transparent"
+                        }`}
                     >
                       <Icon
                         size={20}
@@ -265,16 +264,14 @@ const Profile = () => {
                       />
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`text-sm font-medium ${
-                            isActive ? "text-white" : "text-gray-900"
-                          }`}
+                          className={`text-sm font-medium ${isActive ? "text-white" : "text-gray-900"
+                            }`}
                         >
                           {item.label}
                         </p>
                         <p
-                          className={`text-xs ${
-                            isActive ? "text-white" : "text-gray-500"
-                          }`}
+                          className={`text-xs ${isActive ? "text-white" : "text-gray-500"
+                            }`}
                         >
                           {item.description}
                         </p>
@@ -359,11 +356,10 @@ const Profile = () => {
                               updateActiveTab(item.id);
                               setIsSidebarOpen(false);
                             }}
-                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
-                              isActive
-                                ? "bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200"
-                                : "text-gray-700 hover:bg-gray-50 border border-transparent"
-                            }`}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${isActive
+                              ? "bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200"
+                              : "text-gray-700 hover:bg-gray-50 border border-transparent"
+                              }`}
                           >
                             <Icon
                               size={20}
@@ -373,16 +369,14 @@ const Profile = () => {
                             />
                             <div className="flex-1 min-w-0">
                               <p
-                                className={`text-sm font-medium ${
-                                  isActive ? "text-blue-900" : "text-gray-900"
-                                }`}
+                                className={`text-sm font-medium ${isActive ? "text-blue-900" : "text-gray-900"
+                                  }`}
                               >
                                 {item.label}
                               </p>
                               <p
-                                className={`text-xs ${
-                                  isActive ? "text-blue-600" : "text-gray-500"
-                                }`}
+                                className={`text-xs ${isActive ? "text-blue-600" : "text-gray-500"
+                                  }`}
                               >
                                 {item.description}
                               </p>

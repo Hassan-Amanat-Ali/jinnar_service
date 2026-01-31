@@ -67,17 +67,15 @@ const HowItWorks = () => {
           <div className="rounded-full border border-border bg-muted p-1 shadow-sm inline-flex gap-1">
             <button
               onClick={() => setAudience("customers")}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
-                audience === "customers" ? "bg-white shadow" : "text-black/70"
-              }`}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${audience === "customers" ? "bg-white shadow" : "text-black/70"
+                }`}
             >
               For Customers
             </button>
             <button
               onClick={() => setAudience("workers")}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
-                audience === "workers" ? "bg-white shadow" : "text-black/70"
-              }`}
+              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${audience === "workers" ? "bg-white shadow" : "text-black/70"
+                }`}
             >
               For Workers
             </button>
@@ -107,7 +105,7 @@ const HowItWorks = () => {
             )
           )}
         </div>
-        {/* How Training Works section */}
+        {/* How Training Works section
         <div
           id="training-info"
           className="mt-14 rounded-2xl border border-border bg-white p-6 text-center"
@@ -118,7 +116,7 @@ const HowItWorks = () => {
           <a href="/how-training-works" className="btn-primary">
             How Training Works
           </a>
-        </div>
+        </div> */}
       </div>
     </section>
   );

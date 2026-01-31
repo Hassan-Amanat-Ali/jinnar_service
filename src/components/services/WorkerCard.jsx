@@ -1,118 +1,82 @@
 import React from "react";
-import { Star, Clock, MapPin, Eye } from "lucide-react";
+import { Star, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
 import OptimizedImage from "../common/OptimizedImage";
 
 const WorkerCard = ({
-  name,
+  name, // This is actually the Gig Title based on GigSection usage
   image,
   rating,
   reviews,
   available,
-  experience,
-  distance,
-  bio,
-  skills,
-  jobsCompleted,
-  rate,
   sellerId,
   gigId,
+  rate, // "TZS 50,000" or similar
+  // Props that might contain the "missing" job count
+  jobsCompleted,
+  sellerName,
+  sellerImage
 }) => {
   const navigate = useNavigate();
+
+  // Format rating to 1 decimal
+  const formattedRating = Number(rating).toFixed(1);
+
   return (
-    <div className="w-full max-w-sm rounded-2xl shadow p-4 text-gray-800 text-sm bg-white border border-gray-300 flex flex-col">
-      {/* Top Section */}
-      <div className="flex items-start gap-3 flex-shrink-0">
+    <div
+      className="group flex flex-col w-full bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer"
+      onClick={() => navigate(`/book-worker/${sellerId}/${gigId}`)}
+    >
+      {/* 1. Gig Image (Cover) */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
         <OptimizedImage
           src={image}
           alt={name}
-          className="w-15 h-15 rounded-lg object-cover flex-shrink-0"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="flex-1">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-base">{name}</h2>
-            <span
-              className={`text-xs px-2 py-0.5 rounded-full ${
-                available
-                  ? "bg-green-100 text-black"
-                  : "bg-gray-200 text-gray-600"
-              }`}
-            >
-              {available ? "Available" : "Busy"}
+        {/* Heart Icon Overlay (Placeholder for wishlist) */}
+        {/* <div className="absolute top-3 right-3 p-2 rounded-full bg-white/20 backdrop-blur-sm hover:bg-white text-white hover:text-red-500 transition-all">
+          <Heart size={16} fill={false ? "currentColor" : "none"} />
+        </div> */}
+      </div>
+
+      {/* 2. Content */}
+      <div className="flex flex-col flex-1 p-4 gap-3">
+
+        {/* Seller Info (Mini Avatar + Name) */}
+        {/* Note: GigSection currently doesn't pass sellerImage/sellerName explicitly to WorkerCard, 
+            it passes 'name' as gig.title. We might need to adjust partials if we want seller avatar here. 
+            For now, we'll keep it simple or assume we might update GigSection to pass seller details later.
+        */}
+        <div className="flex items-center gap-2">
+          {/* If we had seller avatar, it would go here. For now, showing 'Level' or just spacing */}
+          <h3 className="flex-1 font-medium text-gray-900 text-base line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
+            {name}
+          </h3>
+        </div>
+
+        {/* Rating */}
+        <div className="flex items-center gap-1 text-sm">
+          <Star size={14} className="text-black fill-black" />
+          <span className="font-bold text-gray-900">{formattedRating}</span>
+          <span className="text-gray-500">({reviews})</span>
+        </div>
+
+        {/* Footer: Price & Actions */}
+        <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
+          {/* Job Count - attempting to fix the "0 jobs" issue by showing it only if > 0 */}
+          <div className="text-xs text-gray-500 font-medium">
+            {/* Fallback to checking if available/pro if jobs is 0, or just hide it */}
+            {/* {jobsCompleted > 0 && `${jobsCompleted} jobs done`} */}
+          </div>
+
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] uppercase font-bold text-gray-400">Starting at</span>
+            <span className="text-base font-bold text-gray-900">
+              {typeof rate === "number" ? `TZS ${rate.toLocaleString()}` : rate}
             </span>
           </div>
-          <div className="flex items-center gap-1 text-yellow-500 text-sm">
-            <Star size={14} fill="currentColor" />
-            <span className="font-medium text-black">{rating}</span>
-            <span className="text-gray-500 text-xs">({reviews} Reviews)</span>
-          </div>
         </div>
-      </div>
-
-      {/* Info */}
-      <div className="flex items-center gap-3 mt-5 text-gray-600 text-xs flex-shrink-0">
-        <span className="flex items-center gap-1">
-          <Clock size={14} color="#74C7F2" /> {experience} Exp
-        </span>
-        <div className="bg-gray-400 h-[15px] w-[1px]"></div>
-        <span className="flex items-center gap-1">
-          <MapPin size={14} color="#74C7F2" /> {distance}
-        </span>
-      </div>
-
-      {/* Bio */}
-      <div className="mt-3.5 h-10 overflow-hidden">
-        <p className="text-black text-sm leading-tight line-clamp-2">{bio}</p>
-      </div>
-
-      {/* Skills */}
-      <div className="h-16 mt-2.5 overflow-hidden">
-        <div className="flex flex-wrap gap-2">
-          {skills.slice(0, 4).map((skill, idx) => (
-            <span
-              key={idx}
-              className="px-2 py-1.5 bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white text-xs rounded-lg whitespace-nowrap capitalize"
-            >
-              {skill}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="flex justify-around items-center mt-4 bg-gray-50 rounded-xl p-2 text-xs py-3.5 flex-shrink-0">
-        <div className="text-center">
-          <p className="font-semibold">{jobsCompleted || 0}</p>
-          <p className="text-gray-500">Jobs</p>
-        </div>
-        <div className="w-px bg-gray-200 h-6" />
-        <div className="text-center">
-          <p className="font-semibold">
-            {typeof rate === "number" ? `TZS ${rate}` : rate}
-          </p>
-          <p className="text-gray-500">Rate</p>
-        </div>
-      </div>
-
-      {/* Buttons */}
-      <div className="flex gap-2 mt-3 flex-shrink-0">
-        <button
-          className="flex items-center justify-center gap-1 border rounded-lg w-1/2 py-2.5 text-xs font-medium text-gray-400 hover:text-gray-600 hover:border-gray-400 transition cursor-pointer"
-          onClick={() => {
-            navigate(`/worker-profile/${sellerId}`);
-          }}
-        >
-          <Eye size={14} /> View
-        </button>
-        <button
-          className="w-1/2 py-2.5 rounded-lg bg-gradient-to-r from-[#B6E0FE] to-[#74C7F2] text-white text-xs font-medium cursor-pointer"
-          onClick={() => {
-            navigate(`/book-worker/${sellerId}/${gigId}`);
-          }}
-        >
-          Book Now
-        </button>
       </div>
     </div>
   );
